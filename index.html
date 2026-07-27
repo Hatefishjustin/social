@@ -6,6 +6,7 @@
   <title>心缘 - 社交匹配</title>
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
+<style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
@@ -25,7 +26,6 @@
   --accent-soft: rgba(255,59,92,0.10);
   --line: var(--hairline);
 }
-*{margin:0;padding:0;box-sizing:border-box}
 html,body{
   background:var(--bg);
   color:var(--text-primary);
@@ -749,14 +749,7 @@ async function saveProfile(){
 }
 
 function showTerms(){
-  alert('用户协议与隐私政策
-
-1. 本平台仅供16岁以上中学生及大学生使用
-2. 聊天内容受平台监管，禁止交换联系方式
-3. 禁止线下见面邀约
-4. 平台有权保存聊天记录以处理投诉（至少6个月）
-5. 如遇不适请立即使用举报功能
-6. 本平台为兴趣社交平台，非婚恋平台')
+  alert('用户协议与隐私政策\n\n1. 本平台仅供16岁以上中学生及大学生使用\n2. 聊天内容受平台监管，禁止交换联系方式\n3. 禁止线下见面邀约\n4. 平台有权保存聊天记录以处理投诉（至少6个月）\n5. 如遇不适请立即使用举报功能\n6. 本平台为兴趣社交平台，非婚恋平台')
 }
 
 async function loadMatchView(){
