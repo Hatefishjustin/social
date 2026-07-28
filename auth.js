@@ -281,21 +281,30 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
-/* ── Auto-login via login_code in URL ── */
+/* ── Auto-login via login_code in URL or IP trust ── */
 async function tryAutoLogin() {
+  // 优先检查 login_code URL参数
   var p = new URLSearchParams(location.search);
   var code = p.get('login_code');
-  if (!code || code.length !== 6) return false;
-  try {
-    var r = await codeLogin(code);
-    if (r.ok) {
-      // Clean URL
-      p.delete('login_code');
-      var newUrl = location.pathname + (p.toString() ? '?' + p.toString() : '');
-      history.replaceState(null, '', newUrl);
-      return true;
-    }
-  } catch(e) {}
+  if (code && code.length === 6) {
+    try {
+      var r = await codeLogin(code);
+      if (r.ok) {
+        p.delete('login_code');
+        var newUrl = location.pathname + (p.toString() ? '?' + p.toString() : '');
+        history.replaceState(null, '', newUrl);
+        return true;
+      }
+    } catch(e) {}
+  }
+  // 如果URL中没有login_code，尝试IP自动登录
+  if (!code) {
+    try {
+      var autoRes = await fetch('/auth/auto-login', { credentials: 'same-origin' });
+      var autoData = await autoRes.json();
+      if (autoData.ok) return true;
+    } catch(e) {}
+  }
   return false;
 }
 
