@@ -2650,6 +2650,7 @@ checkResumeOnLoad();
 
 // 页面加载即检查登录状态，并处理可能存在的登录跳转参数
 checkSession().then(handleLoginRedirectParams);
+fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'match'})}).catch(function(){});
 </script>
 </body>
 </html>
