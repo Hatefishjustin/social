@@ -1741,6 +1741,7 @@ function finishQuiz(){
 
   const scores = computeScores();
   renderResult(scores);
+  saveResultToStorage(scores);
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
