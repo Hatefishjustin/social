@@ -1,11 +1,12 @@
 /**
  * 路径: /functions/askbox.js
  * 路由: /askbox
+ * v2: 增加活动日志，记录 IP / 设备 / 地区
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
@@ -32,6 +33,39 @@ function jsonResponse(body, status = 200) {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
+}
+
+function getRequestMeta(request) {
+  return {
+    ip: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
+    ua: (request.headers.get('User-Agent') || '').slice(0, 500),
+    country: (request.cf || {}).country || '',
+    city: (request.cf || {}).city || '',
+  };
+}
+
+async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO activity_log (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      user ? user.id : null,
+      user ? user.email : null,
+      action,
+      targetType,
+      targetId || null,
+      (content || '').slice(0, 500),
+      meta.ip,
+      meta.ua,
+      meta.country,
+      meta.city,
+      isAnonymous ? 1 : 0,
+      Date.now()
+    ).run();
+  } catch (e) {
+    console.error('activity_log insert failed:', e.message);
+  }
 }
 
 const PAGE_SIZE = 20;
@@ -67,6 +101,7 @@ export const onRequestGet = async ({ request, env }) => {
 
 export const onRequestPost = async ({ request, env }) => {
   const user = await getCurrentUser(request, env);
+  const meta = getRequestMeta(request);
 
   let body;
   try {
@@ -80,6 +115,7 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'invalid_content', message: '问题内容不能为空且不超过1000字' }, 400);
   }
 
+  const now = Date.now();
   const result = await env.DB.prepare(
     `INSERT INTO askbox_questions (asker_id, target_id, content, is_anonymous, created_at)
      VALUES (?, ?, ?, ?, ?)`
@@ -88,10 +124,13 @@ export const onRequestPost = async ({ request, env }) => {
     targetId || null,
     content,
     isAnonymous ? 1 : 0,
-    Date.now()
+    now
   ).run();
 
-  return jsonResponse({ ok: true, id: result.meta.last_row_id });
+  const questionId = result.meta.last_row_id;
+  await logActivity(env, meta, user, 'askbox_question', 'askbox', questionId, content, isAnonymous);
+
+  return jsonResponse({ ok: true, id: questionId });
 };
 
 export const onRequest = async ({ request, env, next }) => {
@@ -99,6 +138,8 @@ export const onRequest = async ({ request, env, next }) => {
   if (url.pathname === '/askbox/answer' && request.method === 'POST') {
     const user = await getCurrentUser(request, env);
     if (!user) return jsonResponse({ error: 'unauthorized' }, 401);
+
+    const meta = getRequestMeta(request);
 
     let body;
     try {
@@ -113,7 +154,7 @@ export const onRequest = async ({ request, env, next }) => {
     }
 
     const q = await env.DB.prepare(
-      `SELECT target_id FROM askbox_questions WHERE id = ?`
+      `SELECT target_id, content, asker_id, is_anonymous FROM askbox_questions WHERE id = ?`
     ).bind(questionId).first();
 
     if (!q) return jsonResponse({ error: 'not_found' }, 404);
@@ -124,6 +165,8 @@ export const onRequest = async ({ request, env, next }) => {
     await env.DB.prepare(
       `UPDATE askbox_questions SET answer_content = ?, answered_at = ? WHERE id = ?`
     ).bind(answerContent, Date.now(), questionId).run();
+
+    await logActivity(env, meta, user, 'askbox_answer', 'askbox', questionId, answerContent, false);
 
     return jsonResponse({ ok: true });
   }
