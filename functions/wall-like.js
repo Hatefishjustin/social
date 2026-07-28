@@ -1,13 +1,11 @@
 /**
  * 路径: /functions/wall-like.js
  * 路由: /wall-like
- *
- * POST /wall-like  { postId, action: 'like' | 'unlike' }
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
