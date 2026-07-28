@@ -1,13 +1,13 @@
 /**
  * Cloudflare Pages Function
  * 路径: /api/avatar
- * POST - 上传头像（base64图片数据）
- * GET  - 获取头像
+ * POST - 上传头像（base64图片，存入avatars表）
+ * GET  - 获取头像图片
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
@@ -34,18 +34,17 @@ async function getCurrentUser(request, env) {
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const userId = url.searchParams.get('userId');
-
   if (!userId) return jsonResponse({ error: 'missing_userId' }, 400);
 
   const row = await env.DB.prepare(
-    `SELECT avatar_data FROM users WHERE id = ?`
+    `SELECT image_data FROM avatars WHERE user_id = ?`
   ).bind(userId).first();
 
-  if (!row || !row.avatar_data) {
+  if (!row || !row.image_data) {
     return new Response(null, { status: 404 });
   }
 
-  return new Response(row.avatar_data, {
+  return new Response(row.image_data, {
     status: 200,
     headers: {
       'Content-Type': 'image/webp',
@@ -67,28 +66,36 @@ export const onRequestPost = async ({ request, env }) => {
   if (!image || typeof image !== 'string') {
     return jsonResponse({ error: 'missing_image' }, 400);
   }
-
-  // Validate base64 data URL format: data:image/...;base64,...
   if (!image.startsWith('data:image/')) {
     return jsonResponse({ error: 'invalid_format', message: '请提供base64图片数据' }, 400);
   }
 
-  const MAX_SIZE = 150 * 1024; // 150KB
-  if (image.length > MAX_SIZE * 1.5) {
-    return jsonResponse({ error: 'too_large', message: '图片过大，请压缩后重新上传' }, 400);
+  // 150KB limit
+  if (image.length > 210000) {
+    return jsonResponse({ error: 'too_large', message: '图片过大，请压缩后重试' }, 400);
   }
 
-  await env.DB.prepare(
-    `UPDATE users SET avatar_data = ? WHERE id = ?`
-  ).bind(image, user.id).run();
+  // Auto-create avatars table
+  try {
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS avatars (user_id TEXT PRIMARY KEY, image_data TEXT NOT NULL, updated_at INTEGER NOT NULL)`
+    ).run();
+  } catch(e) { console.error('create avatars table:', e.message); }
 
-  // Also set avatar_url to API endpoint for backwards compatibility
-  const avatarApiUrl = `/api/avatar?userId=${user.id}`;
+  // Upsert avatar
+  await env.DB.prepare(
+    `INSERT INTO avatars (user_id, image_data, updated_at) VALUES (?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET image_data = excluded.image_data, updated_at = excluded.updated_at`
+  ).bind(user.id, image, Date.now()).run();
+
+  const avatarUrl = '/api/avatar?userId=' + user.id;
+
+  // Update users.avatar_url for session.js sync
   await env.DB.prepare(
     `UPDATE users SET avatar_url = ? WHERE id = ?`
-  ).bind(avatarApiUrl, user.id).run();
+  ).bind(avatarUrl, user.id).run();
 
-  return jsonResponse({ ok: true, avatarUrl: avatarApiUrl });
+  return jsonResponse({ ok: true, avatarUrl: avatarUrl });
 };
 
 export const onRequestOptions = async () => {
