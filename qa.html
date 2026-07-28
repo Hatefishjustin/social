@@ -7,6 +7,7 @@
 <meta name="description" content="匿名提问，温柔回应。创建你的专属提问箱，收集真实想法。">
 <meta property="og:title" content="心镜 · 轻匿提问箱">
 <meta property="og:description" content="有什么想问的吗？匿名提问，温柔回应…">
+<script src="/auth.js"></script>
 <style>
 :root {
   --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
@@ -210,6 +211,7 @@ body{
       <button class="nav-btn" id="btnShareTop" aria-label="分享提问箱" title="分享提问箱">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       </button>
+      <button class="auth-login-btn">登录</button>
     </div>
   </nav>
 
@@ -346,17 +348,51 @@ function initTarget() {
   var u = p.get('u');
   if (u) {
     state.targetId = u;
-    var name = p.get('n') || u;
+    state.isOwnerView = false; // visiting someone else
+    var name = p.get('n') || ('用户' + u.substring(0,4));
     dom.profileName.textContent = name + ' 的提问箱';
     dom.profileAvatar.textContent = (name[0] || '?').toUpperCase();
     dom.navTitle.textContent = name + ' · 轻匿提问箱';
-    // 如果是别人的提问箱，隐藏 tab（只看 TA 的提问箱）
-    // 但保留广场切换能力
+    // 访问别人提问箱：默认切到 mine（实际上是 TA 的提问箱），隐藏 badge
+    dom.tabBadge.style.display = 'none';
   } else {
+    state.targetId = null;
+    state.isOwnerView = false;
     dom.profileName.textContent = '我的提问箱';
     dom.profileAvatar.textContent = '?';
   }
   updateShareLink();
+}
+
+// ── Auth integration ──
+function syncWithAuth() {
+  var uid = Auth.getUserId();
+  var email = Auth.getEmail();
+
+  // 访问特定提问箱（?u=xxx）：保持 visitor 模式
+  if (state.targetId && !state.isOwnerView) {
+    // 已经是 visitor 模式，不做修改
+    return;
+  }
+
+  if (Auth.isLoggedIn()) {
+    state.targetId = String(uid);
+    state.isOwnerView = true;
+    dom.profileName.textContent = (email ? email.split('@')[0] : '我') + ' 的提问箱';
+    dom.profileAvatar.textContent = email ? email[0].toUpperCase() : '?';
+    dom.navTitle.textContent = '我的 · 轻匿提问箱';
+    dom.askArea.style.opacity = '0.35';
+    dom.askArea.style.pointerEvents = 'none'; // 不能自己问自己
+  } else {
+    state.targetId = null;
+    state.isOwnerView = false;
+    dom.profileName.textContent = '我的提问箱';
+    dom.profileAvatar.textContent = '?';
+    dom.askArea.style.opacity = '1';
+    dom.askArea.style.pointerEvents = 'auto';
+  }
+  updateShareLink();
+  loadFeed(true);
 }
 
 // ── Share ──
@@ -442,6 +478,20 @@ function renderEmpty(icon, title, desc, btnText) {
 // ── Load feed ──
 async function loadFeed(reset) {
   if (state.isLoading) return;
+
+  // 未登录时访问「我的提问箱」tab：显示登录引导
+  if (state.tab === 'mine' && !Auth.isLoggedIn() && !state.targetId) {
+    dom.feedList.innerHTML = renderEmpty('🔐', '需要登录', '登录后即可查看和管理你的提问箱', '立即登录');
+    setTimeout(function() {
+      var btn = document.getElementById('emptyBtn');
+      if (btn) btn.addEventListener('click', function() { Auth.showLoginModal(); });
+    }, 50);
+    dom.statTotal.textContent = '—';
+    dom.statAnswered.textContent = '—';
+    dom.tabBadge.style.display = 'none';
+    return;
+  }
+
   if (reset) { state.page = 1; state.hasMore = true; dom.feedList.innerHTML = ''; }
 
   state.isLoading = true;
@@ -525,10 +575,16 @@ async function submitQuestion() {
   clearErr();
 
   try {
+    // 确定 targetId：优先 URL 参数，其次当前登录用户（但自己不能问自己）
+    var tid = state.targetId;
+    if (state.isOwnerView) {
+      // 拥有者不能问自己，但理论上已被 UI 拦截
+      tid = null;
+    }
     var body = {
       content: content,
       is_anonymous: dom.anonCheck.checked ? 1 : 0,
-      target_id: state.targetId || null
+      target_id: tid || null
     };
     var r = await fetch('/askbox', {
       method: 'POST',
@@ -570,22 +626,28 @@ function updateCharCount() {
 
 // ── Tab switch ──
 function switchTab(tab) {
+  // 未登录且无 ?u= 时，mine tab 被拦截显示登录引导
+  if (tab === 'mine' && !Auth.isLoggedIn() && !state.targetId) {
+    Auth.showLoginModal();
+    return;
+  }
   if (state.tab === tab) return;
   state.tab = tab;
   QA('.tab-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
-
-  // 广场模式下如果没 targetId，隐藏 mine 的 badge
   if (tab === 'square') {
     dom.tabBadge.style.display = 'none';
   }
-
   loadFeed(true);
 }
 
 // ── Share overlay ──
 function openShare() {
+  if (!Auth.isLoggedIn()) {
+    Auth.showLoginModal();
+    return;
+  }
   updateShareLink();
   dom.overlay.classList.add('show');
 }
@@ -713,7 +775,43 @@ window.addEventListener('scroll', function() {
 function init() {
   initTarget();
   updateCharCount();
-  loadFeed(true);
+
+  // 访问别人提问箱（?u=xxx），直接加载，不受登录状态影响
+  if (state.targetId && !state.isOwnerView) {
+    loadFeed(true);
+  } else {
+    // 等待 auth.js 初始化完成再同步
+    if (Auth.isLoggedIn()) {
+      syncWithAuth();
+    } else {
+      loadFeed(true);
+    }
+  }
+
+  // 监听登录状态变化
+  Auth.onAuthChange(function(user) {
+    // 如果已经在访问别人的提问箱，不切换
+    var p = new URLSearchParams(location.search);
+    if (p.get('u')) return;
+
+    if (user) {
+      syncWithAuth();
+    } else {
+      state.targetId = null;
+      state.isOwnerView = false;
+      dom.profileName.textContent = '我的提问箱';
+      dom.profileAvatar.textContent = '?';
+      dom.askArea.style.opacity = '1';
+      dom.askArea.style.pointerEvents = 'auto';
+      if (state.tab === 'mine') {
+        state.tab = 'square';
+        QA('.tab-btn').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.tab === 'square');
+        });
+      }
+      loadFeed(true);
+    }
+  });
 }
 
 if (document.readyState === 'loading') {
