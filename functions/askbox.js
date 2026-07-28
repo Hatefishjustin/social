@@ -110,7 +110,10 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'invalid_body' }, 400);
   }
 
-  const { targetId, content, isAnonymous = true } = body || {};
+  // 兼容前端 snake_case 与 camelCase
+  const targetId = body.targetId || body.target_id;
+  const content = body.content;
+  const isAnonymous = body.isAnonymous !== undefined ? body.isAnonymous : (body.is_anonymous !== undefined ? body.is_anonymous : true);
   if (!content || typeof content !== 'string' || content.length > 1000) {
     return jsonResponse({ error: 'invalid_content', message: '问题内容不能为空且不超过1000字' }, 400);
   }
