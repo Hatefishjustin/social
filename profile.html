@@ -100,6 +100,16 @@
     body { padding: 10px; }
     .card { padding: 16px; }
   }
+
+.psych-profile-card{margin-top:16px}
+.psych-empty{color:var(--text-tertiary);font-size:13px;text-align:center;padding:20px 0}
+.psych-empty a{color:var(--accent)}
+.psych-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.psych-item{background:var(--bg-input);border-radius:10px;padding:12px;text-align:center}
+.psych-item-label{font-size:11px;color:var(--text-quaternary);margin-bottom:4px}
+.psych-item-value{font-size:16px;font-weight:700;color:var(--accent)}
+.psych-values{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.psych-value-tag{padding:3px 10px;background:rgba(167,139,250,0.12);color:var(--accent);border-radius:12px;font-size:12px}
 </style>
 </head>
 <body>
@@ -139,6 +149,13 @@
         <label>邮箱</label>
         <input type="email" id="emailInput" disabled style="opacity:.5">
         <div class="hint">邮箱不可修改</div>
+      </div>
+    </div>
+
+    <div class="card psych-profile-card" id="psychProfileCard">
+      <div class="card-title">我的心理画像</div>
+      <div id="psychProfileContent">
+        <div class="psych-empty">还没有测评记录？去 <a href="/match.html">心理测评</a> 做一个吧，完成后这里会自动显示你的心理画像。</div>
       </div>
     </div>
 
@@ -185,7 +202,30 @@ function updateAvatarPreview(url) {
 if (Auth.isLoggedIn()) {
   init();
 } else {
-  Auth.onAuthChange(function(user){
+  function loadPsychProfile() {
+  var card = document.getElementById('psychProfileContent');
+  try {
+    var raw = localStorage.getItem('xinjing_quiz_result_v2');
+    if (!raw) return;
+    var r = JSON.parse(raw);
+    card.innerHTML =
+      '<div class="psych-grid">' +
+        '<div class="psych-item"><div class="psych-item-label">依恋类型</div><div class="psych-item-value">'+r.attachmentLabel+'</div></div>' +
+        '<div class="psych-item"><div class="psych-item-label">MBTI</div><div class="psych-item-value">'+r.mbti+'</div></div>' +
+        '<div class="psych-item"><div class="psych-item-label">主要爱之语</div><div class="psych-item-value">'+r.loveLang+'</div></div>' +
+        '<div class="psych-item"><div class="psych-item-label">测评时间</div><div class="psych-item-value" style="font-size:13px">'+new Date(r.savedAt).toLocaleDateString()+'</div></div>' +
+      '</div>' +
+      '<div class="psych-values">'+
+        r.topValues.map(function(v){return '<span class="psych-value-tag">'+v+'</span>'}).join('')+
+      '</div>' +
+      '<div style="text-align:center;margin-top:10px"><a href="/match.html" style="color:var(--accent);font-size:12px">重新测评</a></div>';
+  } catch(e) {}
+}
+
+// Load psych profile on init
+loadPsychProfile();
+
+Auth.onAuthChange(function(user){
     if (user) init();
   });
   // If still not logged in after initial check
