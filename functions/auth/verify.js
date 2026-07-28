@@ -182,10 +182,14 @@ export const onRequestPost = async ({ request, env }) => {
   const clientIP = request.headers.get('CF-Connecting-IP') || '';
   if (clientIP) {
     try {
+      // Auto-create table if needed
+      await env.DB.prepare(
+        `CREATE TABLE IF NOT EXISTS ip_trust (id INTEGER PRIMARY KEY AUTOINCREMENT, ip TEXT NOT NULL, user_id TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)`
+      ).run();
       await env.DB.prepare(
         `INSERT INTO ip_trust (ip, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
       ).bind(clientIP, user.id, Date.now() + 5 * 60 * 1000, Date.now()).run();
-    } catch(e) { /* table may not exist yet */ }
+    } catch(e) { console.error('ip_trust insert failed:', e.message); }
   }
 
   const headers = new Headers({
