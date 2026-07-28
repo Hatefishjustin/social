@@ -464,17 +464,17 @@ async function fetchNotifs(page) {
 }
 
 function typeLabel(t) {
-  var map = { like: '赞了你的帖子', comment: '评论了你的帖子', answer: '回答了你的提问' };
+  var map = { like: '赞了你的帖子', comment: '评论了你的帖子', answer: '回答了你的提问', askbox_question: '向你提问', wall_like: '赞了你的表白', wall_comment: '评论了你的表白' };
   return map[t] || t;
 }
 
 function typeIcon(t) {
-  var map = { like: '♥', comment: '💬', answer: '✉' };
+  var map = { like: '♥', comment: '💬', answer: '✉', askbox_question: '❓', wall_like: '💖', wall_comment: '🗨' };
   return map[t] || '📌';
 }
 
 function targetLink(t, id) {
-  var map = { wall: '/campus.html', askbox: '/qa.html' };
+  var map = { wall: '/campus.html', askbox: '/qa.html', askbox_question: '/qa.html', wall_like: '/campus.html', wall_comment: '/campus.html' };
   return map[t] || '/';
 }
 
