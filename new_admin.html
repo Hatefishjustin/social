@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>管理后台</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #111;
+    --border: #222;
+    --text: #ddd;
+    --muted: #888;
+    --accent: #FF3B5C;
+    --green: #00C853;
+    --blue: #448AFF;
+    --orange: #FF9100;
+    --purple: #AA00FF;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .header .sub { font-size: 12px; color: var(--muted); }
+  .back-btn {
+    color: var(--accent); text-decoration: none; font-size: 14px;
+    padding: 6px 14px; border: 1px solid var(--accent); border-radius: 20px;
+    transition: all .2s;
+  }
+  .back-btn:hover { background: var(--accent); color: #fff; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--card); padding: 4px; border-radius: 14px;
+  }
+  .tab-btn {
+    flex: 1; text-align: center; padding: 10px 16px; border: none;
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 600;
+    cursor: pointer; border-radius: 10px; transition: all .2s;
+    font-family: var(--font); white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Stats */
+  .stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1; min-width: 90px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; text-align: center;
+  }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: #fff; }
+  .stat-card .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat-card .delta { font-size: 10px; margin-top: 4px; }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--accent); }
+
+  /* Filters */
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card); color: var(--muted); font-size: 12px; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+  }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  /* Activity list */
+  .activity-list { display: flex; flex-direction: column; gap: 8px; }
+  .activity-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; transition: border-color .2s;
+  }
+  .activity-item:hover { border-color: #333; }
+
+  .act-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .act-type {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .act-type.wall_post { background: rgba(255,59,92,.15); color: var(--accent); }
+  .act-type.askbox_question { background: rgba(68,138,255,.15); color: var(--blue); }
+  .act-type.askbox_answer { background: rgba(0,200,83,.15); color: var(--green); }
+
+  .act-time { font-size: 11px; color: var(--muted); }
+  .act-content { font-size: 14px; color: #ccc; margin-bottom: 8px; line-height: 1.5; word-break: break-all; }
+  .act-answer { font-size: 13px; color: var(--green); margin-bottom: 8px; padding: 8px 10px; background: rgba(0,200,83,.06); border-radius: 6px; }
+  .act-answer::before { content: '↳ 回复: '; color: var(--muted); font-size: 11px; }
+
+  .act-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); }
+  .act-meta span { display: flex; align-items: center; gap: 3px; }
+  .act-meta .user-tag {
+    background: rgba(170,0,255,.12); color: var(--purple);
+    padding: 1px 7px; border-radius: 3px; font-size: 10px;
+  }
+  .act-meta .anon-tag {
+    background: rgba(255,145,0,.12); color: var(--orange);
+    padding: 1px 7px; border-radius: 3px; font-size: 10px;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin-top: 20px; padding: 10px 0;
+  }
+  .pagination button {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 13px; cursor: pointer;
+    transition: all .2s;
+  }
+  .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pagination button:disabled { opacity: 0.3; cursor: default; }
+  .pagination .page-info { font-size: 12px; color: var(--muted); }
+
+  /* Quiz Dashboard */
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .section-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .section-row { grid-template-columns: 1fr; } }
+
+  .breakdown-list { display: flex; flex-direction: column; gap: 6px; }
+  .breakdown-row {
+    display: flex; align-items: center; gap: 10px; font-size: 12px;
+  }
+  .breakdown-row .name { flex: 0 0 100px; color: var(--text); text-align: right; }
+  .breakdown-row .bar-track {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .breakdown-row .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .breakdown-row .count { flex: 0 0 36px; color: var(--muted); text-align: right; }
+
+  /* Trend chart */
+  .trend-chart {
+    display: flex; align-items: flex-end; gap: 3px; height: 120px;
+    padding: 8px 0; margin-bottom: 6px;
+  }
+  .trend-bar {
+    flex: 1; background: var(--accent); border-radius: 2px 2px 0 0;
+    position: relative; cursor: pointer; min-height: 2px;
+  }
+  .trend-bar:hover { background: #ff5c75; }
+  .trend-bar .tip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%); background: var(--card); padding: 4px 8px;
+    border-radius: 4px; font-size: 10px; white-space: nowrap; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .trend-bar:hover .tip { display: block; }
+  .trend-labels {
+    display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+  }
+
+  /* Table */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  th {
+    text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td {
+    padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap; color: var(--text);
+  }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: rgba(255,255,255,0.03); color: var(--accent); }
+  tr.no-data { opacity: 0.5; }
+  .mono { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: var(--muted); }
+
+  .refresh-btn {
+    margin-top: 16px; padding: 8px 20px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    font-size: 12px; cursor: pointer; transition: all .2s;
+    font-family: var(--font);
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Loading & Empty */
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .error-msg { text-align: center; padding: 40px; color: var(--accent); font-size: 14px; }
+
+  /* Login required */
+  .login-prompt {
+    text-align: center; padding: 60px 20px;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .login-prompt p { color: var(--muted); margin-bottom: 16px; }
+  .login-prompt a {
+    display: inline-block; padding: 10px 28px; background: var(--accent);
+    color: #fff; text-decoration: none; border-radius: 24px; font-size: 14px;
+  }
+
+  /* Mobile */
+  @media (max-width: 500px) {
+    body { padding: 10px; }
+    .stat-card { min-width: 65px; padding: 10px 7px; }
+    .stat-card .num { font-size: 22px; }
+    .act-meta { gap: 6px; }
+    .filters { gap: 5px; }
+    .filter-btn { padding: 5px 10px; font-size: 11px; }
+    .tab-btn { padding: 8px 10px; font-size: 12px; }
+    th, td { padding: 6px 8px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>管理后台</h1>
+      <div class="sub" id="headerSub">用户活动监控</div>
+    </div>
+    <a href="/" class="back-btn">返回首页</a>
+  </div>
+
+  <div id="loginPrompt" class="login-prompt" style="display:none">
+    <p>需要登录后才能查看管理后台</p>
+    <a href="javascript:Auth.showLogin()">去登录</a>
+  </div>
+
+  <div id="mainContent" style="display:none">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="activity">用户活动</button>
+      <button class="tab-btn" data-tab="quiz">心理测评</button>
+      <button class="tab-btn" data-tab="reports">举报管理</button>
+    </div>
+
+    <!-- ======== 活动监控 Tab ======== -->
+    <div class="tab-content active" id="tab-activity">
+      <div class="stats" id="stats"></div>
+
+      <div class="filters">
+        <button class="filter-btn active" data-action="">全部</button>
+        <button class="filter-btn" data-action="wall_post">表白墙发帖</button>
+        <button class="filter-btn" data-action="askbox_question">提问箱提问</button>
+        <button class="filter-btn" data-action="askbox_answer">提问箱回答</button>
+      </div>
+
+      <div class="activity-list" id="activityList"></div>
+      <div class="loading" id="loading">加载中...</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- ======== 心理测评 Tab ======== -->
+    <div class="tab-content" id="tab-quiz">
+      <div class="loading" id="quizLoading">正在加载心理测评数据...</div>
+      <div id="quizDashboard"></div>
+    </div>
+
+    <!-- ======== 举报管理 Tab ======== -->
+    <div class="tab-content" id="tab-reports">
+      <div class="stats" id="reportsStats"></div>
+      <div class="filters">
+        <button class="filter-btn active" data-status="pending">待处理</button>
+        <button class="filter-btn" data-status="resolved">已处理</button>
+        <button class="filter-btn" data-status="dismissed">已驳回</button>
+      </div>
+      <div id="reportsList" class="activity-list"></div>
+      <div class="loading" id="reportsLoading" style="display:none">加载中...</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/auth.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ==================== 活动监控 ====================
+var STATE = { page: 1, action: '', totalPages: 0 };
+
+function apiUrl(page, action) {
+  return '/admin-activity?page=' + page + '&action=' + (action || '');
+}
+
+async function fetchActivities(page, action) {
+  var r = await fetch(apiUrl(page || 1, action || ''), { credentials: 'include' });
+  if (r.status === 401) throw new Error('unauthorized');
+  return r.json();
+}
+
+function formatTime(ts) {
+  var d = new Date(ts);
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+
+function formatDate(ts) {
+  var d = new Date(ts);
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  return pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+function formatShortDate(ts) {
+  var d = new Date(ts);
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
+
+function truncateUA(ua) {
+  if (!ua) return '';
+  return ua.length <= 50 ? ua : ua.slice(0, 47) + '...';
+}
+
+function parseDevice(ua) {
+  if (!ua) return '未知';
+  if (/iphone|ipad/i.test(ua)) return 'iOS';
+  if (/android/i.test(ua)) return 'Android';
+  if (/windows/i.test(ua)) return 'Windows';
+  if (/macintosh|mac os/i.test(ua)) return 'macOS';
+  if (/linux/i.test(ua)) return 'Linux';
+  return '其他';
+}
+
+function actionLabel(a) {
+  var map = { wall_post:'表白墙发帖', askbox_question:'提问箱提问', askbox_answer:'提问箱回答' };
+  return map[a] || a;
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderActivity(item) {
+  var time = formatTime(item.created_at);
+  var device = parseDevice(item.user_agent);
+  var location = [item.country, item.city].filter(Boolean).join(' ') || '未知';
+
+  var userTag = '';
+  if (item.is_anonymous) {
+    userTag = '<span class="anon-tag">匿名</span>';
+  } else if (item.user_email) {
+    userTag = '<span class="user-tag">' + esc(item.user_email) + '</span>';
+  } else {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
+  }
+
+  var answerBlock = '';
+  if (item.action === 'askbox_answer') {
+    answerBlock = '<div class="act-answer">' + esc(item.content) + '</div>';
+  } else {
+    answerBlock = '<div class="act-content">' + esc(item.content) + '</div>';
+  }
+
+  return '<div class="activity-item">' +
+    '<div class="act-header">' +
+      '<span class="act-type ' + item.action + '">' + actionLabel(item.action) + '</span>' +
+      '<span class="act-time">' + time + '</span>' +
+    '</div>' +
+    answerBlock +
+    '<div class="act-meta">' +
+      userTag +
+      '<span>IP: ' + esc(item.ip || '未知') + '</span>' +
+      '<span>设备: ' + device + '</span>' +
+      '<span>地区: ' + esc(location) + '</span>' +
+      '<span title="' + esc(item.user_agent || '') + '" style="cursor:help">UA: ' + esc(truncateUA(item.user_agent)) + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderStats(data) {
+  var total = data.pagination ? data.pagination.total : 0;
+  var counts = {};
+  if (data.activities) {
+    data.activities.forEach(function(a){ counts[a.action] = (counts[a.action] || 0) + 1; });
+  }
+  document.getElementById('stats').innerHTML =
+    '<div class="stat-card"><div class="num">'+total+'</div><div class="label">总活动数</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.wall_post || 0)+'</div><div class="label">表白墙</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.askbox_question || 0)+'</div><div class="label">提问</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.askbox_answer || 0)+'</div><div class="label">回答</div></div>';
+}
+
+function renderPagination(pagination) {
+  var p = document.getElementById('pagination');
+  if (pagination.totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML =
+    '<button ' + (pagination.page <= 1 ? 'disabled' : '') + ' onclick="goPage('+(pagination.page-1)+')">上一页</button>' +
+    '<span class="page-info">第 '+pagination.page+' / '+pagination.totalPages+' 页</span>' +
+    '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="goPage('+(pagination.page+1)+')">下一页</button>';
+}
+
+function renderList(activities) {
+  var el = document.getElementById('activityList');
+  if (!activities || activities.length === 0) {
+    el.innerHTML = '<div class="empty">暂无活动记录</div>';
+    return;
+  }
+  el.innerHTML = activities.map(renderActivity).join('');
+}
+
+async function loadPage(page, action) {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('activityList').innerHTML = '';
+  try {
+    var data = await fetchActivities(page, action);
+    document.getElementById('loading').style.display = 'none';
+    STATE.page = data.pagination.page;
+    STATE.totalPages = data.pagination.totalPages;
+    renderStats(data);
+    renderList(data.activities);
+    renderPagination(data.pagination);
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('activityList').innerHTML =
+      '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+window.goPage = function(p) { loadPage(p, STATE.action); };
+
+// ==================== 心理测评 ====================
+var attachLabels = {
+  secure: '安全型', anxious: '焦虑型', avoidant: '回避型', fearful: '矛盾(恐惧)型'
+};
+var loveLabels = {
+  words: '肯定的言辞', acts: '服务的行动', gifts: '接受礼物',
+  time: '精心的时刻', touch: '身体的接触'
+};
+var deviceLabels = { mobile: '手机', desktop: '桌面', tablet: '平板' };
+var quizTypeLabels = { ideal_partner: '理想伴侣测评' };
+
+function quizTypeLabel(t) { return quizTypeLabels[t] || t; }
+
+function renderBreakdown(items, labelMap) {
+  if (!items || items.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无数据</div>';
+  var max = Math.max(1, items.map(function(i){ return i.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  return items.map(function(i){
+    return '<div class="breakdown-row">' +
+      '<div class="name">' + esc((labelMap && labelMap[i.key]) || i.key || '未知') + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(i.count/max*100) + '%"></div></div>' +
+      '<div class="count">' + i.count + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderTrend(trend) {
+  if (!trend || trend.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无趋势数据</div>';
+  var max = Math.max(1, trend.map(function(t){ return t.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  var bars = trend.map(function(t){
+    return '<div class="trend-bar" style="height:' + Math.max(4, Math.round(t.count/max*100)) + '%">' +
+      '<div class="tip">' + formatShortDate(t.date) + '：' + t.count + '次</div>' +
+    '</div>';
+  }).join('');
+  var labels = '<span>' + formatShortDate(trend[0].date) + '</span><span>' + formatShortDate(trend[trend.length-1].date) + '</span>';
+  return '<div class="trend-chart">' + bars + '</div><div class="trend-labels">' + labels + '</div>';
+}
+
+function renderQuizDashboard(data) {
+  var el = document.getElementById('quizDashboard');
+
+  var growth = data.growth.growthPct;
+  var growthHtml;
+  if (growth === null) {
+    growthHtml = '<div style="font-size:10px;color:var(--muted);">数据不足</div>';
+  } else {
+    var cls = growth >= 0 ? 'up' : 'down';
+    var sign = growth >= 0 ? '+' : '';
+    growthHtml = '<div class="delta ' + cls + '">' + sign + growth + '% 环比</div>';
+  }
+
+  var loginRate = data.totals.completions > 0
+    ? Math.round((data.totals.completions - data.totals.anonCompletions) / data.totals.completions * 100)
+    : 0;
+
+  var limitLabel = data.appliedLimit === 'all' ? '全部' : '近' + data.appliedLimit + '条';
+
+  el.innerHTML =
+    '<div class="stats">' +
+      '<div class="stat-card"><div class="num">' + data.today.newUsers + '</div><div class="label">今日新增用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.today.completedTests + '</div><div class="label">今日完成测试</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.totals.users + '</div><div class="label">累计用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.totals.completions + '</div><div class="label">累计测试</div></div>' +
+      '<div class="stat-card"><div class="num">' + loginRate + '%</div><div class="label">登录转化率</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.growth.last7dNewUsers + '</div><div class="label">7天新增</div>' + growthHtml + '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">近14天完成趋势</div>' +
+      renderTrend(data.dailyTrend) +
+    '</div>' +
+
+    '<div class="section section-row">' +
+      '<div>' +
+        '<div class="section-title">依恋类型分布</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.attachBreakdown, attachLabels) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="section-title">主要爱语分布</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.loveBreakdown, loveLabels) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="section section-row">' +
+      '<div>' +
+        '<div class="section-title">访问地区（Top 10）</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.countryBreakdown) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="section-title">设备类型</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.deviceBreakdown, deviceLabels) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近完成的测试（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr>' +
+          '<th>用户</th><th>类型</th><th>结果摘要</th>' +
+          '<th>国家</th><th>设备</th><th>系统</th><th>浏览器</th><th>IP</th><th>时间</th>' +
+        '</tr></thead><tbody>' +
+        (data.recentRecords.length === 0
+          ? '<tr><td colspan="9" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentRecords.map(function(r){
+              return '<tr class="' + (r.hasData ? 'clickable' : 'no-data') + '" ' +
+                (r.hasData ? 'onclick="window.open(\'https://yourlover.pages.dev/?adminView=' + r.id + '\',\'_blank\')" ' : '') +
+                'title="' + (r.hasData ? '点击查看完整结果' : '无完整数据') + '">' +
+                '<td>' + (r.email ? esc(r.email) : '<span style="color:var(--muted);">匿名</span>') + '</td>' +
+                '<td>' + esc(quizTypeLabel(r.quizType)) + '</td>' +
+                '<td>' + esc(r.headline || '—') + '</td>' +
+                '<td>' + (r.country ? esc(r.country) : '—') + '</td>' +
+                '<td>' + (r.device ? esc(deviceLabels[r.device] || r.device) : '—') + '</td>' +
+                '<td>' + (r.os ? esc(r.os) : '—') + '</td>' +
+                '<td>' + (r.browser ? esc(r.browser) : '—') + '</td>' +
+                '<td class="mono">' + (r.ip ? esc(r.ip) : '—') + '</td>' +
+                '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近注册用户（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr><th>ID</th><th>邮箱</th><th>注册时间</th><th>最后活跃</th></tr></thead><tbody>' +
+        (data.recentUsers.length === 0
+          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentUsers.map(function(u){
+              return '<tr>' +
+                '<td class="mono">' + u.id + '</td>' +
+                '<td>' + esc(u.email) + '</td>' +
+                '<td class="mono">' + formatDate(u.createdAt) + '</td>' +
+                '<td class="mono">' + formatDate(u.lastSeenAt) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">匿名访客活跃度（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr><th>访客标识</th><th>完成次数</th><th>首次活跃</th><th>最后活跃</th></tr></thead><tbody>' +
+        (data.recentVisitors.length === 0
+          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentVisitors.map(function(v){
+              return '<tr>' +
+                '<td class="mono">' + esc((v.visitorId||'').slice(0, 8)) + '…</td>' +
+                '<td>' + v.count + '</td>' +
+                '<td class="mono">' + formatDate(v.firstSeen) + '</td>' +
+                '<td class="mono">' + formatDate(v.lastSeen) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<button class="refresh-btn" onclick="loadQuizStats()">刷新数据</button>';
+}
+
+async function loadQuizStats() {
+  var loading = document.getElementById('quizLoading');
+  var dashboard = document.getElementById('quizDashboard');
+  loading.style.display = 'block';
+  dashboard.innerHTML = '';
+  try {
+    var r = await fetch('/admin/quiz-stats', { credentials: 'include' });
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      dashboard.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderQuizDashboard(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    dashboard.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ==================== 举报管理 ====================
+async function loadReports() {
+  var list = document.getElementById('reportsList');
+  var loading = document.getElementById('reportsLoading');
+  loading.style.display = 'block';
+  list.innerHTML = '';
+  try {
+    var r = await fetch('/api/reports-admin?status=' + reportsStatus, { credentials: 'include' });
+    var d = await r.json();
+    loading.style.display = 'none';
+    var reports = d.reports || [];
+    // Stats
+    var total = d.stats ? d.stats.total || reports.length : reports.length;
+    var pending = d.stats ? d.stats.pending || 0 : reports.filter(function(x){return x.status==='pending'}).length;
+    var resolved = d.stats ? d.stats.resolved || 0 : reports.filter(function(x){return x.status==='resolved'}).length;
+    document.getElementById('reportsStats').innerHTML =
+      '<div class="stat-card"><div class="num">'+total+'</div><div class="label">总举报</div></div>' +
+      '<div class="stat-card"><div class="num">'+pending+'</div><div class="label">待处理</div></div>' +
+      '<div class="stat-card"><div class="num">'+resolved+'</div><div class="label">已处理</div></div>';
+    if (!reports.length) {
+      list.innerHTML = '<div class="empty">暂无'+(reportsStatus==='pending'?'待处理':'')+(reportsStatus==='resolved'?'已处理':'')+(reportsStatus==='dismissed'?'已驳回':'')+'举报</div>';
+      return;
+    }
+    list.innerHTML = reports.map(function(rp){
+      var statusLabel = { pending: '待处理', resolved: '已处理', dismissed: '已驳回' };
+      var statusCls = { pending: 'wall_post', resolved: 'askbox_answer', dismissed: '' };
+      var actionBtns = rp.status === 'pending'
+        ? '<button class="filter-btn" style="font-size:11px;padding:4px 12px;margin-right:6px;background:#4ade80;border-color:#4ade80;color:#000" onclick="handleReport('+rp.id+',\'resolved\')">通过</button>' +
+          '<button class="filter-btn" style="font-size:11px;padding:4px 12px;margin-right:6px;background:#f87171;border-color:#f87171;color:#fff" onclick="handleReport('+rp.id+',\'dismissed\')">驳回</button>'
+        : '';
+      return '<div class="activity-item">' +
+        '<div class="act-header">' +
+          '<span class="act-type '+(statusCls[rp.status]||'')+'">'+(statusLabel[rp.status]||rp.status)+'</span>' +
+          '<span class="act-time">' + formatTime(rp.created_at) + '</span>' +
+        '</div>' +
+        '<div class="act-content">' + esc(rp.reason || rp.content || '') + '</div>' +
+        '<div class="act-meta">' +
+          '<span class="user-tag">举报人: ' + esc(rp.reporter_email || '匿名') + '</span>' +
+          '<span>被举报: ' + esc(rp.target_email || rp.target_type || '') + '</span>' +
+          '<span>类型: ' + esc(rp.type || rp.target_type || '') + '</span>' +
+        '</div>' +
+        (actionBtns ? '<div style="margin-top:8px">'+actionBtns+'</div>' : '') +
+        (rp.admin_note ? '<div style="margin-top:6px;font-size:11px;color:var(--muted)">管理员备注: ' + esc(rp.admin_note) + '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    loading.style.display = 'none';
+    list.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+window.handleReport = async function(id, action) {
+  try {
+    var r = await fetch('/api/reports-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportId: id, action: action })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      loadReports();
+    } else {
+      alert(d.message || '操作失败');
+    }
+  } catch(e) {
+    alert('网络错误');
+  }
+};
+
+// ==================== Init ====================
+var quizLoaded = false;
+var reportsLoaded = false;
+var reportsStatus = 'pending';
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+  document.querySelector('.tab-btn[data-tab="' + tabName + '"]').classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+
+  if (tabName === 'activity') {
+    document.getElementById('headerSub').textContent = '用户活动监控';
+  } else if (tabName === 'quiz') {
+    document.getElementById('headerSub').textContent = '心理测评统计';
+    if (!quizLoaded) {
+      quizLoaded = true;
+      loadQuizStats();
+    }
+  } else if (tabName === 'reports') {
+    document.getElementById('headerSub').textContent = '举报管理';
+    if (!reportsLoaded) {
+      reportsLoaded = true;
+      loadReports();
+    }
+  }
+}
+
+function init() {
+  if (Auth.isLoggedIn()) {
+    document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('loginPrompt').style.display = 'none';
+    loadPage(1, '');
+  } else {
+    document.getElementById('loginPrompt').style.display = 'block';
+  }
+}
+
+if (Auth.isLoggedIn()) {
+  init();
+} else {
+  Auth.onAuthChange(function(user){
+    if (user) init();
+  });
+  setTimeout(function(){
+    if (!Auth.isLoggedIn()) {
+      document.getElementById('loginPrompt').style.display = 'block';
+    }
+  }, 600);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  // Activity filter buttons
+  document.querySelectorAll('#tab-activity .filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#tab-activity .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      STATE.action = btn.dataset.action;
+      loadPage(1, STATE.action);
+    });
+  });
+
+  // Reports filter buttons
+  document.querySelectorAll('#tab-reports .filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#tab-reports .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      reportsStatus = btn.dataset.status;
+      loadReports();
+    });
+  });
+});
+
+})();
+</script>
+</body>
+</html>
