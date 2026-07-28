@@ -170,8 +170,16 @@ export const onRequestPost = async ({ request, env }) => {
     `INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)`
   ).bind(sessionToken, user.id, expiresAt).run();
 
+  // Generate 6-digit cross-browser login code (valid 30 min)
+  const codeDigits = '0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += codeDigits[Math.floor(Math.random() * 10)];
+  await env.DB.prepare(
+    `INSERT INTO device_codes (code, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
+  ).bind(code, user.id, Date.now() + 30 * 60 * 1000, Date.now()).run();
+
   const headers = new Headers({
-    'Location': '/',
+    'Location': '/?login_code=' + code,
     'Set-Cookie': `session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
   });
 
