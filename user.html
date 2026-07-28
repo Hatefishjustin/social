@@ -56,6 +56,15 @@ body{background:var(--bg);color:var(--text-primary);min-height:100vh}
 .anon-toggle input[type=checkbox]{accent-color:var(--accent)}
 .ask-submit{padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer}
 .ask-submit:disabled{opacity:0.5;cursor:not-allowed}
+
+.chat-btn {
+  display: inline-block; padding: 10px 32px; background: var(--accent);
+  color: #fff; border-radius: 24px; font-size: 14px; font-weight: 600;
+  text-decoration: none; transition: all .2s;
+}
+.chat-btn:hover { background: var(--accent-dim); transform: translateY(-1px); }
+.chat-btn:active { transform: scale(.95); }
+
 .ask-msg{margin-top:8px;font-size:13px}
 .ask-limit{font-size:12px;color:var(--text-quaternary);margin-top:8px;text-align:center}
 
@@ -200,6 +209,7 @@ function renderProfile(d) {
         '<span class="meta-badge">'+d.gender+'</span>'+
         '<span class="meta-badge">'+d.ageGroup+'</span>'+
       '</div>'+
+      (Auth.isLoggedIn() && Auth.getUserId() !== state.userId ? '<div style="margin-top:16px"><a href="/chat.html?userId='+state.userId+'" class="chat-btn">去聊天</a></div>' : '')+
       scoresHtml+
     '</div>'+
     askHtml+
