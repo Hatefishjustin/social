@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>个人设置 - 心镜·社交</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #111;
+    --border: #222;
+    --text: #ddd;
+    --muted: #888;
+    --accent: #FF3B5C;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .container { max-width: 500px; margin: 0 auto; }
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .back-btn { color: var(--muted); text-decoration: none; font-size: 14px; transition: color .2s; }
+  .back-btn:hover { color: var(--accent); }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card-title { font-size: 13px; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Avatar */
+  .avatar-section { text-align: center; margin-bottom: 20px; }
+  .avatar-preview {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--border); margin-bottom: 10px;
+    background: #1a1a1e;
+  }
+  .avatar-placeholder {
+    width: 80px; height: 80px; border-radius: 50%; border: 2px dashed var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 28px; margin-bottom: 10px;
+  }
+
+  /* Input */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(255,255,255,.04);
+    color: #fff; font-size: 14px; outline: none; font-family: inherit;
+    transition: border-color .2s;
+  }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,59,92,.1); }
+  .field input::placeholder { color: rgba(255,255,255,.2); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .btn {
+    display: block; width: 100%; padding: 13px; border-radius: 100px;
+    font-size: 15px; font-weight: 600; cursor: pointer; border: none;
+    font-family: inherit; transition: all .2s; margin-top: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #C4293F; box-shadow: 0 6px 20px rgba(255,59,92,.25); }
+  .btn-primary:active { transform: scale(.97); }
+  .btn-primary:disabled { opacity: .4; pointer-events: none; }
+
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    padding: 10px 24px; border-radius: 10px; font-size: 13px; z-index: 999;
+    pointer-events: none; transition: opacity .3s; opacity: 0;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #00C853; color: #000; }
+  .toast.error { background: var(--accent); color: #fff; }
+
+  .login-prompt { text-align: center; padding: 60px 20px; }
+  .login-prompt p { color: var(--muted); margin-bottom: 16px; }
+  .login-prompt a {
+    display: inline-block; padding: 10px 28px; background: var(--accent);
+    color: #fff; text-decoration: none; border-radius: 24px; font-size: 14px;
+  }
+
+  @media (max-width: 500px) {
+    body { padding: 10px; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>个人设置</h1>
+    <a href="/" class="back-btn">返回</a>
+  </div>
+
+  <div id="loginPrompt" class="login-prompt" style="display:none">
+    <p>需要登录后才能修改个人资料</p>
+    <a href="javascript:Auth.showLoginModal()">去登录</a>
+  </div>
+
+  <div id="mainContent" style="display:none">
+    <div class="card">
+      <div class="card-title">头像</div>
+      <div class="avatar-section">
+        <img id="avatarImg" class="avatar-preview" src="" style="display:none" alt="头像">
+        <div id="avatarPlaceholder" class="avatar-placeholder">?</div>
+      </div>
+      <div class="field">
+        <label>头像链接</label>
+        <input type="url" id="avatarInput" placeholder="https://example.com/avatar.jpg" autocomplete="off">
+        <div class="hint">粘贴图片直链地址，支持 jpg / png / webp</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">基本资料</div>
+      <div class="field">
+        <label>显示名称</label>
+        <input type="text" id="nameInput" placeholder="你的昵称" maxlength="30" autocomplete="off">
+        <div class="hint">最长 30 个字符，留空则显示邮箱前缀</div>
+      </div>
+      <div class="field">
+        <label>邮箱</label>
+        <input type="email" id="emailInput" disabled style="opacity:.5">
+        <div class="hint">邮箱不可修改</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="saveBtn">保存更改</button>
+  </div>
+</div>
+
+<script src="/auth.js"></script>
+<script>
+(function(){
+'use strict';
+
+var nameInput   = document.getElementById('nameInput');
+var avatarInput = document.getElementById('avatarInput');
+var avatarImg   = document.getElementById('avatarImg');
+var avatarPH    = document.getElementById('avatarPlaceholder');
+var emailInput  = document.getElementById('emailInput');
+var saveBtn     = document.getElementById('saveBtn');
+
+function showToast(msg, type) {
+  var t = document.querySelector('.toast');
+  if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+
+function updateAvatarPreview(url) {
+  if (url && url.trim()) {
+    avatarImg.src = url.trim();
+    avatarImg.style.display = 'inline-block';
+    avatarPH.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    avatarPH.style.display = 'inline-flex';
+  }
+}
+
+// Check login
+if (Auth.isLoggedIn()) {
+  init();
+} else {
+  Auth.onAuthChange(function(user){
+    if (user) init();
+  });
+  // If still not logged in after initial check
+  setTimeout(function(){
+    if (!Auth.isLoggedIn()) {
+      document.getElementById('loginPrompt').style.display = 'block';
+    }
+  }, 500);
+}
+
+function init() {
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('loginPrompt').style.display = 'none';
+
+  // Fill current values
+  var displayName = Auth.getDisplayName() || '';
+  var avatarUrl   = Auth.getAvatarUrl() || '';
+  var email       = Auth.getEmail() || '';
+
+  nameInput.value = displayName;
+  avatarInput.value = avatarUrl;
+  emailInput.value = email;
+  updateAvatarPreview(avatarUrl);
+
+  // Avatar URL live preview
+  avatarInput.addEventListener('input', function(){
+    updateAvatarPreview(this.value);
+  });
+
+  // Save
+  saveBtn.addEventListener('click', async function(){
+    saveBtn.disabled = true;
+    saveBtn.textContent = '保存中...';
+
+    var body = {
+      displayName: nameInput.value.trim(),
+      avatarUrl: avatarInput.value.trim()
+    };
+
+    try {
+      var r = await fetch('/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      var d = await r.json();
+      if (d.ok) {
+        showToast('保存成功', 'success');
+        // Refresh auth state to pick up new name/avatar
+        await Auth.refresh();
+        // Update form with new values
+        nameInput.value = Auth.getDisplayName() || '';
+        avatarInput.value = Auth.getAvatarUrl() || '';
+        updateAvatarPreview(Auth.getAvatarUrl());
+      } else {
+        showToast(d.message || '保存失败', 'error');
+      }
+    } catch(e) {
+      showToast('网络错误', 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '保存更改';
+    }
+  });
+}
+
+})();
+</script>
+</body>
+</html>
