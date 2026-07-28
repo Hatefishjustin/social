@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>心镜 · 社交 - 提问箱</title>
+<style>
+/* ── 设计语言沿用心镜主站 yourlover.pages.dev ── */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+               'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  --bg: #000000;
+  --bg-elevated: #0A0A0C;
+  --surface: #141416;
+  --surface-hover: #1C1C1F;
+  --hairline: rgba(255,255,255,0.08);
+  --hairline-strong: rgba(255,255,255,0.14);
+  --text-primary: rgba(255,255,255,0.96);
+  --text-secondary: rgba(255,255,255,0.62);
+  --text-tertiary: rgba(255,255,255,0.38);
+  --accent: #FF3B5C;
+  --accent-dim: #C4293F;
+  --accent-glow: rgba(255,59,92,0.16);
+  --accent-soft: rgba(255,59,92,0.10);
+  --radius-pill: 100px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 8px;
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+  --max-width: 640px;
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html {
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text-primary);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  touch-action:manipulation;
+  scroll-behavior:smooth;
+}
+body {
+  min-height:100vh; min-height:100dvh;
+  background:var(--bg);
+  background-image:
+    radial-gradient(ellipse 1000px 600px at 20% -10%, rgba(59,130,246,0.08), transparent),
+    radial-gradient(ellipse 800px 500px at 100% 100%, rgba(255,255,255,0.03), transparent);
+  display:flex; flex-direction:column; align-items:center;
+  padding-bottom:calc(80px + var(--safe-bottom));
+}
+::selection { background:var(--accent); color:#fff; }
+
+.app-container {
+  width:100%; max-width:var(--max-width); padding:0 24px;
+  display:flex; flex-direction:column;
+  min-height:100vh; min-height:100dvh;
+}
+
+/* ── 顶部导航 ── */
+.nav-header {
+  position:sticky; top:0; z-index:50;
+  background:linear-gradient(var(--bg) 80%, transparent);
+  padding:18px 0 12px;
+}
+.nav-brand {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+}
+.nav-dot {
+  width:8px; height:8px; border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 0 12px var(--accent-glow);
+  animation:pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:.5; transform:scale(.8); }
+}
+.nav-title {
+  font-size:20px; font-weight:700; letter-spacing:-0.3px;
+  color:var(--text-primary);
+  cursor:pointer;
+}
+.nav-title:hover { opacity:.8; }
+.nav-subtitle {
+  font-size:12px; color:var(--text-tertiary); font-weight:400;
+  letter-spacing:.5px;
+}
+
+/* ── Feed ── */
+.feed-section { flex:1; padding-top:8px; padding-bottom:16px; }
+.feed-container {
+  display:flex; flex-direction:column; gap:10px;
+  transition:opacity .25s;
+}
+.feed-container.loading { opacity:.5; pointer-events:none; }
+
+/* ── 卡片 ── */
+.card {
+  background:var(--surface);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius-lg);
+  padding:18px 20px;
+  transition:all .3s var(--ease-out);
+  animation:cardIn .4s var(--ease-out) forwards;
+  position:relative;
+}
+@keyframes cardIn {
+  from { opacity:0; transform:translateY(12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.card:hover {
+  border-color:var(--hairline-strong);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+}
+.card:active { transform:scale(.985); transition:transform .1s ease; }
+
+.card-meta {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  font-size:12px; color:var(--text-tertiary); margin-bottom:8px;
+}
+.card-meta-item { display:flex; align-items:center; gap:4px; }
+.card-anon-badge {
+  font-size:11px; color:var(--text-tertiary);
+  background:rgba(255,255,255,.05); padding:2px 10px;
+  border-radius:var(--radius-pill); font-weight:500;
+}
+.card-question {
+  font-size:15px; line-height:1.6; color:rgba(255,255,255,.85);
+  word-break:break-word; white-space:pre-wrap; margin-bottom:12px;
+  padding-left:12px; border-left:2px solid var(--hairline-strong);
+}
+.card-answer {
+  background:var(--bg-elevated); border-radius:var(--radius-md);
+  padding:14px 16px; margin-top:8px; position:relative;
+  border:1px solid var(--hairline);
+}
+.answer-label {
+  font-size:11px; font-weight:600; color:var(--accent);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
+}
+.answer-content {
+  font-size:14px; line-height:1.6; color:rgba(255,255,255,.8);
+  white-space:pre-wrap; word-break:break-word;
+}
+.answer-time { font-size:11px; color:var(--text-tertiary); margin-top:8px; }
+
+/* ── 空状态 ── */
+.empty-state {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:80px 20px; text-align:center; color:var(--text-tertiary);
+  animation:cardIn .4s var(--ease-out) forwards;
+}
+.empty-icon { font-size:48px; margin-bottom:16px; opacity:.4; }
+.empty-title { font-size:16px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
+.empty-desc { font-size:13px; color:var(--text-tertiary); max-width:260px; line-height:1.6; }
+
+/* ── 加载器 ── */
+.loader { display:flex; justify-content:center; padding:30px; }
+.loader-dot {
+  width:6px; height:6px; border-radius:50%; background:var(--accent);
+  margin:0 4px; animation:loaderBounce .6s infinite alternate;
+}
+.loader-dot:nth-child(2) { animation-delay:.15s; }
+.loader-dot:nth-child(3) { animation-delay:.3s; }
+@keyframes loaderBounce {
+  to { transform:translateY(-10px); opacity:.3; }
+}
+
+/* ── FAB ── */
+.fab {
+  position:fixed; bottom:calc(24px + var(--safe-bottom));
+  right:max(20px, calc((100vw - var(--max-width)) / 2 + 20px));
+  z-index:60; width:52px; height:52px; border-radius:50%;
+  background:var(--accent); border:none; color:#fff; font-size:26px;
+  cursor:pointer;
+  box-shadow:0 8px 28px var(--accent-glow);
+  transition:all .25s var(--ease-out);
+  display:flex; align-items:center; justify-content:center;
+  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+  user-select:none; -webkit-user-select:none;
+}
+.fab:hover {
+  background:var(--accent-dim); transform:translateY(-2px);
+  box-shadow:0 14px 36px var(--accent-glow);
+}
+.fab:active { transform:scale(.88); box-shadow:0 4px 14px var(--accent-glow); }
+
+/* ── 模态框 ── */
+.modal-overlay {
+  position:fixed; inset:0; z-index:100;
+  background:rgba(0,0,0,.78);
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s var(--ease-out);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+}
+.modal-overlay.active { opacity:1; pointer-events:auto; }
+.modal-sheet {
+  width:100%; max-width:var(--max-width);
+  background:var(--surface);
+  border-radius:20px 20px 0 0;
+  padding:20px 24px calc(20px + var(--safe-bottom));
+  transform:translateY(100%);
+  transition:transform .4s cubic-bezier(.32,.72,0,1);
+  max-height:85vh; overflow-y:auto;
+  display:flex; flex-direction:column; gap:16px;
+  border:1px solid var(--hairline); border-bottom:none;
+}
+.modal-overlay.active .modal-sheet { transform:translateY(0); }
+.modal-handle {
+  width:36px; height:4px; background:var(--hairline-strong);
+  border-radius:2px; align-self:center; margin-bottom:4px; flex-shrink:0;
+}
+.modal-title {
+  font-size:17px; font-weight:700; color:var(--text-primary);
+  text-align:center; flex-shrink:0;
+}
+.modal-close {
+  position:absolute; top:16px; right:24px;
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(255,255,255,.06); border:none;
+  color:var(--text-secondary); font-size:16px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  touch-action:manipulation; z-index:5;
+  transition:all .2s var(--ease-out);
+}
+.modal-close:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+.modal-close:active { transform:scale(.9); }
+.modal-textarea {
+  width:100%; min-height:120px;
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius-md); padding:14px 16px;
+  color:var(--text-primary); font-size:15px;
+  font-family:var(--font-sans); resize:vertical; line-height:1.7;
+  transition:border-color .2s; outline:none;
+}
+.modal-textarea:focus {
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-soft);
+}
+.modal-textarea::placeholder { color:var(--text-tertiary); }
+.modal-toggle-row {
+  display:flex; align-items:center; justify-content:space-between; padding:4px 0;
+}
+.modal-toggle-label { font-size:14px; color:var(--text-secondary); font-weight:500; }
+.toggle-switch { position:relative; width:48px; height:28px; flex-shrink:0; }
+.toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
+.toggle-slider {
+  position:absolute; cursor:pointer; inset:0;
+  background:rgba(255,255,255,.08); border-radius:28px;
+  transition:all .3s var(--ease-out);
+  border:1px solid var(--hairline);
+}
+.toggle-slider::before {
+  content:''; position:absolute;
+  height:22px; width:22px; left:2px; bottom:2px;
+  background:var(--text-tertiary); border-radius:50%;
+  transition:all .3s var(--ease-out);
+}
+.toggle-switch input:checked+.toggle-slider {
+  background:var(--accent); border-color:var(--accent);
+  box-shadow:0 0 10px var(--accent-glow);
+}
+.toggle-switch input:checked+.toggle-slider::before {
+  transform:translateX(20px); background:#fff;
+}
+.modal-submit-btn {
+  width:100%; padding:14px; border:none; border-radius:var(--radius-pill);
+  background:var(--accent); color:#fff; font-size:16px; font-weight:600;
+  cursor:pointer; font-family:var(--font-sans);
+  transition:all .25s var(--ease-out);
+  touch-action:manipulation; letter-spacing:.5px;
+}
+.modal-submit-btn:hover {
+  background:var(--accent-dim);
+  box-shadow:0 8px 24px var(--accent-glow);
+  transform:translateY(-1px);
+}
+.modal-submit-btn:active { background:var(--accent-dim); transform:scale(.97); }
+.modal-submit-btn:disabled { opacity:.35; pointer-events:none; }
+.modal-error { font-size:12px; color:#f87171; text-align:center; min-height:16px; }
+
+/* ── Toast ── */
+.toast {
+  position:fixed; bottom:calc(90px + var(--safe-bottom)); left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--surface-hover); color:var(--text-primary);
+  padding:12px 24px; border-radius:var(--radius-pill);
+  font-size:13px; font-weight:500; z-index:200;
+  opacity:0; pointer-events:none;
+  transition:all .35s cubic-bezier(.175,.885,.32,1.275);
+  border:1px solid var(--hairline-strong);
+  box-shadow:0 8px 24px rgba(0,0,0,.6);
+  white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.success { border-color:#4ade80; color:#4ade80; }
+.toast.error   { border-color:#f87171; color:#f87171; }
+
+/* ── 响应式 ── */
+@media (min-width:640px) {
+  .modal-overlay { align-items:center; }
+  .modal-sheet { border-radius:var(--radius-lg); margin-bottom:20px; max-height:80vh; }
+  .fab { right:calc((100vw - var(--max-width)) / 2 + 24px); bottom:28px; }
+}
+@media (max-width:380px) {
+  .card { padding:14px 16px; }
+  .card-question { font-size:14px; }
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header class="nav-header">
+    <div class="nav-brand">
+      <div class="nav-dot"></div>
+      <div>
+        <div class="nav-title" onclick="location.href='/'">心镜 · 社交</div>
+        <div class="nav-subtitle">匿名提问箱</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="feed-section">
+    <div class="feed-container" id="feed-askbox"></div>
+    <div class="loader" id="feedLoader" style="display:none">
+      <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+    </div>
+  </main>
+</div>
+
+<button class="fab" id="fabBtn" aria-label="提问">?</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <button class="modal-close" id="modalClose" aria-label="关闭">✕</button>
+    <div class="modal-title">匿名提问</div>
+    <textarea class="modal-textarea" id="content-input" placeholder="写下你的问题..." maxlength="1000"></textarea>
+    <div class="modal-toggle-row">
+      <span class="modal-toggle-label">匿名提问</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="anon-check" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="modal-error" id="modalError"></div>
+    <button class="modal-submit-btn" id="modalSubmit">提交问题</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  var state = {
+    page: 1,
+    isLoading: false,
+    hasMore: true
+  };
+  var $ = function(s){ return document.querySelector(s); };
+  var dom = {
+    feedAskbox: $('#feed-askbox'),
+    feedLoader: $('#feedLoader'),
+    fabBtn: $('#fabBtn'),
+    modalOverlay: $('#modalOverlay'),
+    modalClose: $('#modalClose'),
+    contentInput: $('#content-input'),
+    anonCheck: $('#anon-check'),
+    modalError: $('#modalError'),
+    modalSubmit: $('#modalSubmit'),
+    toast: $('#toast')
+  };
+
+  function formatTime(ts) {
+    if (!ts) return '';
+    var diff = Date.now() - ts;
+    var s = Math.floor(diff/1000), m = Math.floor(s/60), h = Math.floor(m/60), d = Math.floor(h/24);
+    if (s < 60) return '刚刚';
+    if (m < 60) return m + '分钟前';
+    if (h < 24) return h + '小时前';
+    if (d < 7) return d + '天前';
+    var date = new Date(ts);
+    var mo = date.getMonth()+1, day = date.getDate();
+    if (date.getFullYear() === new Date().getFullYear()) return mo + '月' + day + '日';
+    return date.getFullYear() + '年' + mo + '月' + day + '日';
+  }
+  function esc(str) {
+    if (!str) return '';
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function toast(msg, type) {
+    var t = dom.toast;
+    t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
+    clearTimeout(t._tid);
+    t._tid = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+  function showLoader() { dom.feedLoader.style.display = 'flex'; }
+  function hideLoader() { dom.feedLoader.style.display = 'none'; }
+
+  function render(q) {
+    var answerHTML = q.answer_content ?
+      '<div class="card-answer"><div class="answer-label">回答</div><div class="answer-content">' + esc(q.answer_content) + '</div><div class="answer-time">' + formatTime(q.answered_at) + '</div></div>' : '';
+    return '<article class="card" data-question-id="' + q.id + '">' +
+      '<div class="card-meta"><span class="card-anon-badge">' + (q.is_anonymous ? '匿名提问' : '实名提问') + '</span><span class="card-meta-item">' + formatTime(q.created_at) + '</span></div>' +
+      '<div class="card-question">' + esc(q.content) + '</div>' +
+      answerHTML + '</article>';
+  }
+
+  function emptyHTML(icon, title, desc) {
+    return '<div class="empty-state"><div class="empty-icon">' + icon + '</div><div class="empty-title">' + title + '</div><div class="empty-desc">' + desc + '</div></div>';
+  }
+
+  async function loadAskbox() {
+    if (state.isLoading) return; state.isLoading = true; showLoader(); dom.feedAskbox.classList.add('loading');
+    try {
+      var res = await fetch('/askbox?page=' + state.page, { headers:{'Accept':'application/json; charset=utf-8'} });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      var questions = (data.questions || []).filter(function(q){ return q.answered_at !== null; });
+      if (state.page === 1) dom.feedAskbox.innerHTML = '';
+      if (questions.length === 0 && state.page === 1) {
+        dom.feedAskbox.innerHTML = emptyHTML('📬', '暂无已回答的问题', '提问箱中的问题在得到回答后会显示在这里');
+      } else {
+        var html = questions.map(render).join('');
+        if (state.page === 1) dom.feedAskbox.innerHTML = html;
+        else dom.feedAskbox.insertAdjacentHTML('beforeend', html);
+      }
+      var pag = data.pagination || {};
+      state.hasMore = pag.page < pag.totalPages;
+    } catch(e) {
+      console.error(e);
+      if (state.page === 1) dom.feedAskbox.innerHTML = emptyHTML('😿', '加载失败', '网络似乎出了问题');
+      toast('加载失败', 'error');
+    } finally {
+      state.isLoading = false; hideLoader(); dom.feedAskbox.classList.remove('loading');
+    }
+  }
+
+  function openModal() {
+    dom.modalOverlay.classList.add('active');
+    dom.contentInput.value = ''; dom.modalError.textContent = ''; dom.modalSubmit.disabled = false;
+    dom.anonCheck.checked = true;
+    dom.contentInput.focus(); document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    dom.modalOverlay.classList.remove('active'); document.body.style.overflow = '';
+    setTimeout(function(){ dom.contentInput.value = ''; dom.modalError.textContent = ''; }, 350);
+  }
+
+  async function submitQuestion() {
+    var content = dom.contentInput.value.trim();
+    if (!content) { dom.modalError.textContent = '请输入问题'; dom.contentInput.focus(); return; }
+    dom.modalSubmit.disabled = true; dom.modalError.textContent = '';
+    try {
+      var body = { content:content, is_anonymous:dom.anonCheck.checked?1:0, target_id:null };
+      var res = await fetch('/askbox', { method:'POST', headers:{'Content-Type':'application/json; charset=utf-8'}, body:JSON.stringify(body) });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      toast('问题已提交，等待回答', 'success'); closeModal();
+      state.page = 1; state.hasMore = true; await loadAskbox();
+    } catch(e) {
+      console.error(e); dom.modalError.textContent = '提交失败，请稍后重试'; toast('提交失败', 'error');
+    } finally { dom.modalSubmit.disabled = false; }
+  }
+
+  dom.fabBtn.addEventListener('click', openModal);
+  dom.modalClose.addEventListener('click', closeModal);
+  dom.modalOverlay.addEventListener('click', function(e){ if (e.target === dom.modalOverlay) closeModal(); });
+  dom.modalSubmit.addEventListener('click', submitQuestion);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && dom.modalOverlay.classList.contains('active')) closeModal();
+    if ((e.ctrlKey||e.metaKey) && e.key === 'Enter' && dom.modalOverlay.classList.contains('active') && document.activeElement === dom.contentInput) { e.preventDefault(); submitQuestion(); }
+  });
+
+  var scrollTicking = false;
+  window.addEventListener('scroll', function(){
+    if (scrollTicking) return; scrollTicking = true;
+    requestAnimationFrame(function(){
+      scrollTicking = false;
+      if (state.isLoading) return;
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 300 && state.hasMore) {
+        state.page++; loadAskbox();
+      }
+    });
+  }, {passive:true});
+
+  function init() { loadAskbox(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
