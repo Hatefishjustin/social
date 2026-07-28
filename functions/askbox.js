@@ -1,15 +1,11 @@
 /**
  * 路径: /functions/askbox.js
  * 路由: /askbox
- *
- * GET  /askbox?targetId=123&page=1   -> 获取提问列表
- * POST /askbox                      -> 提问
- * POST /askbox/answer               -> 回答
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
