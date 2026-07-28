@@ -2,14 +2,11 @@
  * Cloudflare Pages Function
  * 路径: /functions/wall.js
  * 路由: /wall
- *
- * GET  /wall?page=1&tag=表白   -> 获取帖子列表
- * POST /wall                    -> 发布帖子
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
