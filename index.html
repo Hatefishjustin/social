@@ -181,6 +181,33 @@ html, body {
   text-align: center; font-size: 12px; color: var(--text-quaternary);
   border-top: 1px solid var(--border);
 }
+
+.notif-bell{position:relative;background:none;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 8px;cursor:pointer;color:rgba(255,255,255,.45);transition:all .2s;display:flex;align-items:center}
+.notif-bell:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.18)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.notif-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:flex-end;padding:70px 16px 0;opacity:0;pointer-events:none;transition:opacity .25s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.notif-overlay.show{opacity:1;pointer-events:auto}
+.notif-panel{width:100%;max-width:360px;max-height:70vh;background:var(--surface-raised);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+.notif-panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;font-weight:600;color:var(--text-primary)}
+.notif-mark-all{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 8px}
+.notif-list{flex:1;overflow-y:auto;padding:4px 0}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 18px;text-decoration:none;color:inherit;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.03)}
+.notif-item:hover{background:rgba(255,255,255,.03)}
+.notif-unread{background:rgba(196,82,110,.06)}
+.notif-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.notif-body{flex:1;min-width:0}
+.notif-text{font-size:13px;color:var(--text-secondary);line-height:1.4}
+.notif-preview{font-size:11px;color:var(--text-quaternary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px}
+.notif-empty{text-align:center;color:var(--text-quaternary);font-size:13px;padding:32px 20px}
+.notif-load-more{text-align:center;padding:12px}
+.notif-load-more button{background:none;border:none;color:var(--text-tertiary);font-size:12px;cursor:pointer;padding:6px 16px;border-radius:8px}
+.notif-load-more button:hover{color:var(--text-secondary);background:rgba(255,255,255,.04)}
+.login-code-banner{max-width:640px;margin:0 auto;padding:6px 20px}
+.login-code-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,rgba(196,82,110,.15),rgba(196,82,110,.06));border:1px solid rgba(196,82,110,.2);border-radius:12px;padding:12px 16px}
+.login-code-label{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+.login-code-digits{font-size:22px;font-weight:700;letter-spacing:6px;color:var(--accent);font-variant-numeric:tabular-nums;font-family:monospace}
+.login-code-close{background:none;border:none;color:var(--text-quaternary);font-size:14px;cursor:pointer;padding:4px}
 </style>
 </head>
 <body>
@@ -194,7 +221,19 @@ html, body {
       <div class="brand-dot"></div>
       <div class="brand-name">心镜 · 社交</div>
     </div>
+    <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="通知" style="display:none">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+    </button>
     <button class="auth-login-btn login-btn">登录</button>
+  </div>
+</div>
+
+<div id="loginCodeBanner" class="login-code-banner" style="display:none">
+  <div class="login-code-inner">
+    <span class="login-code-label">跨设备登录码（30分钟有效）</span>
+    <span class="login-code-digits" id="loginCodeDigits"></span>
+    <button class="login-code-close" onclick="this.parentElement.parentElement.remove()">✕</button>
   </div>
 </div>
 
@@ -396,6 +435,152 @@ function showFeedbackMsg(msg, type) {
   el.textContent = msg; el.style.display = 'block';
   el.style.color = type === 'success' ? '#4ade80' : '#ff6b6b';
 }
+</script>
+
+<!-- 通知面板 -->
+<div class="notif-overlay" id="notifOverlay" onclick="if(event.target===this)closeNotifPanel()">
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-head">
+      <span>通知</span>
+      <button class="notif-mark-all" id="notifMarkAll" onclick="markAllRead()">全部已读</button>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-empty">加载中...</div>
+    </div>
+    <div class="notif-load-more" id="notifLoadMore" style="display:none">
+      <button onclick="loadMoreNotif()">加载更多</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 通知系统 ──
+var notifState = { page: 1, hasMore: false, total: 0, unread: 0, loading: false };
+
+async function fetchNotifs(page) {
+  var r = await fetch('/api/notifications?page=' + page + '&limit=20', { credentials: 'same-origin' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+function typeLabel(t) {
+  var map = { like: '赞了你的帖子', comment: '评论了你的帖子', answer: '回答了你的提问' };
+  return map[t] || t;
+}
+
+function typeIcon(t) {
+  var map = { like: '♥', comment: '💬', answer: '✉' };
+  return map[t] || '📌';
+}
+
+function targetLink(t, id) {
+  var map = { wall: '/campus.html', askbox: '/qa.html' };
+  return map[t] || '/';
+}
+
+function renderNotif(n) {
+  var cls = n.is_read ? '' : ' notif-unread';
+  var preview = n.content_preview ? (n.content_preview.length > 40 ? n.content_preview.slice(0,40)+'...' : n.content_preview) : '';
+  return '<a class="notif-item'+cls+'" href="'+targetLink(n.target_type, n.target_id)+'" onclick="closeNotifPanel()">'+
+    '<span class="notif-icon">'+typeIcon(n.type)+'</span>'+
+    '<div class="notif-body">'+
+      '<div class="notif-text">'+typeLabel(n.type)+'</div>'+
+      (preview ? '<div class="notif-preview">'+preview.replace(/</g,'&lt;')+'</div>' : '')+
+    '</div>'+
+    '<span class="notif-dot" style="display:'+(n.is_read?'none':'block')+'"></span>'+
+  '</a>';
+}
+
+async function loadNotifs(page) {
+  if (notifState.loading) return;
+  notifState.loading = true;
+  try {
+    var d = await fetchNotifs(page);
+    var list = document.getElementById('notifList');
+    var html = d.notifications.map(renderNotif).join('');
+    if (page === 1) {
+      list.innerHTML = d.notifications.length === 0 ? '<div class="notif-empty">暂无通知</div>' : html;
+    } else {
+      list.insertAdjacentHTML('beforeend', html);
+    }
+    notifState.page = d.pagination.page;
+    notifState.hasMore = d.pagination.page < d.pagination.totalPages;
+    notifState.unread = d.unread;
+    notifState.total = d.pagination.total;
+    document.getElementById('notifLoadMore').style.display = notifState.hasMore ? 'block' : 'none';
+    updateNotifBadge();
+  } catch(e) {
+    document.getElementById('notifList').innerHTML = '<div class="notif-empty">加载失败</div>';
+  } finally {
+    notifState.loading = false;
+  }
+}
+
+function loadMoreNotif() { loadNotifs(notifState.page + 1); }
+
+function updateNotifBadge() {
+  var badge = document.getElementById('notifBadge');
+  badge.textContent = notifState.unread > 99 ? '99+' : notifState.unread;
+  badge.style.display = notifState.unread > 0 ? 'flex' : 'none';
+}
+
+function toggleNotifPanel() {
+  var ov = document.getElementById('notifOverlay');
+  if (ov.classList.contains('show')) {
+    closeNotifPanel();
+  } else {
+    ov.classList.add('show');
+    if (notifState.total === 0 || document.getElementById('notifList').querySelector('.notif-empty')) {
+      loadNotifs(1);
+    }
+  }
+}
+
+function closeNotifPanel() {
+  document.getElementById('notifOverlay').classList.remove('show');
+}
+
+async function markAllRead() {
+  try {
+    await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mark_all_read: true }) });
+    document.querySelectorAll('.notif-unread').forEach(function(el){ el.classList.remove('notif-unread'); });
+    document.querySelectorAll('.notif-dot').forEach(function(el){ el.style.display = 'none'; });
+    notifState.unread = 0;
+    updateNotifBadge();
+  } catch(e) {}
+}
+
+// Auto-refresh unread count every 60s
+window.addEventListener('authchange', function(e) {
+  var bell = document.getElementById('notifBell');
+  var user = e.detail;
+  if (user) {
+    bell.style.display = '';
+    fetchNotifs(1).then(function(d){
+      notifState.unread = d.unread;
+      notifState.total = d.pagination.total;
+      updateNotifBadge();
+    }).catch(function(){});
+  } else {
+    bell.style.display = 'none';
+  }
+});
+
+// ── 登录码提示横幅 ──
+(function(){
+  var params = new URLSearchParams(location.search);
+  var code = params.get('login_code');
+  if (code) {
+    var banner = document.getElementById('loginCodeBanner');
+    var digits = document.getElementById('loginCodeDigits');
+    digits.textContent = code;
+    banner.style.display = 'block';
+    // Clean URL
+    var url = new URL(location);
+    url.searchParams.delete('login_code');
+    history.replaceState(null, '', url);
+  }
+})();
 </script>
 
 </body>
