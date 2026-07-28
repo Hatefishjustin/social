@@ -47,6 +47,15 @@ async function requestLogin(email, pendingResult) {
   return await r.json();
 }
 
+async function codeLogin(code) {
+  var r = await fetch('/auth/code-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code })
+  });
+  return await r.json();
+}
+
 function logout() {
   window.location.href = '/logout';
 }
@@ -92,7 +101,9 @@ function showLoginModal() {
   html += '<div class="auth-sheet">';
   html += '<div class="auth-handle"></div>';
   html += '<div class="auth-title">登录心镜·社交</div>';
-  html += '<div class="auth-desc">输入邮箱，我们会发送一个魔法链接，点击即可登录</div>';
+  html += '<div class="auth-desc">输入邮箱，发送魔法链接登录</div>';
+  html += '<div class="auth-toggle-row"><button class="auth-toggle-link" id="authToggleCode">或使用登录码</button></div>';
+  html += '<div id="authCodeSection" style="display:none"><input type="text" class="auth-input" id="authCodeInput" placeholder="输入6位登录码" maxlength="6" inputmode="numeric" pattern="[0-9]*"><div class="auth-err" id="authCodeErr"></div><button class="auth-submit" id="authCodeSubmit">验证登录码</button></div>';
   html += '<input type="email" class="auth-input" id="authEmailInput" placeholder="your@email.com" autocomplete="email" inputmode="email">';
   html += '<div class="auth-err" id="authErr"></div>';
   html += '<div class="auth-success" id="authSuccess" style="display:none"></div>';
@@ -116,6 +127,51 @@ function showLoginModal() {
 
   overlay.addEventListener('click', function(e){ if (e.target === overlay) close(); });
   overlay.querySelector('#authCancel').addEventListener('click', close);
+
+  // Code login toggle
+  overlay.querySelector('#authToggleCode').addEventListener('click', function(){
+    var sec = overlay.querySelector('#authCodeSection');
+    var toggle = overlay.querySelector('#authToggleCode');
+    if (sec.style.display === 'none') {
+      sec.style.display = 'block';
+      toggle.textContent = '使用邮箱登录';
+      emailInput.parentNode.style.display = 'none';
+      submitBtn.style.display = 'none';
+      setTimeout(function(){ overlay.querySelector('#authCodeInput').focus(); }, 200);
+    } else {
+      sec.style.display = 'none';
+      toggle.textContent = '或使用登录码';
+      emailInput.parentNode.style.display = '';
+      submitBtn.style.display = '';
+    }
+  });
+
+  // Code login submit
+  overlay.querySelector('#authCodeSubmit').addEventListener('click', async function(){
+    var codeInput = overlay.querySelector('#authCodeInput');
+    var codeErr = overlay.querySelector('#authCodeErr');
+    var code = codeInput.value.trim();
+    if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+      codeErr.textContent = '请输入6位数字登录码';
+      return;
+    }
+    var btn = overlay.querySelector('#authCodeSubmit');
+    btn.disabled = true; btn.textContent = '验证中...'; codeErr.textContent = '';
+    try {
+      var result = await codeLogin(code);
+      if (result.ok) {
+        successEl.style.display = 'block';
+        successEl.innerHTML = '✅ 登录成功！';
+        setTimeout(function(){ close(); refresh(); }, 1500);
+      } else {
+        codeErr.textContent = result.message || '登录码无效或已过期';
+      }
+    } catch(e) {
+      codeErr.textContent = '网络错误，请稍后重试';
+    } finally {
+      btn.disabled = false; btn.textContent = '验证登录码';
+    }
+  });
 
   submitBtn.addEventListener('click', async function(){
     var email = emailInput.value.trim();
@@ -216,7 +272,11 @@ function injectStyles() {
     '.auth-dd-email{padding:10px 16px;font-size:12px;color:rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.06);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
     '.auth-dd-item{display:block;width:100%;padding:10px 16px;background:none;border:none;color:rgba(255,255,255,.65);font-size:13px;text-align:left;cursor:pointer;font-family:inherit;transition:background .15s}',
     '.auth-dd-item:hover{background:rgba(255,255,255,.05);color:#f87171}',
-    '@media(min-width:481px){.auth-overlay{align-items:center}.auth-sheet{border-radius:20px;margin-bottom:20px;max-width:420px}}'
+    '.auth-toggle-row{text-align:center;margin:10px 0}',
+    '.auth-toggle-link{background:none;border:none;color:rgba(255,255,255,.35);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;padding:4px 8px}',
+    '.auth-toggle-link:active{color:rgba(255,255,255,.55)}',
+    '#authCodeSection input{text-align:center;letter-spacing:8px;font-size:20px}',
+    '@media(min-width:481px){.auth-overlay{align-items:center}.auth-sheet{border-radius:20px;margin-bottom:20px;max-width:420px}'
   ].join('\n');
   document.head.appendChild(style);
 }
@@ -237,6 +297,7 @@ window.Auth = {
   onAuthChange: onAuthChange,
   requestLogin: requestLogin,
   logout: logout,
+  codeLogin: codeLogin,
   showLoginModal: showLoginModal
 };
 
