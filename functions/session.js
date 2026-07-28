@@ -2,7 +2,7 @@
  * Cloudflare Pages Function
  * 路径: /session
  * 方法: GET
- * 功能: 获取当前登录用户信息
+ * 功能: 获取当前登录用户信息（含昵称+头像）
  */
 
 function parseCookie(cookieHeader, name) {
@@ -25,7 +25,7 @@ export const onRequestGet = async ({ request, env }) => {
   if (!sessionToken) return jsonResponse({ loggedIn: false });
 
   const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id as user_id, users.email
+    `SELECT sessions.expires_at, users.id as user_id, users.email, users.display_name, users.avatar_url
      FROM sessions JOIN users ON sessions.user_id = users.id
      WHERE sessions.token = ?`
   ).bind(sessionToken).first();
@@ -42,6 +42,8 @@ export const onRequestGet = async ({ request, env }) => {
     loggedIn: true,
     userId: row.user_id,
     email: row.email,
+    displayName: row.display_name || '',
+    avatarUrl: row.avatar_url || '',
     isStaff: !!staff,
     staffRole: staff ? staff.role : null,
   });
