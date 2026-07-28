@@ -2,11 +2,12 @@
  * Cloudflare Pages Function
  * 路径: /functions/wall.js
  * 路由: /wall
+ * v2: 增加活动日志，记录 IP / 设备 / 地区
  */
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
+  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
 }
 
@@ -35,6 +36,39 @@ function jsonResponse(body, status = 200) {
   });
 }
 
+function getRequestMeta(request) {
+  return {
+    ip: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
+    ua: (request.headers.get('User-Agent') || '').slice(0, 500),
+    country: (request.cf || {}).country || '',
+    city: (request.cf || {}).city || '',
+  };
+}
+
+async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous) {
+  try {
+    await env.DB.prepare(
+      `INSERT INTO activity_log (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      user ? user.id : null,
+      user ? user.email : null,
+      action,
+      targetType,
+      targetId || null,
+      (content || '').slice(0, 500),
+      meta.ip,
+      meta.ua,
+      meta.country,
+      meta.city,
+      isAnonymous ? 1 : 0,
+      Date.now()
+    ).run();
+  } catch (e) {
+    console.error('activity_log insert failed:', e.message);
+  }
+}
+
 const PAGE_SIZE = 20;
 
 export const onRequestGet = async ({ request, env }) => {
@@ -56,7 +90,7 @@ export const onRequestGet = async ({ request, env }) => {
   sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
   const { results } = await env.DB.prepare(sql).bind(...params, PAGE_SIZE, offset).all();
-  const countRow = await env.DB.prepare(countSql).bind(...params.slice(0, -2)).first();
+  const countRow = await env.DB.prepare(countSql).bind(...params).first();
   const total = countRow?.total || 0;
 
   return jsonResponse({
@@ -67,6 +101,7 @@ export const onRequestGet = async ({ request, env }) => {
 
 export const onRequestPost = async ({ request, env }) => {
   const user = await getCurrentUser(request, env);
+  const meta = getRequestMeta(request);
 
   let body;
   try {
@@ -80,6 +115,7 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'invalid_content', message: '内容不能为空且不超过2000字' }, 400);
   }
 
+  const now = Date.now();
   const result = await env.DB.prepare(
     `INSERT INTO wall_posts (user_id, content, tag, is_anonymous, school, created_at, likes_count, comments_count)
      VALUES (?, ?, ?, ?, ?, ?, 0, 0)`
@@ -89,10 +125,15 @@ export const onRequestPost = async ({ request, env }) => {
     tag.slice(0, 20),
     isAnonymous ? 1 : 0,
     school.slice(0, 50),
-    Date.now()
+    now
   ).run();
 
-  return jsonResponse({ ok: true, id: result.meta.last_row_id });
+  const postId = result.meta.last_row_id;
+
+  // 写入活动日志
+  await logActivity(env, meta, user, 'wall_post', 'wall', postId, content, isAnonymous);
+
+  return jsonResponse({ ok: true, id: postId });
 };
 
 export const onRequestOptions = async () => {
