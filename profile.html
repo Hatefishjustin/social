@@ -200,11 +200,7 @@ function updateAvatarPreview(url) {
   }
 }
 
-// Check login
-if (Auth.isLoggedIn()) {
-  init();
-} else {
-  function loadPsychProfile() {
+function loadPsychProfile() {
   var card = document.getElementById('psychProfileContent');
   try {
     var raw = localStorage.getItem('xinjing_quiz_result_v2');
@@ -224,10 +220,13 @@ if (Auth.isLoggedIn()) {
   } catch(e) {}
 }
 
-// Load psych profile on init
-loadPsychProfile();
+// Check login
+if (Auth.isLoggedIn()) {
+  init();
+} else {
+  loadPsychProfile();
 
-Auth.onAuthChange(function(user){
+  Auth.onAuthChange(function(user){
     if (user) init();
   });
   // If still not logged in after initial check
@@ -258,6 +257,9 @@ function init() {
   uploadHint.addEventListener('click', function(){
     avatarFileInput.click();
   });
+
+  // ── 加载心理画像 ──
+  loadPsychProfile();
 
   avatarFileInput.addEventListener('change', function(){
     var file = this.files[0];
