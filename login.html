@@ -95,6 +95,45 @@ body{
   var errEl = document.getElementById('err');
   var successEl = document.getElementById('success');
   var successText = document.getElementById('successText');
+  var cooldownTimer = null;
+  var cooldownSec = 0;
+
+  // ── Redirect param ──
+  var redirect = new URLSearchParams(location.search).get('redirect') || '/index.html';
+
+  // ── Check already logged in ──
+  async function checkLoggedIn() {
+    try {
+      var r = await fetch('/session', { credentials: 'same-origin' });
+      var d = await r.json();
+      if (d.loggedIn) {
+        window.location.replace(redirect);
+      }
+    } catch(e) {}
+  }
+  checkLoggedIn();
+
+  // ── Countdown ──
+  function startCooldown() {
+    cooldownSec = 60;
+    sendBtn.disabled = true;
+    updateCountdown();
+    cooldownTimer = setInterval(function(){
+      cooldownSec--;
+      if (cooldownSec <= 0) {
+        clearInterval(cooldownTimer);
+        cooldownTimer = null;
+        sendBtn.disabled = false;
+        sendBtn.textContent = '重新发送';
+      } else {
+        updateCountdown();
+      }
+    }, 1000);
+  }
+
+  function updateCountdown() {
+    sendBtn.textContent = cooldownSec + 's';
+  }
 
   async function send() {
     var email = emailInput.value.trim();
@@ -108,7 +147,6 @@ body{
     errEl.textContent = '';
 
     try {
-      // 检查是否携带 pendingResult
       var pending = null;
       try {
         var stored = sessionStorage.getItem('login_pending_result');
@@ -127,17 +165,18 @@ body{
 
       if (d.ok) {
         emailInput.style.display = 'none';
-        sendBtn.style.display = 'none';
         errEl.style.display = 'none';
         successEl.style.display = 'block';
-        successText.textContent = d.message || '验证邮件已发送！请查收邮箱，点击邮件中的链接完成登录。';
+        successText.innerHTML = '验证邮件已发送！请查收邮箱 <strong>'+email+'</strong>，点击邮件中的链接完成登录。<br><br>登录后将自动跳转至目标页面。';
         sessionStorage.removeItem('login_pending_result');
+        startCooldown();
       } else {
         errEl.textContent = d.message || '发送失败，请稍后重试';
+        sendBtn.disabled = false;
+        sendBtn.textContent = '发送';
       }
     } catch(e) {
       errEl.textContent = '网络错误，请稍后重试';
-    } finally {
       sendBtn.disabled = false;
       sendBtn.textContent = '发送';
     }
