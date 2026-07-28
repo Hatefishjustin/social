@@ -31,6 +31,8 @@ async function refresh() {
 function isLoggedIn()  { return user !== null; }
 function getUserId()   { return user ? user.userId : null; }
 function getEmail()    { return user ? user.email : null; }
+function getDisplayName(){ return user ? (user.displayName || '') : ''; }
+function getAvatarUrl() { return user ? (user.avatarUrl || '') : ''; }
 function getUser()     { return user; }
 function onAuthChange(fn) { listeners.push(fn); }
 
@@ -54,9 +56,15 @@ function updateNavUI() {
   var btns = document.querySelectorAll('.auth-login-btn, .auth-user-btn');
   btns.forEach(function(btn){
     if (isLoggedIn()) {
-      var email = getEmail() || '';
-      var short = email ? email.split('@')[0] : '我';
-      btn.textContent = short;
+      var displayName = getDisplayName();
+      var email = getEmail();
+      var short = displayName || (email ? email.split('@')[0] : '我');
+      var avatar = getAvatarUrl();
+      if (avatar) {
+        btn.innerHTML = '<img src="'+avatar.replace(/"/g,'&quot;')+'" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover" onerror="this.remove()">'+short.replace(/</g,'&lt;');
+      } else {
+        btn.textContent = short;
+      }
       btn.className = btn.className.replace('auth-login-btn','auth-user-btn');
       btn.title = email;
       btn.onclick = function(e){ e.stopPropagation(); showUserMenu(btn); };
@@ -157,6 +165,7 @@ function showUserMenu(btn) {
   var email = getEmail() || '';
   var html = '';
   html += '<div class="auth-dd-email">' + email + '</div>';
+  html += '<a class="auth-dd-item" href="/profile.html" style="text-decoration:none;display:block;text-align:left">个人设置</a>';
   html += '<button class="auth-dd-item" id="authLogoutBtn">退出登录</button>';
   menu.innerHTML = html;
 
@@ -222,6 +231,8 @@ window.Auth = {
   isLoggedIn: isLoggedIn,
   getUserId: getUserId,
   getEmail: getEmail,
+  getDisplayName: getDisplayName,
+  getAvatarUrl: getAvatarUrl,
   getUser: getUser,
   onAuthChange: onAuthChange,
   requestLogin: requestLogin,
