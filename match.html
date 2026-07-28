@@ -1732,6 +1732,32 @@ function discardProgress(){
 /* =========================================================
    计分与结果生成
    ========================================================= */
+const RESULT_STORAGE_KEY = 'xinjing_quiz_result_v2';
+
+function saveResultToStorage(scores) {
+  try {
+    var attachSorted = Object.entries(scores.attach).sort(function(a,b){return b[1]-a[1]});
+    var loveSorted = Object.entries(scores.love).sort(function(a,b){return b[1]-a[1]});
+    var valuesSorted = Object.entries(scores.values).sort(function(a,b){return b[1]-a[1]});
+    var mbtiType =
+      (scores.mbti.mbti_E >= scores.mbti.mbti_I ? 'E' : 'I') +
+      (scores.mbti.mbti_N >= scores.mbti.mbti_S ? 'N' : 'S') +
+      (scores.mbti.mbti_F >= scores.mbti.mbti_T ? 'F' : 'T') +
+      (scores.mbti.mbti_P >= scores.mbti.mbti_J ? 'P' : 'J');
+    var attachKey = attachSorted[0][0];
+    var attachName = attachInfo[attachKey] ? attachInfo[attachKey].name : attachKey;
+    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify({
+      attachmentType: attachKey,
+      attachmentLabel: attachName,
+      loveLang: loveLabels[loveSorted[0][0]] || loveSorted[0][0],
+      loveLangKey: loveSorted[0][0],
+      mbti: mbtiType,
+      topValues: valuesSorted.slice(0,3).map(function(v){return valueLabels[v[0]]||v[0]}),
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
 function finishQuiz(){
   clearProgress(); // 已完成，不再需要保留半成品记录
   questionScreen.classList.add('hidden');
