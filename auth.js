@@ -281,9 +281,27 @@ function injectStyles() {
   document.head.appendChild(style);
 }
 
+/* ── Auto-login via login_code in URL ── */
+async function tryAutoLogin() {
+  var p = new URLSearchParams(location.search);
+  var code = p.get('login_code');
+  if (!code || code.length !== 6) return false;
+  try {
+    var r = await codeLogin(code);
+    if (r.ok) {
+      // Clean URL
+      p.delete('login_code');
+      var newUrl = location.pathname + (p.toString() ? '?' + p.toString() : '');
+      history.replaceState(null, '', newUrl);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
 /* ── Init ── */
 injectStyles();
-refresh();
+tryAutoLogin().then(function(ok){ refresh(); });
 
 /* Expose */
 window.Auth = {
