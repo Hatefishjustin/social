@@ -41,8 +41,8 @@ export const onRequestGet = async ({ request, env }) => {
   if (!postId) return jsonResponse({ error: 'missing post_id' }, 400);
 
   const { results } = await env.DB.prepare(
-    `SELECT id, post_id, user_id, content, is_anonymous, created_at
-     FROM wall_comments WHERE post_id = ? ORDER BY created_at ASC`
+    `SELECT wc.id, wc.post_id, wc.user_id, wc.content, wc.is_anonymous, wc.created_at, u.email as user_email
+     FROM wall_comments wc LEFT JOIN users u ON wc.user_id = u.id WHERE wc.post_id = ? ORDER BY wc.created_at ASC`
   ).bind(postId).all();
 
   return jsonResponse({ comments: results });
