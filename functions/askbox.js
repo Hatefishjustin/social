@@ -130,6 +130,18 @@ export const onRequestPost = async ({ request, env }) => {
   const questionId = result.meta.last_row_id;
   await logActivity(env, meta, user, 'askbox_question', 'askbox', questionId, content, isAnonymous);
 
+  // 发送通知给提问箱主人
+  if (targetId) {
+    try {
+      var askerName = user ? (user.email ? user.email.split('@')[0] : '匿名用户') : '匿名用户';
+      var notifContent = (isAnonymous ? '有人' : askerName) + ' 向你提出了一个问题：' + (content.slice(0, 50));
+      await env.DB.prepare(
+        `INSERT INTO notifications (user_id, type, target_type, target_id, actor_id, actor_email, content_preview, is_read, created_at)
+         VALUES (?, 'askbox_question', 'askbox', ?, ?, ?, ?, 0, ?)`
+      ).bind(targetId, questionId, user ? user.id : null, user ? user.email : null, notifContent, now).run();
+    } catch (e) { console.error('notify fail:', e.message); }
+  }
+
   return jsonResponse({ ok: true, id: questionId });
 };
 
