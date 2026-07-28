@@ -67,6 +67,30 @@ body{background-image:radial-gradient(ellipse 900px 500px at 15% -5%, var(--acce
 .input-area .close-btn{background:var(--surface);border:1px solid var(--hairline-strong);color:var(--text-secondary)}
 .input-area .close-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .no-chat{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-tertiary);font-size:14px}
+
+.admin-tabs{display:flex;gap:4px;margin-top:10px}
+.admin-tab{flex:1;padding:6px 0;background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:8px;color:var(--text-tertiary);font-size:13px;cursor:pointer}
+.admin-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.reports-panel{flex:1;overflow-y:auto}
+.reports-filter{padding:10px 16px;border-bottom:1px solid var(--hairline)}
+.reports-filter select{width:100%;padding:6px 10px;background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:8px;color:var(--text-primary);font-size:13px}
+.reports-list{flex:1;overflow-y:auto}
+.report-item{padding:12px 16px;border-bottom:1px solid var(--hairline);cursor:pointer}
+.report-item:hover{background:var(--surface-hover)}
+.report-reason{font-size:13px;color:var(--text-primary);margin-bottom:4px}
+.report-meta{font-size:11px;color:var(--text-tertiary);display:flex;justify-content:space-between}
+.report-actions{display:flex;gap:6px;margin-top:8px}
+.report-btn{padding:4px 12px;border-radius:12px;border:1px solid var(--hairline);background:var(--bg-elevated);color:var(--text-secondary);font-size:12px;cursor:pointer}
+.report-btn:hover{color:var(--text-primary)}
+.report-btn.danger:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.report-btn.warn:hover{background:rgba(250,204,21,0.1);border-color:#facc15;color:#facc15}
+.report-status{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600}
+.report-status.pending{background:rgba(250,204,21,0.15);color:#facc15}
+.report-status.resolved{background:rgba(74,222,128,0.15);color:#4ade80}
+.report-detail{background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:10px;padding:12px;margin-top:8px;display:none}
+.report-detail.show{display:block}
+.report-detail p{font-size:12px;color:var(--text-tertiary);margin:4px 0}
+.report-detail .admin-note-area{width:100%;min-height:60px;background:var(--bg);border:1px solid var(--hairline);border-radius:8px;padding:8px;color:var(--text-primary);font-size:12px;resize:vertical;margin:8px 0;outline:none}
 </style>
 </head>
 <body>
@@ -74,10 +98,23 @@ body{background-image:radial-gradient(ellipse 900px 500px at 15% -5%, var(--acce
   <div class="sidebar">
     <div class="sidebar-header">
       <h2>🎧 客服工作台</h2>
-      <p>影子对话管理 · 点击用户开始回复</p>
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchAdminTab('chat', this)">对话</button>
+        <button class="admin-tab" onclick="switchAdminTab('reports', this)">举报</button>
+      </div>
     </div>
     <div class="match-list" id="matchList">
       <div class="empty-state">加载中...</div>
+    </div>
+    <div class="reports-panel" id="reportsPanel" style="display:none">
+      <div class="reports-filter">
+        <select id="reportsFilter" onchange="loadReports()">
+          <option value="pending">待处理</option>
+          <option value="resolved">已处理</option>
+          <option value="all">全部</option>
+        </select>
+      </div>
+      <div class="reports-list" id="reportsList"><div class="empty-state">加载中...</div></div>
     </div>
   </div>
   <div class="main">
@@ -231,6 +268,87 @@ function escapeHtml(text) {
 document.getElementById('sendBtn').onclick = sendMessage;
 document.getElementById('msgInput').onkeydown = e => { if (e.key === 'Enter') sendMessage(); };
 document.getElementById('closeBtn').onclick = closeMatch;
+
+
+// ── Admin Tabs ──
+function switchAdminTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(function(t){t.classList.remove('active')});
+  btn.classList.add('active');
+  if (tab === 'chat') {
+    document.getElementById('matchList').style.display = '';
+    document.getElementById('reportsPanel').style.display = 'none';
+  } else {
+    document.getElementById('matchList').style.display = 'none';
+    document.getElementById('reportsPanel').style.display = '';
+    loadReports();
+  }
+}
+
+// ── Reports ──
+var reportState = { page: 1, reports: [] };
+
+async function loadReports() {
+  var status = document.getElementById('reportsFilter').value;
+  try {
+    var r = await fetch('/api/reports-admin?status='+status+'&page=1&limit=50', {credentials:'same-origin'});
+    var d = await r.json();
+    if (d.reports) {
+      reportState.reports = d.reports;
+      renderReports(d.reports);
+    }
+  } catch(e) {
+    document.getElementById('reportsList').innerHTML = '<div class="empty-state">加载失败</div>';
+  }
+}
+
+function renderReports(reports) {
+  if (!reports || reports.length === 0) {
+    document.getElementById('reportsList').innerHTML = '<div class="empty-state">暂无举报</div>';
+    return;
+  }
+  document.getElementById('reportsList').innerHTML = reports.map(function(r){
+    var reporter = r.reporter_name || (r.reporter_email||'未知');
+    var reported = r.user_a_name || r.user_b_name || '未知';
+    var time = new Date(r.created_at);
+    var timeStr = time.toLocaleDateString()+' '+time.toLocaleTimeString();
+    return '<div class="report-item" id="report-'+r.report_id+'">'+
+      '<div class="report-reason">'+r.reason.replace(/</g,'&lt;').substring(0,60)+'</div>'+
+      '<div class="report-meta"><span>举报人：'+reporter+' → 被举报：'+reported+'</span><span>'+timeStr+'</span></div>'+
+      (r.status === 'pending'
+        ? '<div class="report-actions">'+
+            '<button class="report-btn warn" onclick="handleReport('+r.report_id+','warn')">警告</button>'+
+            '<button class="report-btn danger" onclick="handleReport('+r.report_id+','ban')">封禁</button>'+
+            '<button class="report-btn" onclick="handleReport('+r.report_id+','dismiss')">忽略</button>'+
+          '</div>'
+        : '<span class="report-status '+r.status+'">'+ (r.status==='resolved'?'已处理':r.status) +'</span>')+
+      (r.admin_note ? '<div style="font-size:11px;color:var(--text-tertiary);margin-top:4px">备注：'+r.admin_note.replace(/</g,'&lt;')+'</div>' : '')+
+      '</div>';
+  }).join('');
+}
+
+async function handleReport(reportId, action) {
+  var note = '';
+  if (action === 'warn' || action === 'ban') {
+    note = prompt('请输入处理备注（可选）：');
+    if (note === null) return;
+  }
+  try {
+    var r = await fetch('/api/reports-admin', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({reportId:reportId, action:action, adminNote:note||''}),
+      credentials: 'same-origin'
+    });
+    var d = await r.json();
+    if (d.ok) {
+      loadReports();
+    } else {
+      alert(d.error || '操作失败');
+    }
+  } catch(e) {
+    alert('网络错误');
+  }
+}
 
 loadMatches();
 setInterval(loadMatches, 10000);
