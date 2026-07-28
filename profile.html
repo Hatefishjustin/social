@@ -127,14 +127,16 @@
   <div id="mainContent" style="display:none">
     <div class="card">
       <div class="card-title">头像</div>
-      <div class="avatar-section">
+      <div class="avatar-section" id="avatarClickArea" style="cursor:pointer">
         <img id="avatarImg" class="avatar-preview" src="" style="display:none" alt="头像">
         <div id="avatarPlaceholder" class="avatar-placeholder">?</div>
+        <div class="upload-hint" id="uploadHint">点击上传头像</div>
       </div>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none">
       <div class="field">
-        <label>头像链接</label>
+        <label>头像链接（可选）</label>
         <input type="url" id="avatarInput" placeholder="https://example.com/avatar.jpg" autocomplete="off">
-        <div class="hint">粘贴图片直链地址，支持 jpg / png / webp</div>
+        <div class="hint">也可以粘贴图片直链，或直接点击头像区域上传</div>
       </div>
     </div>
 
