@@ -170,53 +170,32 @@
   </div>
 </div>
 
+<script src="/auth.js"></script>
 <script>
-// ====== Auth Module ======
-const Auth = {
-  _cb: [],
-  async isLoggedIn() {
-    try {
-      const r = await fetch('/auth/me', { credentials: 'include' });
-      const d = await r.json();
-      return !!(d && d.user);
-    } catch (e) { return false; }
-  },
-  async getUserId() {
-    try {
-      const r = await fetch('/auth/me', { credentials: 'include' });
-      const d = await r.json();
-      return (d && d.user) ? d.user.id : null;
-    } catch (e) { return null; }
-  },
-  showLogin() {
-    window.location.href = '/login.html';
-  }
-};
+(function(){
+'use strict';
 
-// ====== App ======
-const STATE = { page: 1, action: '', totalPages: 0 };
+var STATE = { page: 1, action: '', totalPages: 0 };
 
 function apiUrl(page, action) {
-  const p = new URLSearchParams({ page: String(page), action: action || '' });
-  return '/admin-activity?' + p.toString();
+  return '/admin-activity?page=' + page + '&action=' + (action || '');
 }
 
 async function fetchActivities(page, action) {
-  const r = await fetch(apiUrl(page || 1, action || ''), { credentials: 'include' });
+  var r = await fetch(apiUrl(page || 1, action || ''), { credentials: 'include' });
   if (r.status === 401) throw new Error('unauthorized');
   return r.json();
 }
 
 function formatTime(ts) {
-  const d = new Date(ts);
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  var d = new Date(ts);
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
 }
 
 function truncateUA(ua) {
   if (!ua) return '';
-  if (ua.length <= 50) return ua;
-  return ua.slice(0, 47) + '...';
+  return ua.length <= 50 ? ua : ua.slice(0, 47) + '...';
 }
 
 function parseDevice(ua) {
@@ -230,103 +209,76 @@ function parseDevice(ua) {
 }
 
 function actionLabel(a) {
-  const map = {
-    wall_post: '表白墙发帖',
-    askbox_question: '提问箱提问',
-    askbox_answer: '提问箱回答'
-  };
+  var map = { wall_post:'表白墙发帖', askbox_question:'提问箱提问', askbox_answer:'提问箱回答' };
   return map[a] || a;
 }
 
-function renderActivity(item) {
-  const time = formatTime(item.created_at);
-  const device = parseDevice(item.user_agent);
-  const location = [item.country, item.city].filter(Boolean).join(' ') || '未知';
-
-  let userTag = '';
-  if (item.is_anonymous) {
-    userTag = '<span class="anon-tag">匿名</span>';
-  } else if (item.user_email) {
-    userTag = `<span class="user-tag">${escapeHtml(item.user_email)}</span>`;
-  } else {
-    userTag = '<span class="anon-tag">匿名(未登录)</span>';
-  }
-
-  let answerBlock = '';
-  // For askbox_answer, the content is the answer; show the question context if available
-  if (item.action === 'askbox_answer') {
-    answerBlock = `<div class="act-answer">${escapeHtml(item.content)}</div>`;
-  } else {
-    answerBlock = `<div class="act-content">${escapeHtml(item.content)}</div>`;
-  }
-
-  // For askbox_question that has been answered, try to show answer too
-  // (answer content is in a different log entry, so we skip inline answer for questions)
-
-  return `
-    <div class="activity-item">
-      <div class="act-header">
-        <span class="act-type ${item.action}">${actionLabel(item.action)}</span>
-        <span class="act-time">${time}</span>
-      </div>
-      ${answerBlock}
-      <div class="act-meta">
-        ${userTag}
-        <span>IP: ${escapeHtml(item.ip || '未知')}</span>
-        <span>设备: ${device}</span>
-        <span>地区: ${escapeHtml(location)}</span>
-        <span title="${escapeHtml(item.user_agent || '')}" style="cursor:help">
-          UA: ${escapeHtml(truncateUA(item.user_agent))}
-        </span>
-      </div>
-    </div>`;
-}
-
-function escapeHtml(s) {
+function esc(s) {
   if (!s) return '';
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderStats(data) {
-  const total = data.pagination?.total || 0;
-  // Count by type from current page (approximate)
-  const counts = {};
-  if (data.activities) {
-    data.activities.forEach(a => { counts[a.action] = (counts[a.action] || 0) + 1; });
+function renderActivity(item) {
+  var time = formatTime(item.created_at);
+  var device = parseDevice(item.user_agent);
+  var location = [item.country, item.city].filter(Boolean).join(' ') || '未知';
+
+  var userTag = '';
+  if (item.is_anonymous) {
+    userTag = '<span class="anon-tag">匿名</span>';
+  } else if (item.user_email) {
+    userTag = '<span class="user-tag">' + esc(item.user_email) + '</span>';
+  } else {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
   }
-  document.getElementById('stats').innerHTML = `
-    <div class="stat-card">
-      <div class="num">${total}</div>
-      <div class="label">总活动数</div>
-    </div>
-    <div class="stat-card">
-      <div class="num">${counts.wall_post || 0}</div>
-      <div class="label">表白墙</div>
-    </div>
-    <div class="stat-card">
-      <div class="num">${counts.askbox_question || 0}</div>
-      <div class="label">提问</div>
-    </div>
-    <div class="stat-card">
-      <div class="num">${counts.askbox_answer || 0}</div>
-      <div class="label">回答</div>
-    </div>
-  `;
+
+  var answerBlock = '';
+  if (item.action === 'askbox_answer') {
+    answerBlock = '<div class="act-answer">' + esc(item.content) + '</div>';
+  } else {
+    answerBlock = '<div class="act-content">' + esc(item.content) + '</div>';
+  }
+
+  return '<div class="activity-item">' +
+    '<div class="act-header">' +
+      '<span class="act-type ' + item.action + '">' + actionLabel(item.action) + '</span>' +
+      '<span class="act-time">' + time + '</span>' +
+    '</div>' +
+    answerBlock +
+    '<div class="act-meta">' +
+      userTag +
+      '<span>IP: ' + esc(item.ip || '未知') + '</span>' +
+      '<span>设备: ' + device + '</span>' +
+      '<span>地区: ' + esc(location) + '</span>' +
+      '<span title="' + esc(item.user_agent || '') + '" style="cursor:help">UA: ' + esc(truncateUA(item.user_agent)) + '</span>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderStats(data) {
+  var total = data.pagination ? data.pagination.total : 0;
+  var counts = {};
+  if (data.activities) {
+    data.activities.forEach(function(a){ counts[a.action] = (counts[a.action] || 0) + 1; });
+  }
+  document.getElementById('stats').innerHTML =
+    '<div class="stat-card"><div class="num">'+total+'</div><div class="label">总活动数</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.wall_post || 0)+'</div><div class="label">表白墙</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.askbox_question || 0)+'</div><div class="label">提问</div></div>' +
+    '<div class="stat-card"><div class="num">'+(counts.askbox_answer || 0)+'</div><div class="label">回答</div></div>';
 }
 
 function renderPagination(pagination) {
-  const { page, totalPages } = pagination;
-  const p = document.getElementById('pagination');
-  if (totalPages <= 1) { p.innerHTML = ''; return; }
-  p.innerHTML = `
-    <button ${page <= 1 ? 'disabled' : ''} onclick="goPage(${page - 1})">上一页</button>
-    <span class="page-info">第 ${page} / ${totalPages} 页</span>
-    <button ${page >= totalPages ? 'disabled' : ''} onclick="goPage(${page + 1})">下一页</button>
-  `;
+  var p = document.getElementById('pagination');
+  if (pagination.totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML =
+    '<button ' + (pagination.page <= 1 ? 'disabled' : '') + ' onclick="goPage('+(pagination.page-1)+')">上一页</button>' +
+    '<span class="page-info">第 '+pagination.page+' / '+pagination.totalPages+' 页</span>' +
+    '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="goPage('+(pagination.page+1)+')">下一页</button>';
 }
 
 function renderList(activities) {
-  const el = document.getElementById('activityList');
+  var el = document.getElementById('activityList');
   if (!activities || activities.length === 0) {
     el.innerHTML = '<div class="empty"><div class="icon">📭</div>暂无活动记录</div>';
     return;
@@ -338,7 +290,7 @@ async function loadPage(page, action) {
   document.getElementById('loading').style.display = 'block';
   document.getElementById('activityList').innerHTML = '';
   try {
-    const data = await fetchActivities(page, action);
+    var data = await fetchActivities(page, action);
     document.getElementById('loading').style.display = 'none';
     STATE.page = data.pagination.page;
     STATE.totalPages = data.pagination.totalPages;
@@ -348,17 +300,42 @@ async function loadPage(page, action) {
   } catch (e) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('activityList').innerHTML =
-      `<div class="error-msg">加载失败: ${escapeHtml(e.message)}</div>`;
+      '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
   }
 }
 
-function goPage(p) { loadPage(p, STATE.action); }
+window.goPage = function(p) { loadPage(p, STATE.action); };
+
+// Init when auth is ready
+function init() {
+  if (Auth.isLoggedIn()) {
+    document.getElementById('mainContent').style.display = 'block';
+    document.getElementById('loginPrompt').style.display = 'none';
+    loadPage(1, '');
+  } else {
+    document.getElementById('loginPrompt').style.display = 'block';
+  }
+}
+
+if (Auth.isLoggedIn()) {
+  init();
+} else {
+  Auth.onAuthChange(function(user){
+    if (user) init();
+  });
+  // Show login prompt after a short wait if still not logged in
+  setTimeout(function(){
+    if (!Auth.isLoggedIn()) {
+      document.getElementById('loginPrompt').style.display = 'block';
+    }
+  }, 600);
+}
 
 // Filter buttons
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
       STATE.action = btn.dataset.action;
       loadPage(1, STATE.action);
@@ -366,15 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Init
-(async function init() {
-  const loggedIn = await Auth.isLoggedIn();
-  if (!loggedIn) {
-    document.getElementById('loginPrompt').style.display = 'block';
-    return;
-  }
-  document.getElementById('mainContent').style.display = 'block';
-  await loadPage(1, '');
 })();
 </script>
 </body>
