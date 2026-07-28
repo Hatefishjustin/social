@@ -1,856 +1,267 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>心缘 - 社交匹配</title>
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>eruda.init();</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>心镜 · 社交</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
-               'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', Arial, sans-serif;
-  --bg: #000000;
-  --bg-elevated: #0A0A0C;
-  --surface: #141416;
-  --surface-hover: #1C1C1F;
-  --hairline: rgba(255,255,255,0.08);
-  --hairline-strong: rgba(255,255,255,0.14);
-  --text-primary: rgba(255,255,255,0.96);
-  --text-secondary: rgba(255,255,255,0.62);
-  --text-tertiary: rgba(255,255,255,0.38);
-  --accent: #FF3B5C;
-  --accent-dim: #C4293F;
-  --accent-glow: rgba(255,59,92,0.16);
-  --accent-soft: rgba(255,59,92,0.10);
-  --line: var(--hairline);
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-raised: #1a1a1a;
+  --surface-muted: #161616;
+  --border: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #666666;
+  --text-quaternary: #444444;
+  --accent: #C4526E;
+  --accent-soft: rgba(196,82,110,0.12);
+  --accent-glow: rgba(196,82,110,0.25);
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
-html,body{
-  background:var(--bg);
-  color:var(--text-primary);
-  font-family:var(--font-sans);
-  min-height:100vh;
-  overflow-x:hidden;
-  -webkit-font-smoothing:antialiased;
-}
-body{
-  background-image:
-    radial-gradient(ellipse 900px 500px at 15% -5%, var(--accent-soft), transparent),
-    radial-gradient(ellipse 700px 400px at 95% 105%, rgba(255,255,255,0.02), transparent);
-}
-::selection{background:var(--accent);color:#fff}
-
-.stage{
-  max-width:640px;
-  margin:0 auto;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  padding:0 24px;
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
 }
 
-.nav{
-  position:sticky;
-  top:0;
-  padding:16px 0;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  z-index:50;
-  background:linear-gradient(var(--bg) 70%, transparent);
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,10,10,0.75);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid var(--border);
 }
-.nav-logo{
-  font-weight:700;
-  font-size:17px;
-  letter-spacing:-0.02em;
-  display:flex;
-  align-items:center;
-  gap:8px;
+.header-inner {
+  max-width: 640px; margin: 0 auto; padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.nav-logo .dot{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--accent);
-  box-shadow:0 0 10px var(--accent-glow);
+.brand {
+  display: flex; align-items: center; gap: 10px;
 }
-.nav-user{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  font-size:13px;
-  color:var(--text-secondary);
+.brand-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  animation: pulse 2s ease-in-out infinite;
 }
-.nav-user button{
-  background:none;border:none;
-  color:var(--text-tertiary);
-  cursor:pointer;font-size:12px;
-  letter-spacing:0.05em;
-  transition:color .2s;
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
 }
-.nav-user button:hover{color:var(--accent)}
-.staff-badge{
-  font-size:11px;padding:4px 10px;
-  background:var(--surface);
-  border:1px solid var(--hairline-strong);
-  color:var(--accent);
-  border-radius:100px;
-  font-weight:600;
-  letter-spacing:0.02em;
+.brand-name {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
+  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.login-btn {
+  font-size: 13px; color: var(--text-tertiary);
+  background: transparent; border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.2s ease;
+}
+.login-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+
+/* Hero */
+.hero {
+  max-width: 640px; margin: 0 auto; padding: 40px 20px 32px;
+}
+.hero-tag {
+  display: inline-block; font-size: 12px; color: var(--text-tertiary);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+}
+.hero-title {
+  font-size: 36px; font-weight: 700; line-height: 1.15;
+  letter-spacing: -1px; margin-bottom: 12px;
+}
+.hero-title span {
+  background: linear-gradient(135deg, #fff 0%, #888 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.6;
+  max-width: 420px;
 }
 
-.page{display:none}
-.page.active{display:block;animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both}
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(14px)}
-  to{opacity:1;transform:translateY(0)}
+/* Cards Grid */
+.cards {
+  max-width: 640px; margin: 0 auto; padding: 0 20px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.card::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: var(--radius-lg);
+  padding: 1.5px;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.06) 60%, transparent 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.card:hover::before { opacity: 1; }
+
+.card-icon-wrap {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.card-icon-wrap.match { background: var(--accent-soft); }
+.card-icon-wrap.wall { background: rgba(139,92,246,0.12); }
+.card-icon-wrap.ask { background: rgba(59,130,246,0.12); }
+.card-icon-wrap svg { width: 22px; height: 22px; }
+.card-icon-wrap.match svg { color: var(--accent); }
+.card-icon-wrap.wall svg { color: var(--purple); }
+.card-icon-wrap.ask svg { color: var(--blue); }
+
+.card-title {
+  font-size: 18px; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.card-badge.hot {
+  background: rgba(196,82,110,0.15); color: var(--accent);
+}
+.card-badge.new {
+  background: rgba(59,130,246,0.15); color: var(--blue);
+}
+.card-desc {
+  font-size: 14px; color: var(--text-secondary); line-height: 1.6;
+  margin-bottom: 16px;
+}
+.card-action {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-primary);
+  transition: gap 0.2s ease;
+}
+.card:hover .card-action { gap: 10px; }
+.card-action-arrow {
+  transition: transform 0.2s ease;
+}
+.card:hover .card-action-arrow {
+  transform: translateX(4px);
 }
 
-.tag{
-  font-size:11px;
-  letter-spacing:0.12em;
-  text-transform:uppercase;
-  color:var(--text-tertiary);
-  font-weight:600;
-  margin-bottom:14px;
+/* Decorative elements */
+.glow-orb {
+  position: fixed; width: 300px; height: 300px; border-radius: 50%;
+  filter: blur(120px); opacity: 0.08; pointer-events: none; z-index: 0;
+}
+.glow-orb-1 { top: -100px; left: -100px; background: var(--accent); }
+.glow-orb-2 { bottom: -100px; right: -100px; background: var(--purple); }
+
+/* Footer */
+.footer {
+  max-width: 640px; margin: 0 auto; padding: 24px 20px 40px;
+  text-align: center; font-size: 12px; color: var(--text-quaternary);
+  border-top: 1px solid var(--border);
 }
 
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  border:none;font-family:var(--font-sans);cursor:pointer;
-  transition:all .25s cubic-bezier(.16,1,.3,1);
-  font-weight:600;letter-spacing:-0.01em;
-}
-.btn-primary{
-  background:var(--accent);color:#fff;
-  padding:16px 34px;font-size:15px;
-  border-radius:100px;
-}
-.btn-primary:hover{
-  background:var(--accent-dim);
-  transform:translateY(-1px) scale(1.01);
-  box-shadow:0 12px 32px var(--accent-glow);
-}
-.btn-primary:active{transform:translateY(0) scale(0.98)}
-.btn-primary:disabled{
-  opacity:0.3;cursor:default;
-  transform:none;box-shadow:none;
-}
-.btn-secondary{
-  background:var(--surface);
-  color:var(--text-primary);
-  border:1px solid var(--hairline-strong);
-  padding:14px 28px;font-size:14px;
-  border-radius:100px;
-}
-.btn-secondary:hover{background:var(--surface-hover);border-color:var(--hairline-strong)}
-.btn-block{width:100%}
-.btn-sm{padding:10px 20px;font-size:13px}
-
-.card{
-  background:var(--surface);
-  border:1px solid var(--hairline-strong);
-  border-radius:22px;
-  padding:28px 24px;
-  margin-bottom:16px;
-  animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
-}
-.card h2{
-  font-size:20px;font-weight:700;
-  letter-spacing:-0.02em;
-  margin-bottom:6px;
-}
-.card p{color:var(--text-secondary);font-size:14px;line-height:1.6}
-
-.form-group{margin-bottom:20px}
-.form-group label{
-  display:block;font-size:12px;
-  font-weight:600;letter-spacing:0.04em;
-  text-transform:uppercase;
-  color:var(--text-tertiary);
-  margin-bottom:8px;
-}
-.form-group input,
-.form-group select,
-.form-group textarea{
-  width:100%;padding:14px 16px;
-  background:var(--bg-elevated);
-  border:1px solid var(--hairline);
-  border-radius:14px;
-  color:var(--text-primary);
-  font-size:15px;font-family:var(--font-sans);
-  transition:all .2s cubic-bezier(.16,1,.3,1);
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-glow);
-}
-.form-group input::placeholder{color:var(--text-tertiary)}
-.form-group textarea{resize:vertical;min-height:80px}
-
-.checkbox-label{
-  display:flex;align-items:flex-start;gap:10px;
-  font-size:13px;color:var(--text-secondary);
-  line-height:1.5;cursor:pointer;
-}
-.checkbox-label input[type="checkbox"]{
-  width:18px;height:18px;accent-color:var(--accent);
-  margin-top:1px;flex-shrink:0;
-}
-.checkbox-label a{color:var(--accent);text-decoration:none}
-
-.landing{
-  flex:1;display:flex;flex-direction:column;
-  justify-content:center;padding:60px 0 80px;
-  animation:fadeUp .8s cubic-bezier(.16,1,.3,1) both;
-}
-.landing h1{
-  font-size:32px;line-height:1.3;
-  font-weight:700;letter-spacing:-0.03em;
-  margin-bottom:14px;
-}
-.landing .subtitle{
-  color:var(--text-secondary);
-  font-size:15px;line-height:1.7;
-  margin-bottom:40px;
-}
-.landing-stats{
-  display:flex;gap:32px;margin-bottom:40px;
-}
-.stat-item{text-align:center}
-.stat-num{
-  font-size:28px;font-weight:700;
-  color:var(--accent);letter-spacing:-0.02em;
-}
-.stat-label{font-size:12px;color:var(--text-tertiary);margin-top:4px}
-
-.quiz-wrap{padding:20px 0 60px}
-.quiz-progress{
-  position:sticky;top:60px;
-  padding:16px 0 12px;
-  background:linear-gradient(var(--bg) 80%, transparent);
-  z-index:10;
-}
-.quiz-track{
-  height:1px;background:var(--hairline);
-  position:relative;
-}
-.quiz-fill{
-  height:1px;background:var(--accent);
-  width:0%;
-  transition:width .5s cubic-bezier(.4,0,.2,1);
-  position:relative;
-}
-.quiz-fill::after{
-  content:'';position:absolute;
-  right:-3px;top:50%;
-  width:6px;height:6px;border-radius:50%;
-  background:var(--accent);
-  transform:translateY(-50%);
-  box-shadow:0 0 8px var(--accent);
-}
-.quiz-meta{
-  display:flex;justify-content:space-between;
-  font-size:11px;letter-spacing:0.08em;
-  color:var(--text-tertiary);
-  margin-top:10px;
-}
-.quiz-question{
-  font-size:18px;font-weight:600;
-  line-height:1.6;letter-spacing:-0.01em;
-  margin:32px 0 24px;
-}
-.quiz-options{display:flex;flex-direction:column;gap:10px}
-.quiz-option{
-  padding:16px 18px;
-  background:var(--surface);
-  border:1px solid var(--hairline);
-  border-radius:16px;
-  cursor:pointer;
-  font-size:14.5px;line-height:1.5;
-  color:var(--text-secondary);
-  transition:all .2s cubic-bezier(.16,1,.3,1);
-}
-.quiz-option:hover{
-  border-color:var(--accent);
-  background:var(--surface-hover);
-  color:var(--text-primary);
-}
-.quiz-option.selected{
-  border-color:var(--accent);
-  background:var(--accent-soft);
-  color:var(--text-primary);
-}
-
-.match-hero{
-  text-align:center;padding:40px 20px;
-  animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both;
-}
-.match-avatar{
-  width:96px;height:96px;border-radius:50%;
-  margin:0 auto 20px;
-  background:linear-gradient(135deg, var(--accent-soft), transparent);
-  display:flex;align-items:center;justify-content:center;
-  border:2px solid var(--hairline-strong);
-}
-.match-avatar img{width:80px;height:80px;border-radius:50%}
-.match-score{
-  font-size:56px;font-weight:800;
-  color:var(--accent);line-height:1;
-  letter-spacing:-0.03em;
-}
-.match-score-label{
-  font-size:13px;color:var(--text-tertiary);
-  letter-spacing:0.1em;text-transform:uppercase;
-  margin-bottom:16px;
-}
-.match-name{
-  font-size:22px;font-weight:700;
-  letter-spacing:-0.02em;margin-bottom:4px;
-}
-.match-meta{
-  font-size:14px;color:var(--text-secondary);
-  margin-bottom:24px;
-}
-.match-reason{
-  text-align:left;
-  background:var(--bg-elevated);
-  border:1px solid var(--hairline);
-  border-radius:18px;
-  padding:20px;
-  font-size:14px;line-height:1.7;
-  color:var(--text-secondary);
-  margin-bottom:28px;
-}
-
-.chat-stage{
-  position:fixed;inset:0;
-  background:var(--bg);
-  z-index:100;
-  display:flex;flex-direction:column;
-  animation:fadeUp .3s cubic-bezier(.16,1,.3,1) both;
-}
-.chat-header{
-  padding:14px 20px;
-  display:flex;align-items:center;gap:14px;
-  border-bottom:1px solid var(--hairline);
-  background:linear-gradient(var(--bg) 90%, transparent);
-}
-.chat-header img{
-  width:42px;height:42px;border-radius:50%;
-  border:2px solid var(--hairline-strong);
-}
-.chat-header .info{flex:1}
-.chat-header .name{font-weight:600;font-size:15px;letter-spacing:-0.01em}
-.chat-header .meta{font-size:12px;color:var(--text-tertiary);margin-top:2px}
-.chat-header .back-btn,
-.chat-header .report-btn{
-  background:none;border:none;
-  color:var(--text-tertiary);
-  cursor:pointer;font-size:18px;
-  padding:6px;
-  transition:color .2s;
-}
-.chat-header .back-btn:hover,
-.chat-header .report-btn:hover{color:var(--text-primary)}
-.chat-header .report-btn:hover{color:var(--accent)}
-
-.chat-match-reason{
-  padding:12px 20px;
-  background:var(--bg-elevated);
-  border-bottom:1px solid var(--hairline);
-  font-size:12px;color:var(--text-tertiary);
-  line-height:1.6;
-}
-.chat-messages{
-  flex:1;overflow-y:auto;
-  padding:20px;display:flex;
-  flex-direction:column;gap:12px;
-}
-.msg{display:flex;max-width:78%}
-.msg.me{align-self:flex-end}
-.msg.them{align-self:flex-start}
-.msg.system{align-self:center}
-.msg-bubble{
-  padding:12px 16px;border-radius:18px;
-  font-size:14.5px;line-height:1.55;
-  word-break:break-word;
-}
-.msg.me .msg-bubble{
-  background:var(--accent);color:#fff;
-  border-bottom-right-radius:4px;
-}
-.msg.them .msg-bubble{
-  background:var(--surface);
-  border:1px solid var(--hairline-strong);
-  color:var(--text-primary);
-  border-bottom-left-radius:4px;
-}
-.msg.system .msg-bubble{
-  background:var(--bg-elevated);
-  border:1px solid var(--hairline);
-  color:var(--text-tertiary);
-  font-size:12px;padding:8px 14px;
-  border-radius:12px;
-}
-.msg-time{
-  font-size:11px;color:var(--text-tertiary);
-  margin-top:4px;text-align:right;
-}
-.chat-input-area{
-  padding:14px 20px 24px;
-  border-top:1px solid var(--hairline);
-  display:flex;gap:10px;
-  background:var(--bg);
-}
-.chat-input-area input{
-  flex:1;padding:12px 18px;
-  background:var(--surface);
-  border:1px solid var(--hairline);
-  border-radius:100px;
-  color:var(--text-primary);
-  font-size:14.5px;
-  transition:all .2s;
-}
-.chat-input-area input:focus{
-  outline:none;
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-glow);
-}
-.chat-input-area input::placeholder{color:var(--text-tertiary)}
-.chat-input-area button{
-  padding:12px 22px;
-  background:var(--accent);color:#fff;
-  border:none;border-radius:100px;
-  font-size:14px;font-weight:600;
-  cursor:pointer;
-  transition:all .2s;
-}
-.chat-input-area button:hover{
-  background:var(--accent-dim);
-  box-shadow:0 8px 24px var(--accent-glow);
-}
-
-.safety-toast{
-  background:var(--bg-elevated);
-  border:1px solid var(--hairline);
-  border-radius:14px;
-  padding:14px 18px;
-  font-size:12.5px;
-  color:var(--text-tertiary);
-  line-height:1.6;
-  margin-bottom:16px;
-}
-.safety-toast strong{color:var(--text-secondary)}
-
-.loading{
-  text-align:center;padding:60px 20px;
-  color:var(--text-tertiary);
-}
-.spinner{
-  width:32px;height:32px;
-  border:2px solid var(--hairline);
-  border-top-color:var(--accent);
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-  margin:0 auto 16px;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-.overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,0.72);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-  display:flex;align-items:center;justify-content:center;
-  z-index:200;padding:20px;
-  animation:overlayFadeIn .25s ease both;
-}
-@keyframes overlayFadeIn{from{opacity:0}to{opacity:1}}
-.overlay-panel{
-  background:var(--surface);
-  border:1px solid var(--hairline-strong);
-  border-radius:24px;
-  padding:32px;
-  max-width:420px;width:100%;
-  animation:panelPopIn .35s cubic-bezier(.16,1,.3,1) both;
-}
-@keyframes panelPopIn{
-  from{opacity:0;transform:translateY(14px) scale(0.96)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-.overlay-panel h3{
-  font-size:20px;font-weight:700;
-  margin-bottom:8px;letter-spacing:-0.02em;
-}
-.overlay-panel p{color:var(--text-secondary);font-size:14px;margin-bottom:24px}
-
-@media(min-width:768px){
-  .chat-stage{position:relative;max-width:520px;margin:0 auto;border-radius:24px;border:1px solid var(--hairline);overflow:hidden;height:80vh;top:10vh}
-}
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<div class="stage">
-  <div class="nav">
-    <div class="nav-logo"><span class="dot"></span>心镜 · 社交</div>
-    <div class="nav-user" id="navUser"><span style="color:var(--text-tertiary)">加载中...</span></div>
-  </div>
+<div class="glow-orb glow-orb-1"></div>
+<div class="glow-orb glow-orb-2"></div>
 
-  <!-- 登录页 -->
-  <div class="page active" id="page-login">
-    <div class="landing">
-      <div class="tag">基于心理学测评的聊天匹配</div>
-      <h1>找到真正<br>契合的聊天伙伴</h1>
-      <p class="subtitle">融合依恋理论、大五人格、爱之语与价值观匹配。<br>20道精选题目，AI 深度解读，匹配灵魂共鸣。</p>
-      <div class="landing-stats">
-        <div class="stat-item"><div class="stat-num">20</div><div class="stat-label">道题目</div></div>
-        <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">分钟测评</div></div>
-        <div class="stat-item"><div class="stat-num">92%</div><div class="stat-label">匹配精度</div></div>
-      </div>
-      <div class="card" style="max-width:380px;margin:0 auto;padding:28px">
-        <div class="form-group">
-          <label>邮箱地址</label>
-          <input type="email" id="loginEmail" placeholder="your@email.com">
-        </div>
-        <button class="btn btn-primary btn-block" id="loginBtn" onclick="sendLoginLink()">发送登录链接</button>
-        <p style="font-size:12px;color:var(--text-tertiary);margin-top:16px;text-align:center;line-height:1.6">无需密码，通过邮箱魔法链接安全登录。<br>你的数据仅存储于本设备。</p>
-      </div>
-      <div class="safety-toast" style="max-width:380px;margin:20px auto 0">
-        <strong>⚠️ 年龄限制</strong>：本平台仅限16岁以上中学生及大学生使用。请确保你已达到法定年龄并同意<a href="#" onclick="showTerms();return false" style="color:var(--accent)">用户协议</a>。
-      </div>
+<div class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <div class="brand-name">心镜 · 社交</div>
     </div>
-  </div>
-
-  <!-- 首页 -->
-  <div class="page" id="page-home">
-    <div id="homeContent"></div>
-  </div>
-
-  <!-- 测评页 -->
-  <div class="page" id="page-quiz">
-    <div class="quiz-wrap">
-      <div class="quiz-progress">
-        <div class="quiz-track"><div class="quiz-fill" id="quizFill" style="width:0%"></div></div>
-        <div class="quiz-meta"><span id="quizSectionTag">测评中</span><span id="quizCounter">1 / 20</span></div>
-      </div>
-      <div id="quizContent">
-        <div class="tag">关系模式快速测评</div>
-        <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:12px">20道精选题目</h2>
-        <p style="color:var(--text-secondary);font-size:14px;line-height:1.7;margin-bottom:32px">基于依恋理论、大五人格、爱之语与价值观匹配。答题过程中不会提示每题具体测量什么，以保证结果的真实性。</p>
-        <button class="btn btn-primary" onclick="startQuiz()">开始测评</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 资料页 -->
-  <div class="page" id="page-profile">
-    <div style="padding:20px 0 60px">
-      <div class="tag">完善社交资料</div>
-      <h2 style="font-size:24px;font-weight:700;letter-spacing:-0.02em;margin-bottom:8px">建立你的社交画像</h2>
-      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:32px">这些信息仅用于匹配，不会公开你的邮箱</p>
-      <div class="card" style="padding:28px">
-        <div class="form-group">
-          <label>昵称（2-12字）</label>
-          <input type="text" id="pfNickname" maxlength="12" placeholder="取个昵称">
-        </div>
-        <div class="form-group">
-          <label>性别</label>
-          <select id="pfGender"><option value="">请选择</option><option value="男">男</option><option value="女">女</option><option value="保密">保密</option></select>
-        </div>
-        <div class="form-group">
-          <label>身份</label>
-          <select id="pfAgeGroup"><option value="">请选择</option><option value="中学生">中学生（16+）</option><option value="大学生">大学生</option></select>
-        </div>
-        <div class="form-group">
-          <label>一句话简介（选填，30字内）</label>
-          <input type="text" id="pfBio" maxlength="30" placeholder="比如：喜欢电影和心理学">
-        </div>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="pfConfirm">
-            <span>我已年满16周岁，理解并同意<a href="#" onclick="showTerms();return false">用户协议与隐私政策</a></span>
-          </label>
-        </div>
-        <button class="btn btn-primary btn-block" onclick="saveProfile()">保存并进入</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 匹配页 -->
-  <div class="page" id="page-match">
-    <div id="matchContent"></div>
-  </div>
-
-</div><!-- stage -->
-
-<!-- 聊天页（全屏覆盖） -->
-<div class="page" id="page-chat" style="position:fixed;inset:0;z-index:100;background:var(--bg)">
-  <div class="chat-stage">
-    <div class="chat-header">
-      <button class="back-btn" onclick="navigate('home')">←</button>
-      <img id="chatAvatar" src="" alt="">
-      <div class="info">
-        <div class="name" id="chatName">--</div>
-        <div class="meta" id="chatMeta">--</div>
-      </div>
-      <button class="report-btn" onclick="reportMatch()" title="举报">🚩</button>
-    </div>
-    <div class="chat-match-reason" id="chatReason"></div>
-    <div class="chat-messages" id="chatMessages"></div>
-    <div class="chat-input-area">
-      <input type="text" id="chatInput" placeholder="输入消息..." maxlength="500" onkeydown="if(event.key==='Enter')sendChat()">
-      <button onclick="sendChat()">发送</button>
-    </div>
+    <button class="login-btn" onclick="location.href='/login.html'">登录</button>
   </div>
 </div>
 
-<script>
-let currentUser=null,currentQuiz={step:0,answers:[],scores:{}},currentMatchId=null,currentPartner=null,pollTimer=null,lastPollTime=0,messageCount=0,shadowRevealed=false;
+<div class="hero">
+  <div class="hero-tag">基于心理学测评的聊天匹配</div>
+  <h1 class="hero-title"><span>找到真正</span><br>契合的聊天伙伴</h1>
+  <p class="hero-sub">匿名、安全、基于科学心理测评的校园社交空间。在这里，你可以遇见懂你的人。</p>
+</div>
 
-const QUIZ_QUESTIONS=[
-  {dim:'attachment',q:'当伴侣一段时间没回复消息时，你通常会：',opts:['有点焦虑，会反复查看手机','虽然在意，但会找其他事做','不太在意，各忙各的很好','既担心被抛弃，又想保持距离']},
-  {dim:'attachment',q:'在亲密关系中，你最害怕的是：',opts:['被忽视或冷落','失去个人空间和自由','被伤害或背叛','既害怕被抛弃，又害怕太亲密']},
-  {dim:'attachment',q:'吵架后，你倾向于：',opts:['主动沟通，希望尽快和好','需要冷静一段时间再谈','等对方先开口','想和好但不知道怎么开口']},
-  {dim:'attachment',q:'你对"依赖"的看法是：',opts:['依赖是爱的表现，我希望彼此需要','适度依赖可以，但要有边界','不太喜欢依赖别人，习惯独立','内心渴望依赖，但表现得很独立']},
-  {dim:'attachment',q:'当关系出现危机时，你的第一反应是：',opts:['非常恐慌，想尽办法挽回','理性分析，看能否解决','如果太累就放手','内心崩溃但表面装作没事']},
-  {dim:'big5',q:'在社交场合中，你通常：',opts:['主动认识新朋友，很享受','看心情，有时活跃有时安静','更喜欢和熟悉的人待在一起','尽量避免人多的场合']},
-  {dim:'big5',q:'面对新的体验或挑战，你的态度是：',opts:['非常兴奋，迫不及待想尝试','有兴趣，但会先了解清楚','比较谨慎，需要安全感','不太喜欢改变，偏好熟悉的事物']},
-  {dim:'big5',q:'朋友对你的评价更可能是：',opts:['靠谱、有责任心','随性、不拘小节','温柔、好相处','理性、有主见']},
-  {dim:'big5',q:'当计划突然改变时，你会：',opts:['快速调整，适应新情况','有点不爽，但能接受','感到焦虑，希望恢复原计划','完全无所谓']},
-  {dim:'big5',q:'你更容易因为什么而情绪波动？',opts:['人际关系中的冲突','事情没有按计划进行','他人的批评或否定','很少情绪波动']},
-  {dim:'loveLang',q:'伴侣做什么最让你感到被爱？',opts:['经常说我爱你、赞美我','主动帮我做事、分担压力','送我精心挑选的礼物','花时间专心陪我']},
-  {dim:'loveLang',q:'你表达爱意的主要方式是：',opts:['用语言直接表达','为对方做实际的事','送对方喜欢的礼物','陪伴在对方身边']},
-  {dim:'loveLang',q:'如果伴侣忘记了纪念日，你会：',opts:['希望TA用语言道歉并补偿','更希望TA用行动弥补','如果补了礼物就原谅','只要之后多陪我就好']},
-  {dim:'loveLang',q:'在关系中，你最看重的是：',opts:['被看见、被肯定','被照顾、被支持','被记得、被重视','被陪伴、不孤单']},
-  {dim:'loveLang',q:'伴侣的哪种行为最让你感动？',opts:['在我失落时鼓励我','在我忙碌时帮我处理琐事','突然给我一个惊喜','安静地陪我做我喜欢的事']},
-  {dim:'values',q:'你对长期关系的看法是：',opts:['一旦认定，就应该坚持到底','需要经营，但也要看是否合适','顺其自然，不强求结果','害怕承诺，更喜欢轻松的关系']},
-  {dim:'values',q:'在关系中，独立空间和亲密陪伴，你更偏向：',opts:['非常亲密，希望时刻在一起','亲密为主，偶尔需要独处','独立为主，定期见面就好','高度独立，不喜欢被约束']},
-  {dim:'values',q:'你认为关系中最重要的品质是：',opts:['忠诚和信任','共同成长','彼此尊重','轻松快乐']},
-  {dim:'values',q:'如果伴侣想去外地发展，你会：',opts:['愿意跟随，关系优先','看情况，可以异地试试','支持TA，但自己不一定去','各自发展，不捆绑']},
-  {dim:'values',q:'你对"灵魂伴侣"的看法是：',opts:['坚信存在，在寻找那个唯一','可能存在，但更需要经营','不太相信，合适比浪漫重要','觉得是一种浪漫化想象']}
-];
+<div class="cards">
 
-function $(id){return document.getElementById(id)}
-function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(id).classList.add('active');window.scrollTo(0,0)}
-async function api(path,opts={}){const res=await fetch(path,{credentials:'same-origin',headers:{'Content-Type':'application/json'},...opts});return res.json()}
-function getAvatar(seed){return `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed||'default')}`}
-function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+  <div class="card" onclick="location.href='/'">
+    <div class="card-icon-wrap match">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+    </div>
+    <div class="card-title">
+      心理测评匹配
+      <span class="card-badge hot">核心</span>
+    </div>
+    <div class="card-desc">完成 15-25 道心理学测评题，基于 Bowlbys 依恋理论、Costa & McCrae 的 OCEAN 大五人格模型，找到真正契合的聊天伙伴。</div>
+    <div class="card-action">
+      开始测评
+      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </div>
+  </div>
 
-async function init(){
-  const session=await api('/session');
-  if(session.loggedIn){currentUser=session;renderNav();showHome()}
-  else{renderNav();showPage('page-login')}
-}
+  <div class="card" onclick="location.href='/wall.html'">
+    <div class="card-icon-wrap wall">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+    <div class="card-title">
+      校园表白墙
+      <span class="card-badge new">新功能</span>
+    </div>
+    <div class="card-desc">匿名表白、树洞倾诉、校园捞人。在这里说出平时不敢说的话，每一个心动瞬间都值得被记录。</div>
+    <div class="card-action">
+      进入表白墙
+      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </div>
+  </div>
 
-function renderNav(){
-  const el=$('navUser');
-  if(!currentUser){el.innerHTML='<span style="color:var(--text-tertiary)">未登录</span>';return}
-  let html=`<span>${currentUser.email.split('@')[0]}</span>`;
-  if(currentUser.isStaff){html+=`<a href="admin-support.html" target="_blank" class="staff-badge">🎧 客服台</a>`}
-  html+=`<button onclick="logout()">退出</button>`;
-  el.innerHTML=html
-}
+  <div class="card" onclick="location.href='/wall.html'">
+    <div class="card-icon-wrap ask">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </div>
+    <div class="card-title">
+      匿名提问箱
+      <span class="card-badge new">新功能</span>
+    </div>
+    <div class="card-desc">向感兴趣的人匿名提问，也可以回答来自陌生人的好奇。一种更温柔的相识方式。</div>
+    <div class="card-action">
+      进入提问箱
+      <svg class="card-action-arrow" width="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </div>
+  </div>
 
-async function sendLoginLink(){
-  const email=$('loginEmail').value.trim();
-  if(!email||!email.includes('@')){alert('请输入有效邮箱');return}
-  const btn=$('loginBtn');btn.disabled=true;btn.textContent='发送中...';
-  const res=await api('/auth/request',{method:'POST',body:JSON.stringify({email})});
-  btn.disabled=false;btn.textContent='发送登录链接';
-  if(res.ok){alert('登录链接已发送，请查收邮件（含垃圾邮件箱）')}else{alert(res.message||'发送失败')}
-}
+</div>
 
-async function logout(){await api('/logout');currentUser=null;location.reload()}
+<div class="footer">
+  心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间
+</div>
 
-async function showHome(){
-  showPage('page-home');
-  const container=$('homeContent');
-  container.innerHTML='<div class="loading"><div class="spinner"></div><div style="font-size:13px;color:var(--text-tertiary)">加载中...</div></div>';
-  const quiz=await api('/quiz/latest');
-  const profile=await api('/chat/profile');
-  let html='';
-  html+=`<div style="padding:20px 0 10px"><div class="tag">欢迎回来</div><h2 style="font-size:26px;font-weight:700;letter-spacing:-0.02em">今天想聊聊什么？</h2></div>`;
-  if(!quiz.exists){
-    html+=`<div class="card"><div class="tag">测评</div><h2>完成关系模式测评</h2><p style="margin-bottom:20px">20道精选题目，基于依恋理论、大五人格、爱之语与价值观匹配</p><button class="btn btn-primary" onclick="showPage('page-quiz')">开始测评</button></div>`
-  }else{
-    html+=`<div class="card"><div class="tag">测评已完成</div><h2>${quiz.headline}</h2><p style="margin-bottom:20px">你的关系模式画像已生成，可以开始匹配了</p><button class="btn btn-secondary" onclick="showPage('page-quiz')">重新测评</button></div>`
-  }
-  if(quiz.exists){
-    if(!profile.exists){
-      html+=`<div class="card"><div class="tag">资料</div><h2>完善社交资料</h2><p style="margin-bottom:20px">填写昵称和基本信息，即可开始匹配</p><button class="btn btn-primary" onclick="showPage('page-profile')">完善资料</button></div>`
-    }else{
-      html+=`<div class="card"><div class="tag">匹配</div><h2>寻找聊天伙伴</h2><p style="margin-bottom:20px">基于你的测评结果，为你匹配契合的聊天对象</p><button class="btn btn-primary" onclick="showPage('page-match');loadMatchView()">开始匹配</button></div>`
-    }
-  }
-  html+=`<div class="safety-toast"><strong>⚠️ 安全提示</strong>：禁止交换联系方式，禁止线下见面邀约。如遇不适请立即举报。聊天记录将保存6个月以上。</div>`;
-  container.innerHTML=html
-}
-
-function startQuiz(){currentQuiz={step:0,answers:[],scores:{}};renderQuizQuestion()}
-
-function renderQuizQuestion(){
-  const q=QUIZ_QUESTIONS[currentQuiz.step];
-  const progress=((currentQuiz.step)/QUIZ_QUESTIONS.length)*100;
-  $('quizFill').style.width=progress+'%';
-  $('quizCounter').textContent=`${currentQuiz.step+1} / ${QUIZ_QUESTIONS.length}`;
-  const sectionNames={attachment:'依恋风格',big5:'大五人格',loveLang:'爱之语',values:'价值观'};
-  $('quizSectionTag').textContent=sectionNames[q.dim]||'测评中';
-  let html=`<div class="quiz-question">${currentQuiz.step+1}. ${q.q}</div><div class="quiz-options">`;
-  q.opts.forEach((opt,i)=>{html+=`<div class="quiz-option" onclick="selectOption(${i})">${opt}</div>`});
-  html+=`</div>`;
-  $('quizContent').innerHTML=html
-}
-
-function selectOption(idx){
-  currentQuiz.answers.push(idx);
-  document.querySelectorAll('.quiz-option').forEach((el,i)=>el.classList.toggle('selected',i===idx));
-  setTimeout(()=>{currentQuiz.step++;if(currentQuiz.step<QUIZ_QUESTIONS.length){renderQuizQuestion()}else{finishQuiz()}},200)
-}
-
-function finishQuiz(){
-  const s={attachment:{},big5:{},loveLang:{},values:{}};
-  const attachScores=currentQuiz.answers.slice(0,5);
-  const attachSum=attachScores.reduce((a,b)=>a+b,0);
-  s.attachment.type=attachSum<=5?'安全型':attachSum<=9?'焦虑型':attachSum<=13?'回避型':'恐惧型';
-  s.attachment.score=Math.round((1-attachSum/20)*100);
-  const big5Scores=currentQuiz.answers.slice(5,10);
-  s.big5={openness:100-big5Scores[1]*25,conscientiousness:100-big5Scores[3]*25,extraversion:100-big5Scores[0]*25,agreeableness:100-big5Scores[2]*25,neuroticism:100-big5Scores[4]*25};
-  const loveScores=currentQuiz.answers.slice(10,15);
-  const loveMap=['肯定的言辞','服务的行动','接受礼物','高质量时间'];
-  const loveIdx=loveScores.indexOf(Math.max(...loveScores));
-  s.loveLang={primary:loveMap[loveIdx],scores:{words:100-loveScores[0]*25,acts:100-loveScores[1]*25,gifts:100-loveScores[2]*25,time:100-loveScores[3]*25,touch:50}};
-  const valScores=currentQuiz.answers.slice(15,20);
-  s.values={commitment:100-valScores[0]*25,independence:valScores[1]*25,growth:100-valScores[2]*25,loyalty:100-valScores[3]*25};
-  currentQuiz.scores=s;
-  const headlines=['你渴望深度连接，却需要被理解的安全感','你在独立与亲密之间寻找平衡','你重视忠诚，也珍视个人空间','你的爱是行动派，用陪伴表达真心'];
-  api('/quiz/save',{method:'POST',body:JSON.stringify({headline:headlines[Math.floor(Math.random()*4)],scores:s,answers:currentQuiz.answers})}).then(()=>{
-    $('quizContent').innerHTML=`<div style="text-align:center;padding:60px 20px"><div style="font-size:56px;margin-bottom:20px">🎉</div><h2 style="font-size:24px;font-weight:700;margin-bottom:12px">测评完成</h2><p style="color:var(--text-secondary);margin-bottom:32px">你的关系模式画像已生成</p><button class="btn btn-primary" onclick="showHome()">返回首页</button></div>`
-  })
-}
-
-async function saveProfile(){
-  const nickname=$('pfNickname').value.trim();
-  const gender=$('pfGender').value;
-  const ageGroup=$('pfAgeGroup').value;
-  const bio=$('pfBio').value.trim();
-  const confirmed=$('pfConfirm').checked;
-  if(!nickname||nickname.length<2){alert('昵称至少2个字');return}
-  if(!gender){alert('请选择性别');return}
-  if(!ageGroup){alert('请选择身份');return}
-  if(!confirmed){alert('请确认已年满16周岁并同意用户协议');return}
-  const quiz=await api('/quiz/latest');
-  if(!quiz.exists){alert('请先完成测评');return}
-  const res=await api('/chat/profile',{method:'POST',body:JSON.stringify({nickname,gender,ageGroup,bio,scoresJson:JSON.stringify(quiz.scores)})});
-  if(res.ok){showHome()}else{alert(res.message||'保存失败')}
-}
-
-function showTerms(){
-  alert('用户协议与隐私政策\n\n1. 本平台仅供16岁以上中学生及大学生使用\n2. 聊天内容受平台监管，禁止交换联系方式\n3. 禁止线下见面邀约\n4. 平台有权保存聊天记录以处理投诉（至少6个月）\n5. 如遇不适请立即使用举报功能\n6. 本平台为兴趣社交平台，非婚恋平台')
-}
-
-async function loadMatchView(){
-  const el=$('matchContent');
-  el.innerHTML='<div class="loading"><div class="spinner"></div><div style="font-size:13px;color:var(--text-tertiary)">正在为你寻找契合的聊天对象...</div></div>';
-  try{
-    const res=await api('/chat/match',{method:'POST',body:JSON.stringify({})});
-    if(res.ok&&res.partner){
-      currentPartner=res.partner;currentMatchId=res.matchId;messageCount=0;shadowRevealed=false;
-      el.innerHTML=`<div class="match-hero"><div class="match-avatar"><img src="${getAvatar(res.partner.avatarSeed)}"></div><div class="match-score">${res.partner.matchScore}%</div><div class="match-score-label">匹配度</div><div class="match-name">${res.partner.nickname}</div><div class="match-meta">${res.partner.ageGroup} · ${res.partner.gender}</div><div class="match-reason">${res.partner.matchReason}</div><button class="btn btn-primary btn-block" onclick="enterChat()">开始聊天</button></div><div class="safety-toast" style="max-width:400px;margin:16px auto 0"><strong>💡 提示</strong>：前几条消息请互相了解测评结果，保持友善交流。第8条消息后系统会提示对方身份。</div>`
-    }else if(res.error==='existing_match'){
-      el.innerHTML=`<div class="card" style="text-align:center;padding:60px 20px"><p>你已有一个进行中的对话</p><button class="btn btn-primary" style="margin-top:20px" onclick="showHome()">返回首页</button></div>`
-    }else{
-      el.innerHTML=`<div class="card" style="text-align:center;padding:60px 20px"><p>${res.message||'匹配失败'}</p><button class="btn btn-primary" style="margin-top:20px" onclick="showHome()">返回</button></div>`
-    }
-  }catch(e){
-    el.innerHTML='<div class="card" style="text-align:center;padding:60px 20px"><p style="color:var(--text-tertiary)">网络错误</p></div>'
-  }
-}
-
-function enterChat(){
-  showPage('page-chat');
-  $('chatName').textContent=currentPartner.nickname;
-  $('chatMeta').textContent=`${currentPartner.ageGroup} · 匹配度 ${currentPartner.matchScore}%`;
-  $('chatAvatar').src=getAvatar(currentPartner.avatarSeed);
-  $('chatReason').textContent=currentPartner.matchReason;
-  $('chatMessages').innerHTML='';
-  loadChatHistory();
-  startPoll()
-}
-
-async function loadChatHistory(){
-  try{
-    const res=await api(`/chat/history?matchId=${currentMatchId}&limit=50`);
-    const container=$('chatMessages');
-    container.innerHTML='';
-    (res.messages||[]).forEach(msg=>renderMsg(msg));
-    messageCount=(res.messages||[]).filter(m=>m.sender_id!==0).length;
-    scrollChat()
-  }catch(e){}
-}
-
-function renderMsg(msg){
-  const container=$('chatMessages');
-  const isMe=msg.sender_id===0?false:(msg.sender_name===currentUser?.email?.split('@')[0]||msg.sender_id===-1);
-  const isSystem=msg.sender_id===0;
-  const div=document.createElement('div');
-  div.className=`msg ${isSystem?'system':(isMe?'me':'them')}`;
-  if(isSystem){div.innerHTML=`<div class="msg-bubble">${escapeHtml(msg.content)}</div>`}
-  else{div.innerHTML=`<div class="msg-bubble">${escapeHtml(msg.content)}</div><div class="msg-time">${new Date(msg.created_at).toLocaleTimeString()}</div>`}
-  container.appendChild(div);
-  scrollChat()
-}
-
-function scrollChat(){const c=$('chatMessages');if(c)c.scrollTop=c.scrollHeight}
-
-async function sendChat(){
-  const input=$('chatInput');
-  const text=input.value.trim();
-  if(!text||!currentMatchId)return;
-  input.value='';
-  renderMsg({sender_id:-1,content:text,created_at:Date.now()});
-  messageCount++;
-  if(!shadowRevealed&&messageCount>=8){
-    shadowRevealed=true;
-    setTimeout(()=>renderMsg({sender_id:0,content:'【系统提示】对方是平台志愿者/客服，正在帮助你熟悉功能。你可以随时结束对话或提出任何疑问。'}),1000)
-  }
-  try{
-    const res=await api('/chat/send',{method:'POST',body:JSON.stringify({matchId:currentMatchId,content:text})});
-    if(res.error==='auto_closed'){renderMsg({sender_id:0,content:'【系统】该对话因多次触发安全规则已被自动关闭。'});stopPoll()}
-  }catch(e){}
-}
-
-function startPoll(){lastPollTime=Date.now()-60000;pollTimer=setInterval(doPoll,3000);doPoll()}
-function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null}}
-
-async function doPoll(){
-  if(!currentMatchId)return;
-  try{
-    const res=await api(`/chat/poll?matchId=${currentMatchId}&since=${lastPollTime}`);
-    (res.messages||[]).forEach(msg=>{if(msg.sender_id!==0&&msg.sender_id!==-1){renderMsg(msg);messageCount++}});
-    lastPollTime=Date.now();
-    if(res.matchStatus==='closed'){renderMsg({sender_id:0,content:'【系统】该对话已结束。'});stopPoll()}
-  }catch(e){}
-}
-
-async function reportMatch(){
-  const reason=prompt('请描述举报原因（至少5字）：');
-  if(!reason||reason.length<5)return;
-  await api('/chat/report',{method:'POST',body:JSON.stringify({matchId:currentMatchId,reason})});
-  alert('举报已提交，对话已冻结。');
-  stopPoll();currentMatchId=null;
-  showHome()
-}
-
-function navigate(page){
-  if(page==='home'){stopPoll();currentMatchId=null;showHome()}
-  else if(page==='match')showPage('page-match')
-}
-
-init();
-</script>
 </body>
 </html>
