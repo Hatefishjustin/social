@@ -25,7 +25,7 @@ export const onRequestGet = async ({ request, env }) => {
   if (!sessionToken) return jsonResponse({ loggedIn: false });
 
   const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id as user_id, users.email, users.display_name, users.avatar_url, users.avatar_data, users.is_admin
+    `SELECT sessions.expires_at, users.id as user_id, users.email, users.display_name, users.avatar_url, users.is_admin
      FROM sessions JOIN users ON sessions.user_id = users.id
      WHERE sessions.token = ?`
   ).bind(sessionToken).first();
@@ -38,18 +38,12 @@ export const onRequestGet = async ({ request, env }) => {
     'SELECT role FROM staff_accounts WHERE user_id = ?'
   ).bind(row.user_id).first();
 
-  var avatarUrl = row.avatar_url || '';
-  // 如果有上传的头像数据，优先使用API端点
-  if (row.avatar_data) {
-    avatarUrl = '/api/avatar?userId=' + row.user_id;
-  }
-
   return jsonResponse({
     loggedIn: true,
     userId: row.user_id,
     email: row.email,
     displayName: row.display_name || '',
-    avatarUrl: avatarUrl,
+    avatarUrl: row.avatar_url || '',
     isAdmin: !!row.is_admin,
     isStaff: !!staff,
     staffRole: staff ? staff.role : null,
