@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>校园墙 - 心镜</title>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --surface-muted: #161616;
+  --border: #2a2a2a;
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #666666;
+  --text-quaternary: #444444;
+  --accent-blue: #3b82f6;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg); color: var(--text-primary); line-height: 1.5;
+}
+.container { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,10,10,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.header-inner { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 12px; }
+.wall-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+.tabs { display: flex; gap: 4px; background: var(--surface-muted); border-radius: var(--radius-md); padding: 4px; }
+.tab { padding: 7px 18px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--text-tertiary); transition: all 0.15s ease; }
+.tab.active { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+.feed { padding: 16px 0 80px; display: flex; flex-direction: column; gap: 12px; }
+
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px;
+  transition: border-color 0.15s ease;
+}
+.card:hover { border-color: var(--text-quaternary); }
+.card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; flex-shrink: 0; }
+.avatar.anon { background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); }
+.avatar.named { background: linear-gradient(135deg, var(--accent-red), #f97316); }
+.meta { display: flex; flex-direction: column; gap: 1px; }
+.meta-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.meta-time { font-size: 12px; color: var(--text-quaternary); }
+.card-tag { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: var(--radius-sm); background: rgba(59,130,246,0.08); color: var(--accent-blue); font-weight: 500; margin-bottom: 10px; }
+.card-body { font-size: 15px; line-height: 1.65; color: var(--text-primary); margin-bottom: 12px; word-break: break-word; white-space: pre-wrap; }
+.card-actions { display: flex; align-items: center; gap: 16px; padding-top: 10px; border-top: 1px solid var(--border); }
+.action-btn { display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--text-tertiary); background: none; border: none; cursor: pointer; padding: 5px 8px; border-radius: var(--radius-sm); transition: all 0.15s ease; font-family: inherit; }
+.action-btn:hover { color: var(--text-primary); background: var(--surface-muted); }
+.action-btn.liked { color: var(--accent-red); }
+.action-btn svg { width: 18px; height: 18px; }
+
+.ask-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+.ask-q { display: flex; gap: 10px; margin-bottom: 12px; }
+.ask-q-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ask-q-icon svg { width: 16px; height: 16px; color: var(--text-tertiary); }
+.ask-q-text { font-size: 15px; line-height: 1.55; color: var(--text-primary); padding-top: 2px; flex: 1; }
+.ask-a { display: flex; gap: 10px; padding: 12px; border-radius: var(--radius-md); background: var(--surface-muted); margin-top: 8px; }
+.ask-a-icon { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ask-a-icon svg { width: 16px; height: 16px; color: #fff; }
+.ask-a-text { font-size: 14px; line-height: 1.55; color: var(--text-secondary); padding-top: 2px; flex: 1; }
+.ask-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-quaternary); }
+
+.fab { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--text-primary); color: var(--bg); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3); transition: transform 0.15s ease; z-index: 40; }
+.fab:hover { transform: scale(1.06); }
+.fab svg { width: 22px; height: 22px; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); z-index: 60; display: none; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s ease; }
+.modal-overlay.show { display: flex; opacity: 1; }
+.modal { background: var(--surface); width: 100%; max-width: 640px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 20px 16px 32px; transform: translateY(100%); transition: transform 0.25s cubic-bezier(0.16,1,0.3,1); }
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-title { font-size: 18px; font-weight: 600; }
+.modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--surface-muted); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.modal-close svg { width: 18px; height: 18px; }
+.input-group { margin-bottom: 14px; }
+.input-label { font-size: 13px; color: var(--text-tertiary); margin-bottom: 6px; display: block; font-weight: 500; }
+textarea, input[type="text"] { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); font-size: 15px; font-family: inherit; resize: vertical; outline: none; transition: border-color 0.15s ease; }
+textarea:focus, input[type="text"]:focus { border-color: var(--text-quaternary); }
+textarea { min-height: 120px; line-height: 1.6; }
+.tag-select { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.tag-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
+.tag-chip.active { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59,130,246,0.06); }
+.anon-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 14px; color: var(--text-secondary); }
+.anon-toggle input { width: 18px; height: 18px; accent-color: var(--text-primary); }
+.submit-btn { width: 100%; padding: 14px; border-radius: var(--radius-md); border: none; background: var(--text-primary); color: var(--bg); font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.15s ease; font-family: inherit; }
+.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.empty { text-align: center; padding: 60px 20px; color: var(--text-quaternary); font-size: 14px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container header-inner">
+    <div class="wall-title">校园墙</div>
+    <div class="tabs">
+      <button class="tab active" data-tab="confession" onclick="switchTab('confession')">表白墙</button>
+      <button class="tab" data-tab="askbox" onclick="switchTab('askbox')">提问箱</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="feed" id="feed-confession"></div>
+  <div class="feed hidden" id="feed-askbox"></div>
+</div>
+
+<button class="fab" onclick="openModal()" aria-label="发布">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">发布表白</div>
+      <button class="modal-close" onclick="closeModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="tag-select" id="tag-select">
+      <button class="tag-chip active" data-tag="#表白" onclick="selectTag(this)">#表白</button>
+      <button class="tag-chip" data-tag="#树洞" onclick="selectTag(this)">#树洞</button>
+      <button class="tag-chip" data-tag="#捞人" onclick="selectTag(this)">#捞人</button>
+      <button class="tag-chip" data-tag="#吐槽" onclick="selectTag(this)">#吐槽</button>
+    </div>
+    <div class="input-group">
+      <textarea id="content-input" placeholder="写下你想说的话..."></textarea>
+    </div>
+    <div class="input-group" id="school-group">
+      <label class="input-label">学校（选填）</label>
+      <input type="text" id="school-input" placeholder="如：清华大学">
+    </div>
+    <div class="anon-toggle">
+      <input type="checkbox" id="anon-check" checked>
+      <label for="anon-check">匿名发布</label>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="submitPost()">发布</button>
+  </div>
+</div>
+
+<script>
+const API_BASE = '';
+let currentTab = 'confession';
+let currentTag = '#表白';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('feed-confession').classList.toggle('hidden', tab !== 'confession');
+  document.getElementById('feed-askbox').classList.toggle('hidden', tab !== 'askbox');
+  document.getElementById('modal-title').textContent = tab === 'confession' ? '发布表白' : '匿名提问';
+  document.getElementById('tag-select').classList.toggle('hidden', tab !== 'confession');
+  if (tab === 'confession' && document.getElementById('feed-confession').children.length === 0) loadConfessions();
+  if (tab === 'askbox' && document.getElementById('feed-askbox').children.length === 0) loadAskbox();
+}
+
+function selectTag(el) {
+  document.querySelectorAll('.tag-chip').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentTag = el.dataset.tag;
+}
+
+function openModal() {
+  document.getElementById('modal').classList.add('show');
+  document.getElementById('content-input').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function formatTime(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟前';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' 小时前';
+  const d = new Date(ts);
+  return `${d.getMonth()+1}月${d.getDate()}日`;
+}
+
+function renderConfession(post) {
+  const anon = post.is_anonymous;
+  return `
