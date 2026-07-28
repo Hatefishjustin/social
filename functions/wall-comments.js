@@ -72,7 +72,15 @@ export const onRequestPost = async ({ request, env }) => {
     `UPDATE wall_posts SET comments_count = (SELECT COUNT(*) FROM wall_comments WHERE post_id = ?) WHERE id = ?`
   ).bind(post_id, post_id).run();
 
-  return jsonResponse({ ok: true, id: result.meta.last_row_id });
+    // Notify post owner
+    const postRow = await env.DB.prepare(`SELECT user_id, content FROM wall_posts WHERE id = ?`).bind(post_id).first();
+    if (postRow && postRow.user_id && postRow.user_id !== (user ? user.id : -1)) {
+      await env.DB.prepare(
+        `INSERT INTO notifications (user_id, type, target_type, target_id, actor_id, actor_email, content_preview, is_read, created_at)
+         VALUES (?, 'comment', 'wall', ?, ?, ?, ?, 0, ?)`
+      ).bind(postRow.user_id, post_id, user ? user.id : null, user ? user.email : null, (postRow.content || '').slice(0, 100), Date.now()).run();
+    }
+    return jsonResponse({ ok: true, id: result.meta.last_row_id });
 };
 
 export const onRequestOptions = async () => {
