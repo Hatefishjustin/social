@@ -215,7 +215,7 @@ body {
         '<button class="action-btn like-btn'+(liked?' liked':'')+'" data-post-id="'+p.id+'" aria-label="点赞">'+
           '<span class="heart-icon">'+(liked?'♥':'♡')+'</span><span class="like-count">'+(p.likes_count||0)+'</span>'+
         '</button>'+
-        '<button class="action-btn" data-post-id="'+p.id+'" aria-label="评论"><span>💬</span><span>'+(p.comments_count||0)+'</span></button>'+
+        '<button class="action-btn comment-btn" data-post-id="'+p.id+'" aria-label="评论"><span>💬</span><span>'+(p.comments_count||0)+'</span></button>'+
       '</div></article>';
   }
 
@@ -280,7 +280,7 @@ body {
   });
   dom.feedConfession.addEventListener('click',function(e){
     var btn=e.target.closest('.like-btn');if(btn){e.preventDefault();var pid=parseInt(btn.dataset.postId,10);if(pid&&!isNaN(pid))likePost(pid);return;}
-    var cmt=e.target.closest('.comment-btn');if(cmt){e.preventDefault();toast('评论功能即将开放','');return;}
+    var cmt=e.target.closest('.comment-btn');if(cmt){e.preventDefault();var pid=parseInt(cmt.dataset.postId,10);if(pid&&!isNaN(pid))toggleComments(pid,cmt.closest('.confession-card'));return;}
   });
   dom.fabBtn.addEventListener('click',openModal);
   dom.modalClose.addEventListener('click',closeModal);
@@ -292,6 +292,45 @@ body {
   });
   var st=false;
   window.addEventListener('scroll',function(){if(st)return;st=true;requestAnimationFrame(function(){st=false;if(state.isLoading)return;if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-300&&state.hasMore){state.page++;load();}});},{passive:true});
+  var commentCache={};
+  function toggleComments(pid,card){
+    var sec=card.querySelector('.comment-section');
+    if(sec){
+      sec.classList.toggle('open');
+      if(sec.classList.contains('open')&&!commentCache[pid])loadComments(pid,card);
+      return;
+    }
+    var html='<div class="comment-section open"><div class="comment-list" id="cl-'+pid+'"><div class="comment-empty">加载中...</div></div><div class="comment-input-row"><input class="comment-input" id="ci-'+pid+'" placeholder="写评论..." maxlength="500"><button class="comment-submit" onclick="window._submitComment('+pid+')">发送</button></div></div>';
+    card.insertAdjacentHTML('beforeend',html);
+    loadComments(pid,card);
+  }
+  async function loadComments(pid,card){
+    var list=card.querySelector('#cl-'+pid);if(!list)return;
+    try{
+      var r=await fetch('/wall-comments?post_id='+pid,{headers:{'Accept':'application/json; charset=utf-8'}});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json(),comments=d.comments||[];
+      commentCache[pid]=comments;
+      if(comments.length===0)list.innerHTML='<div class="comment-empty">暂无评论，来抢沙发</div>';
+      else list.innerHTML=comments.map(function(c){return'<div class="comment-item"><div class="comment-avatar">'+(c.is_anonymous?'?':(c.user_email||'U')[0].toUpperCase())+'</div><div class="comment-body"><div class="comment-author">'+(c.is_anonymous?'匿名用户':esc(c.user_email||'用户'))+'</div><div class="comment-text">'+esc(c.content)+'</div><div class="comment-time">'+fmt(c.created_at)+'</div></div></div>'}).join('');
+    }catch(e){list.innerHTML='<div class="comment-empty">加载失败</div>';}
+  }
+  window._submitComment=async function(pid){
+    var inp=document.getElementById('ci-'+pid);if(!inp)return;
+    var c=inp.value.trim();if(!c)return;
+    var btn=inp.parentNode.querySelector('.comment-submit');btn.disabled=true;
+    try{
+      var r=await fetch('/wall-comments',{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify({post_id:pid,content:c,is_anonymous:true})});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json();if(d.ok){inp.value='';commentCache[pid]=null;
+        var card=inp.closest('.confession-card');if(card)loadComments(pid,card);
+        var cntEl=card.querySelector('.comment-btn span:last-child');if(cntEl)cntEl.textContent=(parseInt(cntEl.textContent,10)||0)+1;
+        toast('评论成功','success');
+      }
+    }catch(e){toast('评论失败','error');}
+    finally{btn.disabled=false;}
+  };
+
   function init(){load();fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'campus'})}).catch(function(){});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
