@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -6,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <title>心镜 · 社交 - 校园墙</title>
 <style>
-/* ── 设计语言沿用心镜主站 yourlover.pages.dev ── */
 :root {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
                'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
@@ -51,385 +49,98 @@ body {
   padding-bottom:calc(80px + var(--safe-bottom));
 }
 ::selection { background:var(--accent); color:#fff; }
-
-/* ── 主容器 ── */
-.app-container {
-  width:100%; max-width:var(--max-width); padding:0 24px;
-  display:flex; flex-direction:column;
-  min-height:100vh; min-height:100dvh;
-}
-
-/* ── 顶部导航 ── */
-.nav-header {
-  position:sticky; top:0; z-index:50;
-  background:linear-gradient(var(--bg) 80%, transparent);
-  padding:18px 0 12px;
-  transition:border-color .3s;
-}
-.nav-brand {
-  display:flex; align-items:center; gap:12px; margin-bottom:14px;
-}
-.nav-dot {
-  width:8px; height:8px; border-radius:50%;
-  background:var(--accent);
-  box-shadow:0 0 12px var(--accent-glow);
-  animation:pulse 2.5s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%,100% { opacity:1; transform:scale(1); }
-  50% { opacity:.5; transform:scale(.8); }
-}
-.nav-title {
-  font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--text-primary);
-}
-.nav-subtitle {
-  font-size:12px; color:var(--text-tertiary); font-weight:400; letter-spacing:.5px;
-}
-
-/* ── Tab 切换 ── */
-.tab-row {
-  display:flex; gap:4px; background:var(--surface); border-radius:var(--radius-pill);
-  padding:4px; position:relative;
-}
-.tab-btn {
-  flex:1; padding:10px 16px; border:none; background:transparent;
-  color:var(--text-tertiary); font-size:14px; font-weight:500;
-  border-radius:var(--radius-pill); cursor:pointer;
-  transition:all .25s var(--ease-out);
-  font-family:var(--font-sans); position:relative; z-index:1; white-space:nowrap;
-  touch-action:manipulation;
-}
-.tab-btn.active {
-  color:var(--text-primary); background:var(--surface-hover);
-  box-shadow:0 1px 3px rgba(0,0,0,.3);
-}
-.tab-btn:active { transform:scale(.96); }
-
-/* ── 标签筛选器 ── */
-.tag-filter-row {
-  display:flex; gap:8px; margin-top:12px; overflow-x:auto;
-  scrollbar-width:none; -ms-overflow-style:none; padding:2px 0;
-  flex-shrink:0; transition:opacity .3s, max-height .3s, margin .3s;
-  max-height:44px; opacity:1;
-}
+.app-container { width:100%; max-width:var(--max-width); padding:0 24px; display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; }
+.nav-header { position:sticky; top:0; z-index:50; background:linear-gradient(var(--bg) 80%, transparent); padding:18px 0 12px; }
+.nav-brand { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.nav-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent-glow); animation:pulse 2.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(.8); } }
+.nav-title { font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--text-primary); cursor:pointer; }
+.nav-title:hover { opacity:.8; }
+.nav-subtitle { font-size:12px; color:var(--text-tertiary); font-weight:400; letter-spacing:.5px; }
+.tag-filter-row { display:flex; gap:8px; margin-top:12px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding:2px 0; flex-shrink:0; }
 .tag-filter-row::-webkit-scrollbar { display:none; }
-.tag-filter-row.hidden {
-  max-height:0; opacity:0; margin-top:0; padding:0; overflow:hidden; pointer-events:none;
-}
-.tag-chip {
-  flex-shrink:0; padding:7px 16px; border-radius:var(--radius-pill);
-  font-size:13px; font-weight:500;
-  border:1px solid var(--hairline-strong);
-  background:var(--surface); color:var(--text-secondary);
-  cursor:pointer; transition:all .2s var(--ease-out);
-  font-family:var(--font-sans); white-space:nowrap;
-  touch-action:manipulation; user-select:none; -webkit-user-select:none;
-}
-.tag-chip.active {
-  background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;
-  box-shadow:0 4px 16px var(--accent-glow);
-}
+.tag-chip { flex-shrink:0; padding:7px 16px; border-radius:var(--radius-pill); font-size:13px; font-weight:500; border:1px solid var(--hairline-strong); background:var(--surface); color:var(--text-secondary); cursor:pointer; transition:all .2s var(--ease-out); font-family:var(--font-sans); white-space:nowrap; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+.tag-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:0 4px 16px var(--accent-glow); }
 .tag-chip:active { transform:scale(.94); }
-
-/* ── Feed ── */
 .feed-section { flex:1; padding-top:8px; padding-bottom:16px; }
-.feed-container {
-  display:flex; flex-direction:column; gap:10px;
-  transition:opacity .25s;
-}
+.feed-container { display:flex; flex-direction:column; gap:10px; transition:opacity .25s; }
 .feed-container.loading { opacity:.5; pointer-events:none; }
-.feed-container.hidden { display:none; }
-
-/* ── 卡片 ── */
-.card {
-  background:var(--surface);
-  border:1px solid var(--hairline);
-  border-radius:var(--radius-lg);
-  padding:18px 20px;
-  transition:all .3s var(--ease-out);
-  animation:cardIn .4s var(--ease-out) forwards;
-  position:relative;
-}
-@keyframes cardIn {
-  from { opacity:0; transform:translateY(12px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.card:hover {
-  border-color:var(--hairline-strong);
-  box-shadow:0 8px 32px rgba(0,0,0,.5);
-}
+.card { background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-lg); padding:18px 20px; transition:all .3s var(--ease-out); animation:cardIn .4s var(--ease-out) forwards; position:relative; }
+@keyframes cardIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.card:hover { border-color:var(--hairline-strong); box-shadow:0 8px 32px rgba(0,0,0,.5); }
 .card:active { transform:scale(.985); transition:transform .1s ease; }
-.card-tag {
-  display:inline-block; font-size:11px; font-weight:600;
-  color:var(--accent); background:var(--accent-soft);
-  padding:3px 10px; border-radius:var(--radius-pill); margin-bottom:10px;
-  letter-spacing:.3px;
-}
-.card-content {
-  font-size:15px; line-height:1.7; color:rgba(255,255,255,.85);
-  word-break:break-word; white-space:pre-wrap; margin-bottom:10px;
-}
-.card-meta {
-  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-  font-size:12px; color:var(--text-tertiary); margin-bottom:4px;
-}
+.card-tag { display:inline-block; font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); padding:3px 10px; border-radius:var(--radius-pill); margin-bottom:10px; letter-spacing:.3px; }
+.card-content { font-size:15px; line-height:1.7; color:rgba(255,255,255,.85); word-break:break-word; white-space:pre-wrap; margin-bottom:10px; }
+.card-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--text-tertiary); margin-bottom:4px; }
 .card-meta-item { display:flex; align-items:center; gap:4px; }
-.card-anon-badge {
-  font-size:11px; color:var(--text-tertiary);
-  background:rgba(255,255,255,.05); padding:2px 10px;
-  border-radius:var(--radius-pill); font-weight:500;
-}
+.card-anon-badge { font-size:11px; color:var(--text-tertiary); background:rgba(255,255,255,.05); padding:2px 10px; border-radius:var(--radius-pill); font-weight:500; }
 .card-school { font-size:11px; color:var(--text-tertiary); font-weight:500; }
-.card-actions {
-  display:flex; align-items:center; gap:18px; margin-top:12px;
-  padding-top:10px; border-top:1px solid var(--hairline);
-}
-.action-btn {
-  display:flex; align-items:center; gap:5px; background:none; border:none;
-  color:var(--text-tertiary); font-size:13px; cursor:pointer;
-  padding:6px 8px; border-radius:var(--radius-sm);
-  transition:all .2s var(--ease-out);
-  font-family:var(--font-sans); touch-action:manipulation;
-  user-select:none; -webkit-user-select:none;
-}
+.card-actions { display:flex; align-items:center; gap:18px; margin-top:12px; padding-top:10px; border-top:1px solid var(--hairline); }
+.action-btn { display:flex; align-items:center; gap:5px; background:none; border:none; color:var(--text-tertiary); font-size:13px; cursor:pointer; padding:6px 8px; border-radius:var(--radius-sm); transition:all .2s var(--ease-out); font-family:var(--font-sans); touch-action:manipulation; user-select:none; -webkit-user-select:none; }
 .action-btn:hover { color:rgba(255,255,255,.8); background:rgba(255,255,255,.03); }
 .action-btn.liked { color:var(--accent); }
 .action-btn:active { transform:scale(.9); }
-.action-btn .heart-icon {
-  transition:transform .3s cubic-bezier(.175,.885,.32,1.275); display:inline-block;
-}
-.action-btn.liked .heart-icon {
-  animation:heartPop .4s cubic-bezier(.175,.885,.32,1.275);
-}
-@keyframes heartPop {
-  0% { transform:scale(1); }
-  30% { transform:scale(1.35); }
-  60% { transform:scale(.85); }
-  100% { transform:scale(1); }
-}
-
-/* ── 提问箱卡片 ── */
-.askbox-card .card-question {
-  font-size:15px; line-height:1.6; color:rgba(255,255,255,.85);
-  word-break:break-word; white-space:pre-wrap; margin-bottom:12px;
-  padding-left:12px; border-left:2px solid var(--hairline-strong);
-}
-.askbox-card .card-answer {
-  background:var(--bg-elevated); border-radius:var(--radius-md);
-  padding:14px 16px; margin-top:8px; position:relative;
-  border:1px solid var(--hairline);
-}
-.askbox-card .answer-label {
-  font-size:11px; font-weight:600; color:var(--accent);
-  text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
-}
-.askbox-card .answer-content {
-  font-size:14px; line-height:1.6; color:rgba(255,255,255,.8);
-  white-space:pre-wrap; word-break:break-word;
-}
-.askbox-card .answer-time { font-size:11px; color:var(--text-tertiary); margin-top:8px; }
-
-/* ── 空状态 ── */
-.empty-state {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:80px 20px; text-align:center; color:var(--text-tertiary);
-  animation:cardIn .4s var(--ease-out) forwards;
-}
+.action-btn .heart-icon { transition:transform .3s cubic-bezier(.175,.885,.32,1.275); display:inline-block; }
+.action-btn.liked .heart-icon { animation:heartPop .4s cubic-bezier(.175,.885,.32,1.275); }
+@keyframes heartPop { 0% { transform:scale(1); } 30% { transform:scale(1.35); } 60% { transform:scale(.85); } 100% { transform:scale(1); } }
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; color:var(--text-tertiary); animation:cardIn .4s var(--ease-out) forwards; }
 .empty-icon { font-size:48px; margin-bottom:16px; opacity:.4; }
 .empty-title { font-size:16px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
 .empty-desc { font-size:13px; color:var(--text-tertiary); max-width:260px; line-height:1.6; }
-
-/* ── 加载器 ── */
 .loader { display:flex; justify-content:center; padding:30px; }
-.loader-dot {
-  width:6px; height:6px; border-radius:50%; background:var(--accent);
-  margin:0 4px; animation:loaderBounce .6s infinite alternate;
-}
+.loader-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); margin:0 4px; animation:loaderBounce .6s infinite alternate; }
 .loader-dot:nth-child(2) { animation-delay:.15s; }
 .loader-dot:nth-child(3) { animation-delay:.3s; }
-@keyframes loaderBounce {
-  to { transform:translateY(-10px); opacity:.3; }
-}
-
-/* ── FAB ── */
-.fab {
-  position:fixed; bottom:calc(24px + var(--safe-bottom));
-  right:max(20px, calc((100vw - var(--max-width)) / 2 + 20px));
-  z-index:60; width:52px; height:52px; border-radius:50%;
-  background:var(--accent); border:none; color:#fff; font-size:26px;
-  cursor:pointer;
-  box-shadow:0 8px 28px var(--accent-glow);
-  transition:all .25s var(--ease-out);
-  display:flex; align-items:center; justify-content:center;
-  touch-action:manipulation; -webkit-tap-highlight-color:transparent;
-  user-select:none; -webkit-user-select:none;
-}
-.fab:hover {
-  background:var(--accent-dim); transform:translateY(-2px);
-  box-shadow:0 14px 36px var(--accent-glow);
-}
-.fab:active {
-  transform:scale(.88);
-  box-shadow:0 4px 14px var(--accent-glow);
-}
-
-/* ── 模态框 ── */
-.modal-overlay {
-  position:fixed; inset:0; z-index:100;
-  background:rgba(0,0,0,.78);
-  display:flex; align-items:flex-end; justify-content:center;
-  opacity:0; pointer-events:none;
-  transition:opacity .3s var(--ease-out);
-  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
-}
+@keyframes loaderBounce { to { transform:translateY(-10px); opacity:.3; } }
+.fab { position:fixed; bottom:calc(24px + var(--safe-bottom)); right:max(20px, calc((100vw - var(--max-width)) / 2 + 20px)); z-index:60; width:52px; height:52px; border-radius:50%; background:var(--accent); border:none; color:#fff; font-size:26px; cursor:pointer; box-shadow:0 8px 28px var(--accent-glow); transition:all .25s var(--ease-out); display:flex; align-items:center; justify-content:center; touch-action:manipulation; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; }
+.fab:hover { background:var(--accent-dim); transform:translateY(-2px); box-shadow:0 14px 36px var(--accent-glow); }
+.fab:active { transform:scale(.88); box-shadow:0 4px 14px var(--accent-glow); }
+.modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.78); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s var(--ease-out); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
 .modal-overlay.active { opacity:1; pointer-events:auto; }
-.modal-sheet {
-  width:100%; max-width:var(--max-width);
-  background:var(--surface);
-  border-radius:20px 20px 0 0;
-  padding:20px 24px calc(20px + var(--safe-bottom));
-  transform:translateY(100%);
-  transition:transform .4s cubic-bezier(.32,.72,0,1);
-  max-height:85vh; overflow-y:auto;
-  display:flex; flex-direction:column; gap:16px;
-  border:1px solid var(--hairline); border-bottom:none;
-}
+.modal-sheet { width:100%; max-width:var(--max-width); background:var(--surface); border-radius:20px 20px 0 0; padding:20px 24px calc(20px + var(--safe-bottom)); transform:translateY(100%); transition:transform .4s cubic-bezier(.32,.72,0,1); max-height:85vh; overflow-y:auto; display:flex; flex-direction:column; gap:16px; border:1px solid var(--hairline); border-bottom:none; }
 .modal-overlay.active .modal-sheet { transform:translateY(0); }
-.modal-handle {
-  width:36px; height:4px; background:var(--hairline-strong);
-  border-radius:2px; align-self:center; margin-bottom:4px; flex-shrink:0;
-}
-.modal-title {
-  font-size:17px; font-weight:700; color:var(--text-primary);
-  text-align:center; flex-shrink:0;
-}
-.modal-close {
-  position:absolute; top:16px; right:24px;
-  width:32px; height:32px; border-radius:50%;
-  background:rgba(255,255,255,.06); border:none;
-  color:var(--text-secondary); font-size:16px;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  touch-action:manipulation; z-index:5;
-  transition:all .2s var(--ease-out);
-}
+.modal-handle { width:36px; height:4px; background:var(--hairline-strong); border-radius:2px; align-self:center; margin-bottom:4px; flex-shrink:0; }
+.modal-title { font-size:17px; font-weight:700; color:var(--text-primary); text-align:center; flex-shrink:0; }
+.modal-close { position:absolute; top:16px; right:24px; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.06); border:none; color:var(--text-secondary); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:manipulation; z-index:5; transition:all .2s var(--ease-out); }
 .modal-close:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
 .modal-close:active { transform:scale(.9); }
-.modal-textarea {
-  width:100%; min-height:120px;
-  background:rgba(255,255,255,.04);
-  border:1px solid var(--hairline);
-  border-radius:var(--radius-md); padding:14px 16px;
-  color:var(--text-primary); font-size:15px;
-  font-family:var(--font-sans); resize:vertical; line-height:1.7;
-  transition:border-color .2s; outline:none;
-}
-.modal-textarea:focus {
-  border-color:var(--accent);
-  box-shadow:0 0 0 3px var(--accent-soft);
-}
+.modal-textarea { width:100%; min-height:120px; background:rgba(255,255,255,.04); border:1px solid var(--hairline); border-radius:var(--radius-md); padding:14px 16px; color:var(--text-primary); font-size:15px; font-family:var(--font-sans); resize:vertical; line-height:1.7; transition:border-color .2s; outline:none; }
+.modal-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
 .modal-textarea::placeholder { color:var(--text-tertiary); }
 .modal-tag-row { display:flex; gap:8px; flex-wrap:wrap; }
-.modal-tag-chip {
-  padding:8px 16px; border-radius:var(--radius-pill);
-  font-size:13px; font-weight:500;
-  border:1px solid var(--hairline-strong);
-  background:rgba(255,255,255,.04); color:var(--text-secondary);
-  cursor:pointer; transition:all .2s var(--ease-out);
-  font-family:var(--font-sans); touch-action:manipulation;
-  user-select:none; -webkit-user-select:none;
-}
-.modal-tag-chip.selected {
-  background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;
-  box-shadow:0 4px 14px var(--accent-glow);
-}
+.modal-tag-chip { padding:8px 16px; border-radius:var(--radius-pill); font-size:13px; font-weight:500; border:1px solid var(--hairline-strong); background:rgba(255,255,255,.04); color:var(--text-secondary); cursor:pointer; transition:all .2s var(--ease-out); font-family:var(--font-sans); touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+.modal-tag-chip.selected { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:0 4px 14px var(--accent-glow); }
 .modal-tag-chip:active { transform:scale(.93); }
-.modal-toggle-row {
-  display:flex; align-items:center; justify-content:space-between; padding:4px 0;
-}
+.modal-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:4px 0; }
 .modal-toggle-label { font-size:14px; color:var(--text-secondary); font-weight:500; }
 .toggle-switch { position:relative; width:48px; height:28px; flex-shrink:0; }
 .toggle-switch input { opacity:0; width:0; height:0; position:absolute; }
-.toggle-slider {
-  position:absolute; cursor:pointer; inset:0;
-  background:rgba(255,255,255,.08); border-radius:28px;
-  transition:all .3s var(--ease-out);
-  border:1px solid var(--hairline);
-}
-.toggle-slider::before {
-  content:''; position:absolute;
-  height:22px; width:22px; left:2px; bottom:2px;
-  background:var(--text-tertiary); border-radius:50%;
-  transition:all .3s var(--ease-out);
-}
-.toggle-switch input:checked+.toggle-slider {
-  background:var(--accent); border-color:var(--accent);
-  box-shadow:0 0 10px var(--accent-glow);
-}
-.toggle-switch input:checked+.toggle-slider::before {
-  transform:translateX(20px); background:#fff;
-}
-.modal-submit-btn {
-  width:100%; padding:14px; border:none; border-radius:var(--radius-pill);
-  background:var(--accent); color:#fff; font-size:16px; font-weight:600;
-  cursor:pointer; font-family:var(--font-sans);
-  transition:all .25s var(--ease-out);
-  touch-action:manipulation; letter-spacing:.5px;
-}
-.modal-submit-btn:hover {
-  background:var(--accent-dim);
-  box-shadow:0 8px 24px var(--accent-glow);
-  transform:translateY(-1px);
-}
-.modal-submit-btn:active {
-  background:var(--accent-dim); transform:scale(.97);
-}
+.toggle-slider { position:absolute; cursor:pointer; inset:0; background:rgba(255,255,255,.08); border-radius:28px; transition:all .3s var(--ease-out); border:1px solid var(--hairline); }
+.toggle-slider::before { content:''; position:absolute; height:22px; width:22px; left:2px; bottom:2px; background:var(--text-tertiary); border-radius:50%; transition:all .3s var(--ease-out); }
+.toggle-switch input:checked+.toggle-slider { background:var(--accent); border-color:var(--accent); box-shadow:0 0 10px var(--accent-glow); }
+.toggle-switch input:checked+.toggle-slider::before { transform:translateX(20px); background:#fff; }
+.modal-submit-btn { width:100%; padding:14px; border:none; border-radius:var(--radius-pill); background:var(--accent); color:#fff; font-size:16px; font-weight:600; cursor:pointer; font-family:var(--font-sans); transition:all .25s var(--ease-out); touch-action:manipulation; letter-spacing:.5px; }
+.modal-submit-btn:hover { background:var(--accent-dim); box-shadow:0 8px 24px var(--accent-glow); transform:translateY(-1px); }
+.modal-submit-btn:active { background:var(--accent-dim); transform:scale(.97); }
 .modal-submit-btn:disabled { opacity:.35; pointer-events:none; }
 .modal-error { font-size:12px; color:#f87171; text-align:center; min-height:16px; }
-
-/* ── Toast ── */
-.toast {
-  position:fixed; bottom:calc(90px + var(--safe-bottom)); left:50%;
-  transform:translateX(-50%) translateY(20px);
-  background:var(--surface-hover); color:var(--text-primary);
-  padding:12px 24px; border-radius:var(--radius-pill);
-  font-size:13px; font-weight:500; z-index:200;
-  opacity:0; pointer-events:none;
-  transition:all .35s cubic-bezier(.175,.885,.32,1.275);
-  border:1px solid var(--hairline-strong);
-  box-shadow:0 8px 24px rgba(0,0,0,.6);
-  white-space:nowrap;
-}
+.toast { position:fixed; bottom:calc(90px + var(--safe-bottom)); left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface-hover); color:var(--text-primary); padding:12px 24px; border-radius:var(--radius-pill); font-size:13px; font-weight:500; z-index:200; opacity:0; pointer-events:none; transition:all .35s cubic-bezier(.175,.885,.32,1.275); border:1px solid var(--hairline-strong); box-shadow:0 8px 24px rgba(0,0,0,.6); white-space:nowrap; }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 .toast.success { border-color:#4ade80; color:#4ade80; }
-.toast.error   { border-color:#f87171; color:#f87171; }
-
-/* ── 响应式 ── */
-@media (min-width:640px) {
-  .modal-overlay { align-items:center; }
-  .modal-sheet { border-radius:var(--radius-lg); margin-bottom:20px; max-height:80vh; }
-  .fab { right:calc((100vw - var(--max-width)) / 2 + 24px); bottom:28px; }
-}
-@media (max-width:380px) {
-  .card { padding:14px 16px; }
-  .card-content { font-size:14px; }
-  .tag-chip { padding:6px 12px; font-size:12px; }
-  .tab-btn { padding:8px 12px; font-size:13px; }
-}
+.toast.error { border-color:#f87171; color:#f87171; }
+@media (min-width:640px) { .modal-overlay { align-items:center; } .modal-sheet { border-radius:var(--radius-lg); margin-bottom:20px; max-height:80vh; } .fab { right:calc((100vw - var(--max-width)) / 2 + 24px); bottom:28px; } }
+@media (max-width:380px) { .card { padding:14px 16px; } .card-content { font-size:14px; } .tag-chip { padding:6px 12px; font-size:12px; } }
 </style>
 </head>
 <body>
 <div class="app-container">
-  <header class="nav-header" id="navHeader">
+  <header class="nav-header">
     <div class="nav-brand">
       <div class="nav-dot"></div>
       <div>
-        <div class="nav-title">心镜 · 社交</div>
-        <div class="nav-subtitle">校园墙</div>
+        <div class="nav-title" onclick="location.href='/'">心镜 · 社交</div>
+        <div class="nav-subtitle">校园表白墙</div>
       </div>
-    </div>
-    <div class="tab-row" id="tabRow">
-      <button class="tab-btn active" data-tab="wall">表白墙</button>
-      <button class="tab-btn" data-tab="askbox">提问箱</button>
     </div>
     <div class="tag-filter-row" id="tagFilterRow">
       <button class="tag-chip active" data-tag="">全部</button>
@@ -439,23 +150,19 @@ body {
       <button class="tag-chip" data-tag="#吐槽">#吐槽</button>
     </div>
   </header>
-
   <main class="feed-section">
     <div class="feed-container" id="feed-confession"></div>
-    <div class="feed-container hidden" id="feed-askbox"></div>
     <div class="loader" id="feedLoader" style="display:none">
       <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
     </div>
   </main>
 </div>
-
 <button class="fab" id="fabBtn" aria-label="发布">+</button>
-
 <div class="modal-overlay" id="modalOverlay">
-  <div class="modal-sheet" id="modalSheet">
+  <div class="modal-sheet">
     <div class="modal-handle"></div>
     <button class="modal-close" id="modalClose" aria-label="关闭">✕</button>
-    <div class="modal-title" id="modalTitle">发布到表白墙</div>
+    <div class="modal-title">发布到表白墙</div>
     <textarea class="modal-textarea" id="content-input" placeholder="写下你想说的话..." maxlength="2000"></textarea>
     <div class="modal-tag-row" id="modalTagRow">
       <button class="modal-tag-chip selected" data-tag="#表白">#表白</button>
@@ -465,315 +172,125 @@ body {
     </div>
     <div class="modal-toggle-row">
       <span class="modal-toggle-label">匿名发布</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="anon-check" checked>
-        <span class="toggle-slider"></span>
-      </label>
+      <label class="toggle-switch"><input type="checkbox" id="anon-check" checked><span class="toggle-slider"></span></label>
     </div>
     <div class="modal-error" id="modalError"></div>
     <button class="modal-submit-btn" id="modalSubmit">发布</button>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
-
 <script>
 (function() {
-  const state = {
-    currentTab: 'wall',
-    currentTag: '',
-    selectedModalTag: '#表白',
-    likedPosts: new Set(),
-    wallPage: 1,
-    askboxPage: 1,
-    isLoading: false,
-    hasMoreWall: true,
-    hasMoreAskbox: true,
-    school: localStorage.getItem('mirror_school') || '',
+  var state = { currentTag:'', selectedModalTag:'#表白', likedPosts:new Set(), page:1, isLoading:false, hasMore:true, school:localStorage.getItem('mirror_school')||'' };
+  var $=function(s){return document.querySelector(s);};
+  var dom = {
+    tagFilterRow:$('#tagFilterRow'), feedConfession:$('#feed-confession'), feedLoader:$('#feedLoader'), fabBtn:$('#fabBtn'),
+    modalOverlay:$('#modalOverlay'), modalTagRow:$('#modalTagRow'), modalClose:$('#modalClose'),
+    contentInput:$('#content-input'), anonCheck:$('#anon-check'), modalError:$('#modalError'), modalSubmit:$('#modalSubmit'), toast:$('#toast')
   };
-  const $ = (s) => document.querySelector(s);
-  const dom = {
-    navHeader: $('#navHeader'),
-    tabRow: $('#tabRow'),
-    tagFilterRow: $('#tagFilterRow'),
-    feedConfession: $('#feed-confession'),
-    feedAskbox: $('#feed-askbox'),
-    feedLoader: $('#feedLoader'),
-    fabBtn: $('#fabBtn'),
-    modalOverlay: $('#modalOverlay'),
-    modalTitle: $('#modalTitle'),
-    modalTagRow: $('#modalTagRow'),
-    modalClose: $('#modalClose'),
-    contentInput: $('#content-input'),
-    anonCheck: $('#anon-check'),
-    modalError: $('#modalError'),
-    modalSubmit: $('#modalSubmit'),
-    toast: $('#toast'),
-  };
+  function fmt(t) {
+    if(!t)return''; var d=Date.now()-t, s=Math.floor(d/1e3), m=Math.floor(s/60), h=Math.floor(m/60), day=Math.floor(h/24);
+    if(s<60)return'刚刚'; if(m<60)return m+'分钟前'; if(h<24)return h+'小时前'; if(day<7)return day+'天前';
+    var dt=new Date(t); var mo=dt.getMonth()+1, dd=dt.getDate();
+    return dt.getFullYear()===new Date().getFullYear()?mo+'月'+dd+'日':dt.getFullYear()+'年'+mo+'月'+dd+'日';
+  }
+  function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+  function toast(m,g){var t=dom.toast;t.textContent=m;t.className='toast '+(g||'')+' show';clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2200);}
+  function sl(){dom.feedLoader.style.display='flex';} function hl(){dom.feedLoader.style.display='none';}
+  function empty(icon,title,desc){return'<div class="empty-state"><div class="empty-icon">'+icon+'</div><div class="empty-title">'+title+'</div><div class="empty-desc">'+desc+'</div></div>';}
 
-  function formatTime(ts) {
-    if (!ts) return '';
-    const diff = Date.now() - ts;
-    const s = Math.floor(diff / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
-    if (s < 60) return '刚刚';
-    if (m < 60) return m + '分钟前';
-    if (h < 24) return h + '小时前';
-    if (d < 7) return d + '天前';
-    const date = new Date(ts);
-    const mo = date.getMonth() + 1, day = date.getDate();
-    if (date.getFullYear() === new Date().getFullYear()) return mo + '月' + day + '日';
-    return date.getFullYear() + '年' + mo + '月' + day + '日';
-  }
-  function esc(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  }
-  function toast(msg, type) {
-    const t = dom.toast;
-    t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
-    clearTimeout(t._tid);
-    t._tid = setTimeout(function(){ t.classList.remove('show'); }, 2200);
-  }
-  function showLoader() { dom.feedLoader.style.display = 'flex'; }
-  function hideLoader() { dom.feedLoader.style.display = 'none'; }
-
-  function openModal() {
-    dom.modalOverlay.classList.add('active');
-    dom.contentInput.value = ''; dom.modalError.textContent = ''; dom.modalSubmit.disabled = false;
-    if (state.currentTab === 'wall') {
-      dom.modalTitle.textContent = '发布到表白墙';
-      dom.modalTagRow.style.display = 'flex';
-      state.selectedModalTag = '#表白';
-      dom.modalTagRow.querySelectorAll('.modal-tag-chip').forEach(function(c,i){ c.classList.toggle('selected', i===0); });
-      dom.contentInput.placeholder = '写下你想说的话...'; dom.contentInput.maxLength = 2000;
-    } else {
-      dom.modalTitle.textContent = '匿名提问';
-      dom.modalTagRow.style.display = 'none';
-      dom.contentInput.placeholder = '写下你的问题...'; dom.contentInput.maxLength = 1000;
-      dom.anonCheck.checked = true;
-    }
-    dom.contentInput.focus(); document.body.style.overflow = 'hidden';
-  }
-  function closeModal() {
-    dom.modalOverlay.classList.remove('active'); document.body.style.overflow = '';
-    setTimeout(function(){ dom.contentInput.value = ''; dom.modalError.textContent = ''; }, 350);
+  function render(p) {
+    var liked=state.likedPosts.has(p.id);
+    return'<article class="card confession-card" data-post-id="'+p.id+'">'+
+      (p.tag?'<span class="card-tag">'+esc(p.tag)+'</span>':'')+
+      '<div class="card-content">'+esc(p.content)+'</div>'+
+      '<div class="card-meta">'+
+        '<span class="card-anon-badge">'+(p.is_anonymous?'匿名':'实名')+'</span>'+
+        (p.school?'<span class="card-school">'+esc(p.school)+'</span>':'')+
+        '<span class="card-meta-item">'+fmt(p.created_at)+'</span>'+
+      '</div>'+
+      '<div class="card-actions">'+
+        '<button class="action-btn like-btn'+(liked?' liked':'')+'" data-post-id="'+p.id+'" aria-label="点赞">'+
+          '<span class="heart-icon">'+(liked?'♥':'♡')+'</span><span class="like-count">'+(p.likes_count||0)+'</span>'+
+        '</button>'+
+        '<button class="action-btn" data-post-id="'+p.id+'" aria-label="评论"><span>💬</span><span>'+(p.comments_count||0)+'</span></button>'+
+      '</div></article>';
   }
 
-  function renderConfession(post) {
-    var liked = state.likedPosts.has(post.id);
-    return '<article class="card confession-card" data-post-id="' + post.id + '">' +
-      (post.tag ? '<span class="card-tag">' + esc(post.tag) + '</span>' : '') +
-      '<div class="card-content">' + esc(post.content) + '</div>' +
-      '<div class="card-meta">' +
-        '<span class="card-anon-badge">' + (post.is_anonymous ? '匿名' : '实名') + '</span>' +
-        (post.school ? '<span class="card-school">' + esc(post.school) + '</span>' : '') +
-        '<span class="card-meta-item">' + formatTime(post.created_at) + '</span>' +
-      '</div>' +
-      '<div class="card-actions">' +
-        '<button class="action-btn like-btn' + (liked ? ' liked' : '') + '" data-post-id="' + post.id + '" data-action="like" aria-label="点赞">' +
-          '<span class="heart-icon">' + (liked ? '♥' : '♡') + '</span>' +
-          '<span class="like-count">' + (post.likes_count || 0) + '</span>' +
-        '</button>' +
-        '<button class="action-btn" data-post-id="' + post.id + '" aria-label="评论">' +
-          '<span>💬</span><span>' + (post.comments_count || 0) + '</span>' +
-        '</button>' +
-      '</div>' +
-    '</article>';
+  async function load() {
+    if(state.isLoading)return; state.isLoading=true; sl(); dom.feedConfession.classList.add('loading');
+    try{
+      var u='/wall?page='+state.page+(state.currentTag?'&tag='+encodeURIComponent(state.currentTag):'');
+      var r=await fetch(u,{headers:{'Accept':'application/json; charset=utf-8'}});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json(), posts=d.posts||[], pag=d.pagination||{};
+      if(state.page===1)dom.feedConfession.innerHTML='';
+      if(posts.length===0&&state.page===1)dom.feedConfession.innerHTML=empty('💌','还没有帖子',state.currentTag?'暂无"'+state.currentTag+'"标签的帖子':'成为第一个发布的人吧');
+      else{var h=posts.map(render).join('');if(state.page===1)dom.feedConfession.innerHTML=h;else dom.feedConfession.insertAdjacentHTML('beforeend',h);}
+      state.hasMore=pag.page<pag.totalPages;
+    }catch(e){console.error(e);if(state.page===1)dom.feedConfession.innerHTML=empty('😿','加载失败','网络似乎出了问题');toast('加载失败','error');}
+    finally{state.isLoading=false; hl(); dom.feedConfession.classList.remove('loading');}
   }
 
-  function renderAskbox(q) {
-    var answerHTML = q.answer_content ?
-      '<div class="card-answer">' +
-        '<div class="answer-label">回答</div>' +
-        '<div class="answer-content">' + esc(q.answer_content) + '</div>' +
-        '<div class="answer-time">' + formatTime(q.answered_at) + '</div>' +
-      '</div>' : '';
-    return '<article class="card askbox-card" data-question-id="' + q.id + '">' +
-      '<div class="card-meta" style="margin-bottom:8px">' +
-        '<span class="card-anon-badge">' + (q.is_anonymous ? '匿名提问' : '实名提问') + '</span>' +
-        '<span class="card-meta-item">' + formatTime(q.created_at) + '</span>' +
-      '</div>' +
-      '<div class="card-question">' + esc(q.content) + '</div>' +
-      answerHTML +
-    '</article>';
+  function openModal(){
+    dom.modalOverlay.classList.add('active');dom.contentInput.value='';dom.modalError.textContent='';dom.modalSubmit.disabled=false;
+    dom.contentInput.placeholder='写下你想说的话...';dom.contentInput.maxLength=2000;
+    dom.contentInput.focus();document.body.style.overflow='hidden';
+  }
+  function closeModal(){dom.modalOverlay.classList.remove('active');document.body.style.overflow='';setTimeout(function(){dom.contentInput.value='';dom.modalError.textContent='';},350);}
+
+  async function submitPost(){
+    var c=dom.contentInput.value.trim();if(!c){dom.modalError.textContent='请输入内容';dom.contentInput.focus();return;}
+    dom.modalSubmit.disabled=true;dom.modalError.textContent='';
+    try{
+      var b={content:c,tag:state.selectedModalTag,is_anonymous:dom.anonCheck.checked?1:0,school:state.school};
+      var r=await fetch('/wall',{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify(b)});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      toast('发布成功！','success');closeModal();state.page=1;state.hasMore=true;await load();
+    }catch(e){console.error(e);dom.modalError.textContent='发布失败，请稍后重试';toast('发布失败','error');}
+    finally{dom.modalSubmit.disabled=false;}
   }
 
-  function emptyHTML(icon, title, desc) {
-    return '<div class="empty-state"><div class="empty-icon">' + icon + '</div><div class="empty-title">' + title + '</div><div class="empty-desc">' + desc + '</div></div>';
+  async function likePost(pid){
+    var l=state.likedPosts.has(pid), act=l?'unlike':'like';
+    var card=document.querySelector('.confession-card[data-post-id="'+pid+'"]');
+    var btn=card?card.querySelector('.like-btn'):null;
+    var cnt=btn?btn.querySelector('.like-count'):null;
+    var orig=cnt?parseInt(cnt.textContent,10)||0:0;
+    if(btn){if(act==='like'){btn.classList.add('liked');btn.querySelector('.heart-icon').textContent='♥';if(cnt)cnt.textContent=orig+1;state.likedPosts.add(pid);}
+    else{btn.classList.remove('liked');btn.querySelector('.heart-icon').textContent='♡';if(cnt)cnt.textContent=Math.max(0,orig-1);state.likedPosts.delete(pid);}}
+    try{
+      var r=await fetch('/wall-like',{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify({postId:pid,action:act})});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      var d=await r.json();if(d.ok&&cnt&&d.likesCount!==undefined)cnt.textContent=d.likesCount;
+    }catch(e){console.error(e);if(btn){if(act==='like'){btn.classList.remove('liked');btn.querySelector('.heart-icon').textContent='♡';if(cnt)cnt.textContent=orig;state.likedPosts.delete(pid);}
+    else{btn.classList.add('liked');btn.querySelector('.heart-icon').textContent='♥';if(cnt)cnt.textContent=orig;state.likedPosts.add(pid);}}toast('操作失败','error');}
   }
 
-  async function loadConfessions() {
-    if (state.isLoading) return; state.isLoading = true; showLoader(); dom.feedConfession.classList.add('loading');
-    try {
-      var url = '/wall?page=' + state.wallPage + (state.currentTag ? '&tag=' + encodeURIComponent(state.currentTag) : '');
-      var res = await fetch(url, { headers: {'Accept':'application/json; charset=utf-8'} });
-      if (!res.ok) throw new Error('HTTP '+res.status);
-      var data = await res.json();
-      var posts = data.posts || [], pag = data.pagination || {};
-      if (state.wallPage === 1) dom.feedConfession.innerHTML = '';
-      if (posts.length === 0 && state.wallPage === 1) {
-        dom.feedConfession.innerHTML = emptyHTML('💌', '还没有帖子', state.currentTag ? ('暂无"' + state.currentTag + '"标签的帖子') : '成为第一个发布的人吧');
-      } else {
-        var html = posts.map(renderConfession).join('');
-        if (state.wallPage === 1) dom.feedConfession.innerHTML = html;
-        else dom.feedConfession.insertAdjacentHTML('beforeend', html);
-      }
-      state.hasMoreWall = pag.page < pag.totalPages;
-    } catch(e) {
-      console.error(e);
-      if (state.wallPage === 1) dom.feedConfession.innerHTML = emptyHTML('😿', '加载失败', '网络似乎出了问题');
-      toast('加载失败', 'error');
-    } finally {
-      state.isLoading = false; hideLoader(); dom.feedConfession.classList.remove('loading');
-    }
-  }
-
-  async function loadAskbox() {
-    if (state.isLoading) return; state.isLoading = true; showLoader(); dom.feedAskbox.classList.add('loading');
-    try {
-      var res = await fetch('/askbox?page=' + state.askboxPage, { headers: {'Accept':'application/json; charset=utf-8'} });
-      if (!res.ok) throw new Error('HTTP '+res.status);
-      var data = await res.json();
-      var questions = (data.questions || []).filter(function(q){ return q.answered_at !== null; });
-      if (state.askboxPage === 1) dom.feedAskbox.innerHTML = '';
-      if (questions.length === 0 && state.askboxPage === 1) {
-        dom.feedAskbox.innerHTML = emptyHTML('📬', '暂无已回答的问题', '提问箱中的问题在得到回答后会显示在这里');
-      } else {
-        var html = questions.map(renderAskbox).join('');
-        if (state.askboxPage === 1) dom.feedAskbox.innerHTML = html;
-        else dom.feedAskbox.insertAdjacentHTML('beforeend', html);
-      }
-      var pag = data.pagination || {};
-      state.hasMoreAskbox = pag.page < pag.totalPages;
-    } catch(e) {
-      console.error(e);
-      if (state.askboxPage === 1) dom.feedAskbox.innerHTML = emptyHTML('😿', '加载失败', '网络似乎出了问题');
-      toast('加载失败', 'error');
-    } finally {
-      state.isLoading = false; hideLoader(); dom.feedAskbox.classList.remove('loading');
-    }
-  }
-
-  async function submitPost() {
-    var content = dom.contentInput.value.trim();
-    if (!content) { dom.modalError.textContent = '请输入内容'; dom.contentInput.focus(); return; }
-    dom.modalSubmit.disabled = true; dom.modalError.textContent = '';
-    try {
-      if (state.currentTab === 'wall') {
-        var body = { content:content, tag:state.selectedModalTag, is_anonymous:dom.anonCheck.checked?1:0, school:state.school };
-        var res = await fetch('/wall', { method:'POST', headers:{'Content-Type':'application/json; charset=utf-8'}, body:JSON.stringify(body) });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        toast('发布成功！', 'success'); closeModal();
-        state.wallPage = 1; state.hasMoreWall = true; await loadConfessions();
-      } else {
-        var body = { content:content, is_anonymous:dom.anonCheck.checked?1:0, target_id:null };
-        var res = await fetch('/askbox', { method:'POST', headers:{'Content-Type':'application/json; charset=utf-8'}, body:JSON.stringify(body) });
-        if (!res.ok) throw new Error('HTTP '+res.status);
-        toast('问题已提交，等待回答', 'success'); closeModal();
-        state.askboxPage = 1; state.hasMoreAskbox = true; await loadAskbox();
-      }
-    } catch(e) {
-      console.error(e); dom.modalError.textContent = '发布失败，请稍后重试'; toast('发布失败', 'error');
-    } finally { dom.modalSubmit.disabled = false; }
-  }
-
-  async function likePost(postId) {
-    var isLiked = state.likedPosts.has(postId), action = isLiked ? 'unlike' : 'like';
-    var card = document.querySelector('.confession-card[data-post-id="' + postId + '"]');
-    var btn = card ? card.querySelector('.like-btn') : null;
-    var countEl = btn ? btn.querySelector('.like-count') : null;
-    var orig = countEl ? parseInt(countEl.textContent,10)||0 : 0;
-    if (btn) {
-      if (action === 'like') {
-        btn.classList.add('liked'); btn.querySelector('.heart-icon').textContent = '♥';
-        if (countEl) countEl.textContent = orig + 1;
-        state.likedPosts.add(postId);
-      } else {
-        btn.classList.remove('liked'); btn.querySelector('.heart-icon').textContent = '♡';
-        if (countEl) countEl.textContent = Math.max(0, orig - 1);
-        state.likedPosts.delete(postId);
-      }
-    }
-    try {
-      var res = await fetch('/wall-like', { method:'POST', headers:{'Content-Type':'application/json; charset=utf-8'}, body:JSON.stringify({postId:postId, action:action}) });
-      if (!res.ok) throw new Error('HTTP '+res.status);
-      var data = await res.json();
-      if (data.ok && countEl && data.likesCount !== undefined) countEl.textContent = data.likesCount;
-    } catch(e) {
-      console.error(e);
-      if (btn) {
-        if (action === 'like') { btn.classList.remove('liked'); btn.querySelector('.heart-icon').textContent = '♡'; if (countEl) countEl.textContent = orig; state.likedPosts.delete(postId); }
-        else { btn.classList.add('liked'); btn.querySelector('.heart-icon').textContent = '♥'; if (countEl) countEl.textContent = orig; state.likedPosts.add(postId); }
-      }
-      toast('操作失败', 'error');
-    }
-  }
-
-  function switchTab(tab) {
-    if (state.currentTab === tab) return; state.currentTab = tab;
-    dom.tabRow.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tab === tab); });
-    if (tab === 'wall') {
-      dom.tagFilterRow.classList.remove('hidden');
-      dom.feedConfession.classList.remove('hidden'); dom.feedAskbox.classList.add('hidden');
-      dom.fabBtn.textContent = '+';
-      if (dom.feedConfession.children.length === 0 || dom.feedConfession.querySelector('.empty-state')) { state.wallPage = 1; state.hasMoreWall = true; loadConfessions(); }
-    } else {
-      dom.tagFilterRow.classList.add('hidden');
-      dom.feedConfession.classList.add('hidden'); dom.feedAskbox.classList.remove('hidden');
-      dom.fabBtn.textContent = '?';
-      if (dom.feedAskbox.children.length === 0 || dom.feedAskbox.querySelector('.empty-state')) { state.askboxPage = 1; state.hasMoreAskbox = true; loadAskbox(); }
-    }
-  }
-
-  // ── 事件委托 ──
-  dom.tabRow.addEventListener('click', function(e){ var b = e.target.closest('.tab-btn'); if (b && b.dataset.tab) switchTab(b.dataset.tab); });
-  dom.tagFilterRow.addEventListener('click', function(e){
-    var c = e.target.closest('.tag-chip'); if (!c) return;
-    var tag = c.dataset.tag || ''; if (state.currentTag === tag) return;
-    state.currentTag = tag;
-    dom.tagFilterRow.querySelectorAll('.tag-chip').forEach(function(x){ x.classList.toggle('active', x.dataset.tag === tag); });
-    state.wallPage = 1; state.hasMoreWall = true; loadConfessions();
+  dom.tagFilterRow.addEventListener('click',function(e){
+    var c=e.target.closest('.tag-chip');if(!c)return;var t=c.dataset.tag||'';if(state.currentTag===t)return;state.currentTag=t;
+    dom.tagFilterRow.querySelectorAll('.tag-chip').forEach(function(x){x.classList.toggle('active',x.dataset.tag===t);});
+    state.page=1;state.hasMore=true;load();
   });
-  dom.modalTagRow.addEventListener('click', function(e){
-    var c = e.target.closest('.modal-tag-chip'); if (!c || !c.dataset.tag) return;
-    state.selectedModalTag = c.dataset.tag;
-    dom.modalTagRow.querySelectorAll('.modal-tag-chip').forEach(function(x){ x.classList.toggle('selected', x.dataset.tag === c.dataset.tag); });
+  dom.modalTagRow.addEventListener('click',function(e){
+    var c=e.target.closest('.modal-tag-chip');if(!c||!c.dataset.tag)return;state.selectedModalTag=c.dataset.tag;
+    dom.modalTagRow.querySelectorAll('.modal-tag-chip').forEach(function(x){x.classList.toggle('selected',x.dataset.tag===c.dataset.tag);});
   });
-  dom.feedConfession.addEventListener('click', function(e){
-    var btn = e.target.closest('.like-btn');
-    if (btn) { e.preventDefault(); var pid = parseInt(btn.dataset.postId,10); if (pid && !isNaN(pid)) likePost(pid); return; }
-    var cmt = e.target.closest('.comment-btn');
-    if (cmt) { e.preventDefault(); toast('评论功能即将开放', ''); return; }
+  dom.feedConfession.addEventListener('click',function(e){
+    var btn=e.target.closest('.like-btn');if(btn){e.preventDefault();var pid=parseInt(btn.dataset.postId,10);if(pid&&!isNaN(pid))likePost(pid);return;}
+    var cmt=e.target.closest('.comment-btn');if(cmt){e.preventDefault();toast('评论功能即将开放','');return;}
   });
-  dom.fabBtn.addEventListener('click', openModal);
-  dom.modalClose.addEventListener('click', closeModal);
-  dom.modalOverlay.addEventListener('click', function(e){ if (e.target === dom.modalOverlay) closeModal(); });
-  dom.modalSubmit.addEventListener('click', submitPost);
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape' && dom.modalOverlay.classList.contains('active')) closeModal();
-    if ((e.ctrlKey||e.metaKey) && e.key === 'Enter' && dom.modalOverlay.classList.contains('active') && document.activeElement === dom.contentInput) { e.preventDefault(); submitPost(); }
+  dom.fabBtn.addEventListener('click',openModal);
+  dom.modalClose.addEventListener('click',closeModal);
+  dom.modalOverlay.addEventListener('click',function(e){if(e.target===dom.modalOverlay)closeModal();});
+  dom.modalSubmit.addEventListener('click',submitPost);
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&dom.modalOverlay.classList.contains('active'))closeModal();
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&dom.modalOverlay.classList.contains('active')&&document.activeElement===dom.contentInput){e.preventDefault();submitPost();}
   });
-
-  // ── 无限滚动 ──
-  var scrollTicking = false;
-  window.addEventListener('scroll', function(){
-    if (scrollTicking) return; scrollTicking = true;
-    requestAnimationFrame(function(){
-      scrollTicking = false;
-      if (state.isLoading) return;
-      var sb = window.innerHeight + window.scrollY, dh = document.documentElement.scrollHeight;
-      if (sb >= dh - 300) {
-        if (state.currentTab === 'wall' && state.hasMoreWall) { state.wallPage++; loadConfessions(); }
-        else if (state.currentTab === 'askbox' && state.hasMoreAskbox) { state.askboxPage++; loadAskbox(); }
-      }
-    });
-  }, {passive:true});
-
-  function init() { loadConfessions(); loadAskbox(); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  var st=false;
+  window.addEventListener('scroll',function(){if(st)return;st=true;requestAnimationFrame(function(){st=false;if(state.isLoading)return;if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-300&&state.hasMore){state.page++;load();}});},{passive:true});
+  function init(){load();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 </body>
