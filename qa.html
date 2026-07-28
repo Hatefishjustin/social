@@ -145,6 +145,17 @@ body{
 .card-a-text{font-size:14px;line-height:1.7;color:rgba(255,255,255,.72);white-space:pre-wrap;word-break:break-word}
 .card-a-time{font-size:10px;color:var(--text3);margin-top:7px}
 
+/* ── 回复区域 ── */
+.card-reply{margin:0 0 0 12px;padding:0 18px 16px;border-left:1.5px solid var(--accent)}
+.card-reply-input{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(255,255,255,.82);font-size:13px;line-height:1.6;padding:10px 12px;resize:vertical;min-height:60px;outline:none;font-family:inherit;box-sizing:border-box;margin-bottom:8px;transition:border-color .2s}
+.card-reply-input:focus{border-color:var(--accent)}
+.card-reply-input::placeholder{color:var(--text3)}
+.card-reply-bar{display:flex;align-items:center;justify-content:space-between}
+.card-reply-chars{font-size:10px;color:var(--text3)}
+.card-reply-send{padding:5px 14px;border-radius:var(--radius-pill);background:var(--accent);color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.card-reply-send:disabled{opacity:.5;cursor:default}
+.card-reply-send:not(:disabled):hover{filter:brightness(1.1)}
+
 /* ── 空状态 ── */
 .empty{padding:50px 20px;text-align:center;color:var(--text3);animation:cardIn .35s var(--ease)}
 .empty-icon{font-size:44px;margin-bottom:12px;opacity:.3}
@@ -489,6 +500,17 @@ function renderCard(q) {
         '<div class="card-a-time">' + fmtTime(q.answered_at) + '</div>' +
       '</div>';
   }
+  var replyHtml = '';
+  if (state.tab === 'mine' && !q.answer_content) {
+    replyHtml =
+      '<div class="card-reply">' +
+        '<textarea class="card-reply-input" placeholder="写下你的回答..." maxlength="2000" rows="3"></textarea>' +
+        '<div class="card-reply-bar">' +
+          '<span class="card-reply-chars">0/2000</span>' +
+          '<button class="card-reply-send" data-qid="' + q.id + '">回复</button>' +
+        '</div>' +
+      '</div>';
+  }
   return '<article class="card">' +
     '<div class="card-q">' +
       '<div class="card-q-avatar">?</div>' +
@@ -499,7 +521,7 @@ function renderCard(q) {
           '<span>' + fmtTime(q.created_at) + '</span>' +
         '</div>' +
       '</div>' +
-    '</div>' + answerHtml +
+    '</div>' + answerHtml + replyHtml +
   '</article>';
 }
 
@@ -650,6 +672,33 @@ async function submitQuestion() {
   }
 }
 
+// ── Submit answer ──
+async function submitAnswer(qId, btnEl, inputEl) {
+  var content = inputEl.value.trim();
+  if (!content) { toast('请输入回复内容', 'err'); inputEl.focus(); return; }
+  if (content.length > 2000) { toast('回复不能超过2000字', 'err'); return; }
+
+  btnEl.disabled = true;
+
+  try {
+    var r = await fetch('/askbox/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ questionId: qId, answerContent: content })
+    });
+    if (!r.ok) {
+      var errData = await r.json().catch(function() { return {}; });
+      throw new Error(errData.message || errData.error || '回复失败');
+    }
+    toast('已回复', 'ok');
+    await loadFeed(true);
+  } catch (e) {
+    toast(e.message || '回复失败', 'err');
+  } finally {
+    btnEl.disabled = false;
+  }
+}
+
 // ── Error ──
 function showErr(msg) { dom.askErr.textContent = msg; dom.askErr.classList.add('show'); }
 function clearErr() { dom.askErr.textContent = ''; dom.askErr.classList.remove('show'); }
@@ -789,6 +838,38 @@ QA('.sheet-pf-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     shareTo(btn.dataset.pf);
   });
+});
+
+// 回复交互
+dom.feedList.addEventListener('click', function(e) {
+  var btn = e.target.closest('.card-reply-send');
+  if (!btn) return;
+  var card = btn.closest('.card');
+  var input = card.querySelector('.card-reply-input');
+  var qId = btn.dataset.qid;
+  submitAnswer(qId, btn, input);
+});
+
+dom.feedList.addEventListener('input', function(e) {
+  var input = e.target.closest('.card-reply-input');
+  if (!input) return;
+  var card = input.closest('.card');
+  var chars = card.querySelector('.card-reply-chars');
+  if (chars) {
+    var l = input.value.length;
+    chars.textContent = l + '/2000';
+    chars.className = 'card-reply-chars' + (l > 1900 ? ' danger' : l > 1600 ? ' warn' : '');
+  }
+});
+
+dom.feedList.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter' || e.shiftKey) return;
+  var input = e.target.closest('.card-reply-input');
+  if (!input) return;
+  e.preventDefault();
+  var card = input.closest('.card');
+  var btn = card.querySelector('.card-reply-send');
+  if (btn && !btn.disabled) btn.click();
 });
 
 // Infinite scroll
