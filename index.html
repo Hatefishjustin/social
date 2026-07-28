@@ -181,33 +181,89 @@ html, body {
   text-align: center; font-size: 12px; color: var(--text-quaternary);
   border-top: 1px solid var(--border);
 }
+.footer a.feedback-link {
+  color: var(--text-tertiary); text-decoration: none; font-size: 12px;
+  transition: color .2s; cursor: pointer;
+}
+.footer a.feedback-link:hover { color: var(--accent); }
 
-.notif-bell{position:relative;background:none;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:4px 8px;cursor:pointer;color:rgba(255,255,255,.45);transition:all .2s;display:flex;align-items:center}
-.notif-bell:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.18)}
-.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--accent);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
-.notif-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:flex-end;padding:70px 16px 0;opacity:0;pointer-events:none;transition:opacity .25s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
-.notif-overlay.show{opacity:1;pointer-events:auto}
-.notif-panel{width:100%;max-width:360px;max-height:70vh;background:var(--surface-raised);border:1px solid rgba(255,255,255,.08);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.6)}
-.notif-panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);font-size:14px;font-weight:600;color:var(--text-primary)}
-.notif-mark-all{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 8px}
-.notif-list{flex:1;overflow-y:auto;padding:4px 0}
-.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 18px;text-decoration:none;color:inherit;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.03)}
-.notif-item:hover{background:rgba(255,255,255,.03)}
-.notif-unread{background:rgba(196,82,110,.06)}
-.notif-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
-.notif-body{flex:1;min-width:0}
-.notif-text{font-size:13px;color:var(--text-secondary);line-height:1.4}
-.notif-preview{font-size:11px;color:var(--text-quaternary);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.notif-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px}
-.notif-empty{text-align:center;color:var(--text-quaternary);font-size:13px;padding:32px 20px}
-.notif-load-more{text-align:center;padding:12px}
-.notif-load-more button{background:none;border:none;color:var(--text-tertiary);font-size:12px;cursor:pointer;padding:6px 16px;border-radius:8px}
-.notif-load-more button:hover{color:var(--text-secondary);background:rgba(255,255,255,.04)}
-.login-code-banner{max-width:640px;margin:0 auto;padding:6px 20px}
-.login-code-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,rgba(196,82,110,.15),rgba(196,82,110,.06));border:1px solid rgba(196,82,110,.2);border-radius:12px;padding:12px 16px}
-.login-code-label{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
-.login-code-digits{font-size:22px;font-weight:700;letter-spacing:6px;color:var(--accent);font-variant-numeric:tabular-nums;font-family:monospace}
-.login-code-close{background:none;border:none;color:var(--text-quaternary);font-size:14px;cursor:pointer;padding:4px}
+.bell-btn {
+  background: transparent; border: 1px solid var(--border);
+  padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
+  color: var(--text-tertiary); transition: all .2s; position: relative;
+  display: flex; align-items: center;
+}
+.bell-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.bell-badge {
+  position: absolute; top: -4px; right: -6px; min-width: 16px; height: 16px;
+  border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px;
+  line-height: 16px; text-align: center; padding: 0 4px; font-weight: 600;
+}
+.notif-panel {
+  position: fixed; top: 60px; right: max(16px, calc((100vw - 640px) / 2 + 16px));
+  width: 340px; max-width: calc(100vw - 32px); max-height: 70vh;
+  background: var(--surface-raised); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); z-index: 200;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.notif-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+}
+.notif-title { font-size: 15px; font-weight: 600; }
+.notif-close {
+  background: none; border: none; color: var(--text-tertiary); font-size: 20px;
+  cursor: pointer; padding: 2px 6px; line-height: 1;
+}
+.notif-list { overflow-y: auto; flex: 1; padding: 8px 0; }
+.notif-item {
+  padding: 12px 18px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s; display: flex; gap: 10px; align-items: flex-start;
+}
+.notif-item:hover { background: var(--surface); }
+.notif-item.unread { border-left: 2px solid var(--accent); padding-left: 16px; }
+.notif-item .notif-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
+.notif-item .notif-body { flex: 1; font-size: 13px; line-height: 1.5; }
+.notif-item .notif-body .notif-text { color: var(--text-primary); }
+.notif-item .notif-body .notif-time { color: var(--text-quaternary); font-size: 11px; margin-top: 2px; }
+.notif-empty { text-align: center; padding: 32px 16px; color: var(--text-quaternary); font-size: 13px; }
+
+.feedback-modal {
+  position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.78);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.feedback-modal:not(.active) { display: none; }
+.feedback-card {
+  width: 380px; max-width: calc(100vw - 40px); background: var(--surface-raised);
+  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px;
+}
+.feedback-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.feedback-card select,
+.feedback-card textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text-primary);
+  font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none;
+}
+.feedback-card select:focus,
+.feedback-card textarea:focus { border-color: var(--accent); }
+.feedback-card textarea { min-height: 100px; resize: vertical; }
+.feedback-card .feedback-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.feedback-card button {
+  padding: 8px 20px; border-radius: var(--radius-sm); font-size: 14px;
+  border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+  cursor: pointer; font-family: inherit;
+}
+.feedback-card button.submit { background: var(--accent); border-color: var(--accent); color: #fff; }
+.feedback-card button.submit:disabled { opacity: .5; cursor: not-allowed; }
+.feedback-toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 400; padding: 10px 24px; border-radius: 20px; font-size: 13px;
+  background: var(--surface-raised); color: var(--text-primary); border: 1px solid var(--border);
+  opacity: 0; transition: opacity .3s; pointer-events: none;
+}
+.feedback-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -221,20 +277,22 @@ html, body {
       <div class="brand-dot"></div>
       <div class="brand-name">心镜 · 社交</div>
     </div>
-    <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" title="通知" style="display:none">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
-    </button>
-    <button class="auth-login-btn login-btn">登录</button>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="bellBtn" class="bell-btn" onclick="toggleNotifications()" title="通知">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        <span id="bellBadge" class="bell-badge" style="display:none">0</span>
+      </button>
+      <button class="auth-login-btn login-btn">登录</button>
+    </div>
   </div>
 </div>
 
-<div id="loginCodeBanner" class="login-code-banner" style="display:none">
-  <div class="login-code-inner">
-    <span class="login-code-label">跨设备登录码（30分钟有效）</span>
-    <span class="login-code-digits" id="loginCodeDigits"></span>
-    <button class="login-code-close" onclick="this.parentElement.parentElement.remove()">✕</button>
+<div id="notifPanel" class="notif-panel" style="display:none">
+  <div class="notif-header">
+    <span class="notif-title">通知</span>
+    <button class="notif-close" onclick="toggleNotifications()">&times;</button>
   </div>
+  <div id="notifList" class="notif-list"></div>
 </div>
 
 <div class="hero">
@@ -253,7 +311,7 @@ html, body {
       心理测评匹配
       <span class="card-badge hot">核心</span>
     </div>
-    <div class="card-desc">完成约 40 道心理学测评题，基于依恋理论、大五人格模型等多维度科学量表，找到真正契合的聊天伙伴。</div>
+    <div class="card-desc">完成 15-25 道心理学测评题，基于 Bowlbys 依恋理论、Costa & McCrae 的 OCEAN 大五人格模型，找到真正契合的聊天伙伴。</div>
     <div class="card-action">
       开始测评
       <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
@@ -294,294 +352,180 @@ html, body {
 
 <div class="footer">
   心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间<br>
-  <span style="color:var(--accent); font-size:11px;">Powered by Justin</span>
+  <a class="feedback-link" onclick="showFeedback()" style="margin-top:6px;display:inline-block;">意见反馈</a>
 </div>
 
-<div class="feedback-link">
-  <a href="javascript:void(0)" onclick="openFeedback()">提建议</a>
-  <span class="feedback-divider">|</span>
-  <a href="javascript:void(0)" onclick="openFeedback()">报Bug</a>
-</div>
-
-<!-- 反馈弹窗 -->
-<div class="feedback-overlay" id="feedbackOverlay" onclick="closeFeedback(event)">
-  <div class="feedback-modal" onclick="event.stopPropagation()">
-    <div class="feedback-header">
-      <span>反馈中心</span>
-      <button class="feedback-close" onclick="closeFeedback()">&times;</button>
+<div class="feedback-modal" id="feedbackModal">
+  <div class="feedback-card">
+    <h3>意见反馈</h3>
+    <select id="feedbackType">
+      <option value="bug">Bug 报告</option>
+      <option value="feature">功能建议</option>
+      <option value="other">其他</option>
+    </select>
+    <textarea id="feedbackContent" placeholder="请描述你的反馈..." maxlength="2000"></textarea>
+    <div class="feedback-btns">
+      <button onclick="closeFeedback()">取消</button>
+      <button class="submit" id="feedbackSubmit" onclick="submitFeedback()">提交</button>
     </div>
-    <div class="feedback-tabs">
-      <button class="feedback-tab active" onclick="switchFeedbackTab('suggestion', this)">💡 建议</button>
-      <button class="feedback-tab" onclick="switchFeedbackTab('bug', this)">🐛 报Bug</button>
-    </div>
-    <textarea class="feedback-textarea" id="feedbackContent" placeholder="请描述你的建议或遇到的问题……" maxlength="2000"></textarea>
-    <div class="feedback-footer">
-      <span class="feedback-count" id="feedbackCount">0/2000</span>
-      <button class="feedback-submit" id="feedbackBtn" onclick="submitFeedback()">提交反馈</button>
-    </div>
-    <div class="feedback-msg" id="feedbackMsg"></div>
   </div>
 </div>
 
-<style>
-.feedback-link {
-  text-align: center; padding: 8px 0 24px; font-size: 11px;
-}
-.feedback-link a {
-  color: var(--text-tertiary); text-decoration: none; margin: 0 8px;
-}
-.feedback-link a:hover { color: var(--accent); }
-.feedback-divider { color: var(--border); }
+<div class="feedback-toast" id="feedbackToast"></div>
 
-.feedback-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  z-index: 9999; align-items: center; justify-content: center;
-}
-.feedback-overlay.active { display: flex; }
-.feedback-modal {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: 16px; width: 90%; max-width: 420px; padding: 24px;
-}
-.feedback-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; font-size: 16px; font-weight: 600; color: var(--text-primary);
-}
-.feedback-close {
-  background: none; border: none; color: var(--text-tertiary); font-size: 24px;
-  cursor: pointer; line-height: 1;
-}
-.feedback-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.feedback-tab {
-  flex: 1; padding: 8px 0; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 8px; color: var(--text-secondary); font-size: 14px; cursor: pointer;
-  transition: all 0.2s;
-}
-.feedback-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.feedback-textarea {
-  width: 100%; min-height: 120px; background: var(--bg); border: 1px solid var(--border);
-  border-radius: 10px; padding: 12px; color: var(--text-primary); font-size: 14px;
-  resize: vertical; outline: none; font-family: inherit;
-}
-.feedback-textarea:focus { border-color: var(--accent); }
-.feedback-footer {
-  display: flex; align-items: center; justify-content: space-between; margin-top: 12px;
-}
-.feedback-count { color: var(--text-tertiary); font-size: 12px; }
-.feedback-submit {
-  background: var(--accent); color: #fff; border: none; padding: 8px 24px;
-  border-radius: 20px; font-size: 14px; cursor: pointer; font-weight: 500;
-}
-.feedback-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-.feedback-msg { margin-top: 10px; font-size: 13px; text-align: center; display: none; }
-</style>
-
+<script src="/auth.js"></script>
 <script>
-let feedbackType = 'suggestion';
+(function(){
+'use strict';
 
-function openFeedback() {
-  document.getElementById('feedbackOverlay').classList.add('active');
-  document.getElementById('feedbackContent').value = '';
-  document.getElementById('feedbackCount').textContent = '0/2000';
-  document.getElementById('feedbackMsg').style.display = 'none';
-  document.getElementById('feedbackBtn').disabled = false;
-  document.getElementById('feedbackContent').focus();
+function esc(s) { if(!s)return''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function toast(msg) {
+  var el = document.getElementById('feedbackToast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.remove('show'); }, 2500);
 }
 
-function closeFeedback(e) {
-  if (e && e.target !== document.getElementById('feedbackOverlay')) return;
-  document.getElementById('feedbackOverlay').classList.remove('active');
+// ====== 通知系统 ======
+var notificationState = { unseen: 0 };
+
+function toggleNotifications() {
+  var panel = document.getElementById('notifPanel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'flex';
+    loadNotifications();
+  } else {
+    panel.style.display = 'none';
+  }
 }
 
-function switchFeedbackTab(type, btn) {
-  feedbackType = type;
-  document.querySelectorAll('.feedback-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
+function fmtTime(ts) {
+  if (!ts) return '';
+  var d = Date.now() - new Date(ts).getTime();
+  var s = Math.floor(d/1000), m = Math.floor(s/60), h = Math.floor(m/60), day = Math.floor(h/24);
+  if (s < 60) return '刚刚';
+  if (m < 60) return m + '分钟前';
+  if (h < 24) return h + '小时前';
+  if (day < 7) return day + '天前';
+  var dt = new Date(ts);
+  return (dt.getMonth()+1) + '/' + dt.getDate();
 }
 
-document.getElementById('feedbackContent').addEventListener('input', function() {
-  document.getElementById('feedbackCount').textContent = this.value.length + '/2000';
+async function loadNotifications() {
+  var list = document.getElementById('notifList');
+  try {
+    var r = await fetch('/api/notifications', { credentials: 'same-origin' });
+    var d = await r.json();
+    if (!d.notifications || d.notifications.length === 0) {
+      list.innerHTML = '<div class="notif-empty">暂无通知</div>';
+      return;
+    }
+    var html = '';
+    d.notifications.forEach(function(n){
+      var cls = n.is_read ? '' : ' unread';
+      html += '<div class="notif-item' + cls + '" onclick="markNotifRead(' + n.id + ')">' +
+        (n.is_read ? '' : '<div class="notif-dot"></div>') +
+        '<div class="notif-body">' +
+          '<div class="notif-text">' + esc(n.content_preview || n.content || '') + '</div>' +
+          '<div class="notif-time">' + fmtTime(n.created_at) + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    list.innerHTML = html;
+    notificationState.unseen = d.unseen || d.notifications.filter(function(n){ return !n.is_read; }).length;
+    updateBadge();
+  } catch(e) {
+    list.innerHTML = '<div class="notif-empty">加载失败</div>';
+  }
+}
+
+function updateBadge() {
+  var badge = document.getElementById('bellBadge');
+  if (notificationState.unseen > 0) {
+    badge.style.display = 'inline-block';
+    badge.textContent = notificationState.unseen > 99 ? '99+' : notificationState.unseen;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+window.markNotifRead = function(id) {
+  fetch('/api/notifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: id, read: true })
+  }).then(function(){ loadNotifications(); }).catch(function(){});
+};
+
+// Poll for notifications when logged in
+var notifPollTimer;
+function startNotifPoll() {
+  if (Auth.isLoggedIn()) {
+    fetch('/api/notifications', { credentials: 'same-origin' }).then(function(r){ return r.json(); })
+      .then(function(d){
+        notificationState.unseen = d.unseen || 0;
+        updateBadge();
+      }).catch(function(){});
+  }
+  notifPollTimer = setTimeout(startNotifPoll, 30000);
+}
+startNotifPoll();
+
+Auth.onAuthChange(function(user) {
+  if (user) loadNotifications();
 });
 
-async function submitFeedback() {
-  const content = document.getElementById('feedbackContent').value.trim();
-  if (!content || content.length < 3) {
-    showFeedbackMsg('请至少输入3个字', 'error');
-    return;
-  }
-  const btn = document.getElementById('feedbackBtn');
-  btn.disabled = true; btn.textContent = '提交中...';
+// ====== 反馈系统 ======
+function showFeedback() {
+  if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+  document.getElementById('feedbackModal').classList.add('active');
+  document.getElementById('feedbackContent').value = '';
+}
+
+function closeFeedback() {
+  document.getElementById('feedbackModal').classList.remove('active');
+}
+
+window.submitFeedback = async function() {
+  var type = document.getElementById('feedbackType').value;
+  var content = document.getElementById('feedbackContent').value.trim();
+  if (!content || content.length < 2) { toast('请填写反馈内容'); return; }
+  var btn = document.getElementById('feedbackSubmit');
+  btn.disabled = true;
+  btn.textContent = '提交中...';
   try {
-    const res = await fetch('/api/feedback', {
+    var r = await fetch('/api/feedback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: feedbackType, content })
+      body: JSON.stringify({ type: type, content: content }),
+      credentials: 'same-origin'
     });
-    const data = await res.json();
-    if (data.success) {
-      showFeedbackMsg('感谢你的反馈！', 'success');
-      setTimeout(() => closeFeedback(), 1500);
+    var d = await r.json();
+    if (d.ok) {
+      toast('感谢反馈！');
+      closeFeedback();
     } else {
-      showFeedbackMsg(data.message || '提交失败', 'error');
-      btn.disabled = false; btn.textContent = '提交反馈';
+      toast(d.message || '提交失败');
     }
-  } catch (e) {
-    showFeedbackMsg('网络错误，请重试', 'error');
-    btn.disabled = false; btn.textContent = '提交反馈';
-  }
-}
-
-function showFeedbackMsg(msg, type) {
-  const el = document.getElementById('feedbackMsg');
-  el.textContent = msg; el.style.display = 'block';
-  el.style.color = type === 'success' ? '#4ade80' : '#ff6b6b';
-}
-</script>
-
-<!-- 通知面板 -->
-<div class="notif-overlay" id="notifOverlay" onclick="if(event.target===this)closeNotifPanel()">
-  <div class="notif-panel" id="notifPanel">
-    <div class="notif-panel-head">
-      <span>通知</span>
-      <button class="notif-mark-all" id="notifMarkAll" onclick="markAllRead()">全部已读</button>
-    </div>
-    <div class="notif-list" id="notifList">
-      <div class="notif-empty">加载中...</div>
-    </div>
-    <div class="notif-load-more" id="notifLoadMore" style="display:none">
-      <button onclick="loadMoreNotif()">加载更多</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── 通知系统 ──
-var notifState = { page: 1, hasMore: false, total: 0, unread: 0, loading: false };
-
-async function fetchNotifs(page) {
-  var r = await fetch('/api/notifications?page=' + page + '&limit=20', { credentials: 'same-origin' });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  return await r.json();
-}
-
-function typeLabel(t) {
-  var map = { like: '赞了你的帖子', comment: '评论了你的帖子', answer: '回答了你的提问', askbox_question: '向你提问', wall_like: '赞了你的表白', wall_comment: '评论了你的表白' };
-  return map[t] || t;
-}
-
-function typeIcon(t) {
-  var map = { like: '♥', comment: '💬', answer: '✉', askbox_question: '❓', wall_like: '💖', wall_comment: '🗨' };
-  return map[t] || '📌';
-}
-
-function targetLink(t, id) {
-  var map = { wall: '/campus.html', askbox: '/qa.html', askbox_question: '/qa.html', wall_like: '/campus.html', wall_comment: '/campus.html' };
-  return map[t] || '/';
-}
-
-function renderNotif(n) {
-  var cls = n.is_read ? '' : ' notif-unread';
-  var preview = n.content_preview ? (n.content_preview.length > 40 ? n.content_preview.slice(0,40)+'...' : n.content_preview) : '';
-  return '<a class="notif-item'+cls+'" href="'+targetLink(n.target_type, n.target_id)+'" onclick="closeNotifPanel()">'+
-    '<span class="notif-icon">'+typeIcon(n.type)+'</span>'+
-    '<div class="notif-body">'+
-      '<div class="notif-text">'+typeLabel(n.type)+'</div>'+
-      (preview ? '<div class="notif-preview">'+preview.replace(/</g,'&lt;')+'</div>' : '')+
-    '</div>'+
-    '<span class="notif-dot" style="display:'+(n.is_read?'none':'block')+'"></span>'+
-  '</a>';
-}
-
-async function loadNotifs(page) {
-  if (notifState.loading) return;
-  notifState.loading = true;
-  try {
-    var d = await fetchNotifs(page);
-    var list = document.getElementById('notifList');
-    var html = d.notifications.map(renderNotif).join('');
-    if (page === 1) {
-      list.innerHTML = d.notifications.length === 0 ? '<div class="notif-empty">暂无通知</div>' : html;
-    } else {
-      list.insertAdjacentHTML('beforeend', html);
-    }
-    notifState.page = d.pagination.page;
-    notifState.hasMore = d.pagination.page < d.pagination.totalPages;
-    notifState.unread = d.unread;
-    notifState.total = d.pagination.total;
-    document.getElementById('notifLoadMore').style.display = notifState.hasMore ? 'block' : 'none';
-    updateNotifBadge();
   } catch(e) {
-    document.getElementById('notifList').innerHTML = '<div class="notif-empty">加载失败</div>';
-  } finally {
-    notifState.loading = false;
+    toast('网络错误');
   }
-}
+  btn.disabled = false;
+  btn.textContent = '提交';
+};
 
-function loadMoreNotif() { loadNotifs(notifState.page + 1); }
+window.showFeedback = showFeedback;
+window.closeFeedback = closeFeedback;
 
-function updateNotifBadge() {
-  var badge = document.getElementById('notifBadge');
-  badge.textContent = notifState.unread > 99 ? '99+' : notifState.unread;
-  badge.style.display = notifState.unread > 0 ? 'flex' : 'none';
-}
-
-function toggleNotifPanel() {
-  var ov = document.getElementById('notifOverlay');
-  if (ov.classList.contains('show')) {
-    closeNotifPanel();
-  } else {
-    ov.classList.add('show');
-    if (notifState.total === 0 || document.getElementById('notifList').querySelector('.notif-empty')) {
-      loadNotifs(1);
+// Close notification panel when clicking outside
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('notifPanel');
+  if (panel.style.display !== 'none') {
+    if (!panel.contains(e.target) && e.target.id !== 'bellBtn' && !document.getElementById('bellBtn').contains(e.target)) {
+      panel.style.display = 'none';
     }
-  }
-}
-
-function closeNotifPanel() {
-  document.getElementById('notifOverlay').classList.remove('show');
-}
-
-async function markAllRead() {
-  try {
-    await fetch('/api/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mark_all_read: true }) });
-    document.querySelectorAll('.notif-unread').forEach(function(el){ el.classList.remove('notif-unread'); });
-    document.querySelectorAll('.notif-dot').forEach(function(el){ el.style.display = 'none'; });
-    notifState.unread = 0;
-    updateNotifBadge();
-  } catch(e) {}
-}
-
-// Auto-refresh unread count every 60s
-window.addEventListener('authchange', function(e) {
-  var bell = document.getElementById('notifBell');
-  var user = e.detail;
-  if (user) {
-    bell.style.display = '';
-    fetchNotifs(1).then(function(d){
-      notifState.unread = d.unread;
-      notifState.total = d.pagination.total;
-      updateNotifBadge();
-    }).catch(function(){});
-  } else {
-    bell.style.display = 'none';
   }
 });
 
-// ── 登录码提示横幅 ──
-(function(){
-  var params = new URLSearchParams(location.search);
-  var code = params.get('login_code');
-  if (code) {
-    var banner = document.getElementById('loginCodeBanner');
-    var digits = document.getElementById('loginCodeDigits');
-    digits.textContent = code;
-    banner.style.display = 'block';
-    // Clean URL
-    var url = new URL(location);
-    url.searchParams.delete('login_code');
-    history.replaceState(null, '', url);
-  }
 })();
 </script>
-
-</body>
 </html>
