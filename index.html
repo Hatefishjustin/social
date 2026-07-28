@@ -254,8 +254,149 @@ html, body {
 </div>
 
 <div class="footer">
-  心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间
+  心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间<br>
+  <span style="color:var(--accent); font-size:11px;">Powered by Justin</span>
 </div>
+
+<div class="feedback-link">
+  <a href="javascript:void(0)" onclick="openFeedback()">提建议</a>
+  <span class="feedback-divider">|</span>
+  <a href="javascript:void(0)" onclick="openFeedback()">报Bug</a>
+</div>
+
+<!-- 反馈弹窗 -->
+<div class="feedback-overlay" id="feedbackOverlay" onclick="closeFeedback(event)">
+  <div class="feedback-modal" onclick="event.stopPropagation()">
+    <div class="feedback-header">
+      <span>反馈中心</span>
+      <button class="feedback-close" onclick="closeFeedback()">&times;</button>
+    </div>
+    <div class="feedback-tabs">
+      <button class="feedback-tab active" onclick="switchFeedbackTab('suggestion', this)">💡 建议</button>
+      <button class="feedback-tab" onclick="switchFeedbackTab('bug', this)">🐛 报Bug</button>
+    </div>
+    <textarea class="feedback-textarea" id="feedbackContent" placeholder="请描述你的建议或遇到的问题……" maxlength="2000"></textarea>
+    <div class="feedback-footer">
+      <span class="feedback-count" id="feedbackCount">0/2000</span>
+      <button class="feedback-submit" id="feedbackBtn" onclick="submitFeedback()">提交反馈</button>
+    </div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+  </div>
+</div>
+
+<style>
+.feedback-link {
+  text-align: center; padding: 8px 0 24px; font-size: 11px;
+}
+.feedback-link a {
+  color: var(--text-tertiary); text-decoration: none; margin: 0 8px;
+}
+.feedback-link a:hover { color: var(--accent); }
+.feedback-divider { color: var(--border); }
+
+.feedback-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 9999; align-items: center; justify-content: center;
+}
+.feedback-overlay.active { display: flex; }
+.feedback-modal {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; width: 90%; max-width: 420px; padding: 24px;
+}
+.feedback-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; font-size: 16px; font-weight: 600; color: var(--text-primary);
+}
+.feedback-close {
+  background: none; border: none; color: var(--text-tertiary); font-size: 24px;
+  cursor: pointer; line-height: 1;
+}
+.feedback-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.feedback-tab {
+  flex: 1; padding: 8px 0; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-secondary); font-size: 14px; cursor: pointer;
+  transition: all 0.2s;
+}
+.feedback-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.feedback-textarea {
+  width: 100%; min-height: 120px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; color: var(--text-primary); font-size: 14px;
+  resize: vertical; outline: none; font-family: inherit;
+}
+.feedback-textarea:focus { border-color: var(--accent); }
+.feedback-footer {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 12px;
+}
+.feedback-count { color: var(--text-tertiary); font-size: 12px; }
+.feedback-submit {
+  background: var(--accent); color: #fff; border: none; padding: 8px 24px;
+  border-radius: 20px; font-size: 14px; cursor: pointer; font-weight: 500;
+}
+.feedback-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.feedback-msg { margin-top: 10px; font-size: 13px; text-align: center; display: none; }
+</style>
+
+<script>
+let feedbackType = 'suggestion';
+
+function openFeedback() {
+  document.getElementById('feedbackOverlay').classList.add('active');
+  document.getElementById('feedbackContent').value = '';
+  document.getElementById('feedbackCount').textContent = '0/2000';
+  document.getElementById('feedbackMsg').style.display = 'none';
+  document.getElementById('feedbackBtn').disabled = false;
+  document.getElementById('feedbackContent').focus();
+}
+
+function closeFeedback(e) {
+  if (e && e.target !== document.getElementById('feedbackOverlay')) return;
+  document.getElementById('feedbackOverlay').classList.remove('active');
+}
+
+function switchFeedbackTab(type, btn) {
+  feedbackType = type;
+  document.querySelectorAll('.feedback-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+document.getElementById('feedbackContent').addEventListener('input', function() {
+  document.getElementById('feedbackCount').textContent = this.value.length + '/2000';
+});
+
+async function submitFeedback() {
+  const content = document.getElementById('feedbackContent').value.trim();
+  if (!content || content.length < 3) {
+    showFeedbackMsg('请至少输入3个字', 'error');
+    return;
+  }
+  const btn = document.getElementById('feedbackBtn');
+  btn.disabled = true; btn.textContent = '提交中...';
+  try {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: feedbackType, content })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showFeedbackMsg('感谢你的反馈！', 'success');
+      setTimeout(() => closeFeedback(), 1500);
+    } else {
+      showFeedbackMsg(data.message || '提交失败', 'error');
+      btn.disabled = false; btn.textContent = '提交反馈';
+    }
+  } catch (e) {
+    showFeedbackMsg('网络错误，请重试', 'error');
+    btn.disabled = false; btn.textContent = '提交反馈';
+  }
+}
+
+function showFeedbackMsg(msg, type) {
+  const el = document.getElementById('feedbackMsg');
+  el.textContent = msg; el.style.display = 'block';
+  el.style.color = type === 'success' ? '#4ade80' : '#ff6b6b';
+}
+</script>
 
 </body>
 </html>
