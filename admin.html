@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>管理后台 - 活动监控</title>
+<title>管理后台</title>
 <style>
   :root {
     --bg: #0a0a0a;
@@ -29,7 +29,7 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
-  .container { max-width: 900px; margin: 0 auto; }
+  .container { max-width: 960px; margin: 0 auto; }
 
   /* Header */
   .header {
@@ -45,14 +45,34 @@
   }
   .back-btn:hover { background: var(--accent); color: #fff; }
 
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--card); padding: 4px; border-radius: 14px;
+  }
+  .tab-btn {
+    flex: 1; text-align: center; padding: 10px 16px; border: none;
+    background: transparent; color: var(--muted); font-size: 13px; font-weight: 600;
+    cursor: pointer; border-radius: 10px; transition: all .2s;
+    font-family: var(--font); white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { background: var(--accent); color: #fff; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
   /* Stats */
   .stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
   .stat-card {
-    flex: 1; min-width: 100px; background: var(--card); border: 1px solid var(--border);
+    flex: 1; min-width: 90px; background: var(--card); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 14px; text-align: center;
   }
-  .stat-card .num { font-size: 28px; font-weight: 700; color: #fff; }
+  .stat-card .num { font-size: 26px; font-weight: 700; color: #fff; }
   .stat-card .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat-card .delta { font-size: 10px; margin-top: 4px; }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--accent); }
 
   /* Filters */
   .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -111,10 +131,73 @@
   .pagination button:disabled { opacity: 0.3; cursor: default; }
   .pagination .page-info { font-size: 12px; color: var(--muted); }
 
+  /* Quiz Dashboard */
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .section-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 600px) { .section-row { grid-template-columns: 1fr; } }
+
+  .breakdown-list { display: flex; flex-direction: column; gap: 6px; }
+  .breakdown-row {
+    display: flex; align-items: center; gap: 10px; font-size: 12px;
+  }
+  .breakdown-row .name { flex: 0 0 100px; color: var(--text); text-align: right; }
+  .breakdown-row .bar-track {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .breakdown-row .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .breakdown-row .count { flex: 0 0 36px; color: var(--muted); text-align: right; }
+
+  /* Trend chart */
+  .trend-chart {
+    display: flex; align-items: flex-end; gap: 3px; height: 120px;
+    padding: 8px 0; margin-bottom: 6px;
+  }
+  .trend-bar {
+    flex: 1; background: var(--accent); border-radius: 2px 2px 0 0;
+    position: relative; cursor: pointer; min-height: 2px;
+  }
+  .trend-bar:hover { background: #ff5c75; }
+  .trend-bar .tip {
+    display: none; position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%); background: var(--card); padding: 4px 8px;
+    border-radius: 4px; font-size: 10px; white-space: nowrap; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .trend-bar:hover .tip { display: block; }
+  .trend-labels {
+    display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+  }
+
+  /* Table */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+  }
+  th {
+    text-align: left; padding: 8px 10px; color: var(--muted); font-weight: 600;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  td {
+    padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    white-space: nowrap; color: var(--text);
+  }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: rgba(255,255,255,0.03); color: var(--accent); }
+  tr.no-data { opacity: 0.5; }
+  .mono { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; color: var(--muted); }
+
+  .refresh-btn {
+    margin-top: 16px; padding: 8px 20px; border-radius: 20px;
+    border: 1px solid var(--border); background: var(--card); color: var(--muted);
+    font-size: 12px; cursor: pointer; transition: all .2s;
+    font-family: var(--font);
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   /* Loading & Empty */
   .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
   .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty .icon { font-size: 40px; margin-bottom: 10px; }
   .error-msg { text-align: center; padding: 40px; color: var(--accent); font-size: 14px; }
 
   /* Login required */
@@ -131,11 +214,13 @@
   /* Mobile */
   @media (max-width: 500px) {
     body { padding: 10px; }
-    .stat-card { min-width: 70px; padding: 10px 8px; }
+    .stat-card { min-width: 65px; padding: 10px 7px; }
     .stat-card .num { font-size: 22px; }
     .act-meta { gap: 6px; }
     .filters { gap: 5px; }
     .filter-btn { padding: 5px 10px; font-size: 11px; }
+    .tab-btn { padding: 8px 10px; font-size: 12px; }
+    th, td { padding: 6px 8px; font-size: 11px; }
   }
 </style>
 </head>
@@ -144,7 +229,7 @@
   <div class="header">
     <div>
       <h1>管理后台</h1>
-      <div class="sub">用户活动监控</div>
+      <div class="sub" id="headerSub">用户活动监控</div>
     </div>
     <a href="/" class="back-btn">返回首页</a>
   </div>
@@ -155,18 +240,34 @@
   </div>
 
   <div id="mainContent" style="display:none">
-    <div class="stats" id="stats"></div>
 
-    <div class="filters">
-      <button class="filter-btn active" data-action="">全部</button>
-      <button class="filter-btn" data-action="wall_post">表白墙发帖</button>
-      <button class="filter-btn" data-action="askbox_question">提问箱提问</button>
-      <button class="filter-btn" data-action="askbox_answer">提问箱回答</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="activity">用户活动</button>
+      <button class="tab-btn" data-tab="quiz">心理测评</button>
     </div>
 
-    <div class="activity-list" id="activityList"></div>
-    <div class="loading" id="loading">加载中...</div>
-    <div class="pagination" id="pagination"></div>
+    <!-- ======== 活动监控 Tab ======== -->
+    <div class="tab-content active" id="tab-activity">
+      <div class="stats" id="stats"></div>
+
+      <div class="filters">
+        <button class="filter-btn active" data-action="">全部</button>
+        <button class="filter-btn" data-action="wall_post">表白墙发帖</button>
+        <button class="filter-btn" data-action="askbox_question">提问箱提问</button>
+        <button class="filter-btn" data-action="askbox_answer">提问箱回答</button>
+      </div>
+
+      <div class="activity-list" id="activityList"></div>
+      <div class="loading" id="loading">加载中...</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- ======== 心理测评 Tab ======== -->
+    <div class="tab-content" id="tab-quiz">
+      <div class="loading" id="quizLoading">正在加载心理测评数据...</div>
+      <div id="quizDashboard"></div>
+    </div>
+
   </div>
 </div>
 
@@ -175,6 +276,7 @@
 (function(){
 'use strict';
 
+// ==================== 活动监控 ====================
 var STATE = { page: 1, action: '', totalPages: 0 };
 
 function apiUrl(page, action) {
@@ -191,6 +293,17 @@ function formatTime(ts) {
   var d = new Date(ts);
   var pad = function(n){ return String(n).padStart(2, '0'); };
   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+}
+
+function formatDate(ts) {
+  var d = new Date(ts);
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  return pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+function formatShortDate(ts) {
+  var d = new Date(ts);
+  return (d.getMonth()+1)+'/'+d.getDate();
 }
 
 function truncateUA(ua) {
@@ -280,7 +393,7 @@ function renderPagination(pagination) {
 function renderList(activities) {
   var el = document.getElementById('activityList');
   if (!activities || activities.length === 0) {
-    el.innerHTML = '<div class="empty"><div class="icon">📭</div>暂无活动记录</div>';
+    el.innerHTML = '<div class="empty">暂无活动记录</div>';
     return;
   }
   el.innerHTML = activities.map(renderActivity).join('');
@@ -306,7 +419,203 @@ async function loadPage(page, action) {
 
 window.goPage = function(p) { loadPage(p, STATE.action); };
 
-// Init when auth is ready
+// ==================== 心理测评 ====================
+var attachLabels = {
+  secure: '安全型', anxious: '焦虑型', avoidant: '回避型', fearful: '矛盾(恐惧)型'
+};
+var loveLabels = {
+  words: '肯定的言辞', acts: '服务的行动', gifts: '接受礼物',
+  time: '精心的时刻', touch: '身体的接触'
+};
+var deviceLabels = { mobile: '手机', desktop: '桌面', tablet: '平板' };
+var quizTypeLabels = { ideal_partner: '理想伴侣测评' };
+
+function quizTypeLabel(t) { return quizTypeLabels[t] || t; }
+
+function renderBreakdown(items, labelMap) {
+  if (!items || items.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无数据</div>';
+  var max = Math.max(1, items.map(function(i){ return i.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  return items.map(function(i){
+    return '<div class="breakdown-row">' +
+      '<div class="name">' + esc((labelMap && labelMap[i.key]) || i.key || '未知') + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(i.count/max*100) + '%"></div></div>' +
+      '<div class="count">' + i.count + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderTrend(trend) {
+  if (!trend || trend.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无趋势数据</div>';
+  var max = Math.max(1, trend.map(function(t){ return t.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  var bars = trend.map(function(t){
+    return '<div class="trend-bar" style="height:' + Math.max(4, Math.round(t.count/max*100)) + '%">' +
+      '<div class="tip">' + formatShortDate(t.date) + '：' + t.count + '次</div>' +
+    '</div>';
+  }).join('');
+  var labels = '<span>' + formatShortDate(trend[0].date) + '</span><span>' + formatShortDate(trend[trend.length-1].date) + '</span>';
+  return '<div class="trend-chart">' + bars + '</div><div class="trend-labels">' + labels + '</div>';
+}
+
+function renderQuizDashboard(data) {
+  var el = document.getElementById('quizDashboard');
+
+  var growth = data.growth.growthPct;
+  var growthHtml;
+  if (growth === null) {
+    growthHtml = '<div style="font-size:10px;color:var(--muted);">数据不足</div>';
+  } else {
+    var cls = growth >= 0 ? 'up' : 'down';
+    var sign = growth >= 0 ? '+' : '';
+    growthHtml = '<div class="delta ' + cls + '">' + sign + growth + '% 环比</div>';
+  }
+
+  var loginRate = data.totals.completions > 0
+    ? Math.round((data.totals.completions - data.totals.anonCompletions) / data.totals.completions * 100)
+    : 0;
+
+  var limitLabel = data.appliedLimit === 'all' ? '全部' : '近' + data.appliedLimit + '条';
+
+  el.innerHTML =
+    '<div class="stats">' +
+      '<div class="stat-card"><div class="num">' + data.today.newUsers + '</div><div class="label">今日新增用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.today.completedTests + '</div><div class="label">今日完成测试</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.totals.users + '</div><div class="label">累计用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.totals.completions + '</div><div class="label">累计测试</div></div>' +
+      '<div class="stat-card"><div class="num">' + loginRate + '%</div><div class="label">登录转化率</div></div>' +
+      '<div class="stat-card"><div class="num">' + data.growth.last7dNewUsers + '</div><div class="label">7天新增</div>' + growthHtml + '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">近14天完成趋势</div>' +
+      renderTrend(data.dailyTrend) +
+    '</div>' +
+
+    '<div class="section section-row">' +
+      '<div>' +
+        '<div class="section-title">依恋类型分布</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.attachBreakdown, attachLabels) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="section-title">主要爱语分布</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.loveBreakdown, loveLabels) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="section section-row">' +
+      '<div>' +
+        '<div class="section-title">访问地区（Top 10）</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.countryBreakdown) + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="section-title">设备类型</div>' +
+        '<div class="breakdown-list">' + renderBreakdown(data.deviceBreakdown, deviceLabels) + '</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近完成的测试（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr>' +
+          '<th>用户</th><th>类型</th><th>结果摘要</th>' +
+          '<th>国家</th><th>设备</th><th>系统</th><th>浏览器</th><th>IP</th><th>时间</th>' +
+        '</tr></thead><tbody>' +
+        (data.recentRecords.length === 0
+          ? '<tr><td colspan="9" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentRecords.map(function(r){
+              return '<tr class="' + (r.hasData ? 'clickable' : 'no-data') + '" ' +
+                (r.hasData ? 'onclick="window.open(\'https://yourlover.pages.dev/?adminView=' + r.id + '\',\'_blank\')" ' : '') +
+                'title="' + (r.hasData ? '点击查看完整结果' : '无完整数据') + '">' +
+                '<td>' + (r.email ? esc(r.email) : '<span style="color:var(--muted);">匿名</span>') + '</td>' +
+                '<td>' + esc(quizTypeLabel(r.quizType)) + '</td>' +
+                '<td>' + esc(r.headline || '—') + '</td>' +
+                '<td>' + (r.country ? esc(r.country) : '—') + '</td>' +
+                '<td>' + (r.device ? esc(deviceLabels[r.device] || r.device) : '—') + '</td>' +
+                '<td>' + (r.os ? esc(r.os) : '—') + '</td>' +
+                '<td>' + (r.browser ? esc(r.browser) : '—') + '</td>' +
+                '<td class="mono">' + (r.ip ? esc(r.ip) : '—') + '</td>' +
+                '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近注册用户（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr><th>ID</th><th>邮箱</th><th>注册时间</th><th>最后活跃</th></tr></thead><tbody>' +
+        (data.recentUsers.length === 0
+          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentUsers.map(function(u){
+              return '<tr>' +
+                '<td class="mono">' + u.id + '</td>' +
+                '<td>' + esc(u.email) + '</td>' +
+                '<td class="mono">' + formatDate(u.createdAt) + '</td>' +
+                '<td class="mono">' + formatDate(u.lastSeenAt) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">匿名访客活跃度（' + limitLabel + '）</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr><th>访客标识</th><th>完成次数</th><th>首次活跃</th><th>最后活跃</th></tr></thead><tbody>' +
+        (data.recentVisitors.length === 0
+          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentVisitors.map(function(v){
+              return '<tr>' +
+                '<td class="mono">' + esc((v.visitorId||'').slice(0, 8)) + '…</td>' +
+                '<td>' + v.count + '</td>' +
+                '<td class="mono">' + formatDate(v.firstSeen) + '</td>' +
+                '<td class="mono">' + formatDate(v.lastSeen) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<button class="refresh-btn" onclick="loadQuizStats()">刷新数据</button>';
+}
+
+async function loadQuizStats() {
+  var loading = document.getElementById('quizLoading');
+  var dashboard = document.getElementById('quizDashboard');
+  loading.style.display = 'block';
+  dashboard.innerHTML = '';
+  try {
+    var r = await fetch('/admin/quiz-stats', { credentials: 'include' });
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      dashboard.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderQuizDashboard(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    dashboard.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ==================== Init ====================
+var quizLoaded = false;
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+  document.querySelector('.tab-btn[data-tab="' + tabName + '"]').classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+
+  if (tabName === 'activity') {
+    document.getElementById('headerSub').textContent = '用户活动监控';
+  } else if (tabName === 'quiz') {
+    document.getElementById('headerSub').textContent = '心理测评统计';
+    if (!quizLoaded) {
+      quizLoaded = true;
+      loadQuizStats();
+    }
+  }
+}
+
 function init() {
   if (Auth.isLoggedIn()) {
     document.getElementById('mainContent').style.display = 'block';
@@ -323,7 +632,6 @@ if (Auth.isLoggedIn()) {
   Auth.onAuthChange(function(user){
     if (user) init();
   });
-  // Show login prompt after a short wait if still not logged in
   setTimeout(function(){
     if (!Auth.isLoggedIn()) {
       document.getElementById('loginPrompt').style.display = 'block';
@@ -331,8 +639,15 @@ if (Auth.isLoggedIn()) {
   }, 600);
 }
 
-// Filter buttons
 document.addEventListener('DOMContentLoaded', function(){
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      switchTab(btn.dataset.tab);
+    });
+  });
+
+  // Activity filter buttons
   document.querySelectorAll('.filter-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
       document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
