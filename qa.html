@@ -820,6 +820,7 @@ if (document.readyState === 'loading') {
   init();
 }
 
+fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'qa'})}).catch(function(){});
 })();
 </script>
 </body>
