@@ -292,7 +292,7 @@ body {
   });
   var st=false;
   window.addEventListener('scroll',function(){if(st)return;st=true;requestAnimationFrame(function(){st=false;if(state.isLoading)return;if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-300&&state.hasMore){state.page++;load();}});},{passive:true});
-  function init(){load();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+  function init(){load();fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'campus'})}).catch(function(){});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 </body>
