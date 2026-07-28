@@ -6,30 +6,17 @@
 <title>管理后台</title>
 <style>
   :root {
-    --bg: #0a0a0a;
-    --card: #111;
-    --border: #222;
-    --text: #ddd;
-    --muted: #888;
-    --accent: #FF3B5C;
-    --green: #00C853;
-    --blue: #448AFF;
-    --orange: #FF9100;
-    --purple: #AA00FF;
+    --bg: #0a0a0a; --card: #111; --border: #222; --text: #ddd; --muted: #888;
+    --accent: #FF3B5C; --green: #00C853; --blue: #448AFF; --orange: #FF9100; --purple: #AA00FF;
     --radius: 12px;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 16px;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    font-family: var(--font); background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 16px; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
   }
-  .container { max-width: 900px; margin: 0 auto; }
+  .container { max-width: 960px; margin: 0 auto; }
 
   .header {
     display: flex; align-items: center; justify-content: space-between;
@@ -43,11 +30,17 @@
   }
   .back-btn:hover { background: var(--accent); color: #fff; }
 
-  /* Tabs */
-  .main-tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--card); border-radius: var(--radius); padding: 4px; border: 1px solid var(--border); }
+  /* Main Tabs */
+  .main-tabs {
+    display: flex; gap: 4px; margin-bottom: 20px; background: var(--card);
+    border-radius: var(--radius); padding: 4px; border: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .main-tabs::-webkit-scrollbar { display: none; }
   .main-tab {
-    flex: 1; padding: 9px 0; text-align: center; border-radius: 10px; font-size: 13px; font-weight: 500;
+    padding: 8px 14px; text-align: center; border-radius: 10px; font-size: 12px; font-weight: 500;
     cursor: pointer; color: var(--muted); transition: all .2s; background: transparent; border: none;
+    white-space: nowrap; flex-shrink: 0;
   }
   .main-tab.active { background: var(--accent); color: #fff; }
   .main-tab:hover:not(.active) { color: var(--accent); }
@@ -63,6 +56,7 @@
   }
   .stat-card .num { font-size: 28px; font-weight: 700; color: #fff; }
   .stat-card .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stat-card.highlight { border-color: var(--accent); }
 
   /* Filters */
   .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
@@ -80,7 +74,6 @@
     padding: 14px; transition: border-color .2s;
   }
   .activity-item:hover { border-color: #333; }
-
   .act-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
   .act-type {
     font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
@@ -89,38 +82,33 @@
   .act-type.wall_post { background: rgba(255,59,92,.15); color: var(--accent); }
   .act-type.askbox_question { background: rgba(68,138,255,.15); color: var(--blue); }
   .act-type.askbox_answer { background: rgba(0,200,83,.15); color: var(--green); }
-
   .act-time { font-size: 11px; color: var(--muted); }
   .act-content { font-size: 14px; color: #ccc; margin-bottom: 8px; line-height: 1.5; word-break: break-all; }
   .act-answer { font-size: 13px; color: var(--green); margin-bottom: 8px; padding: 8px 10px; background: rgba(0,200,83,.06); border-radius: 6px; }
   .act-answer::before { content: '↳ 回复: '; color: var(--muted); font-size: 11px; }
   .act-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); }
   .act-meta span { display: flex; align-items: center; gap: 3px; }
-  .act-meta .user-tag { background: rgba(170,0,255,.12); color: var(--purple); padding: 1px 7px; border-radius: 3px; font-size: 10px; }
-  .act-meta .anon-tag { background: rgba(255,145,0,.12); color: var(--orange); padding: 1px 7px; border-radius: 3px; font-size: 10px; }
+  .user-tag { background: rgba(170,0,255,.12); color: var(--purple); padding: 1px 7px; border-radius: 3px; font-size: 10px; }
+  .anon-tag { background: rgba(255,145,0,.12); color: var(--orange); padding: 1px 7px; border-radius: 3px; font-size: 10px; }
+  .anon-logged-tag { background: rgba(255,59,92,.12); color: var(--accent); padding: 1px 7px; border-radius: 3px; font-size: 10px; }
 
   /* Feedback list */
   .feedback-item { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
   .feedback-item:hover { border-color: #333; }
   .fb-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .fb-type {
-    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
-  }
+  .fb-type { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
   .fb-type.suggestion { background: rgba(68,138,255,.15); color: var(--blue); }
   .fb-type.bug { background: rgba(255,59,92,.15); color: var(--accent); }
-  .fb-status-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
-  .fb-status-badge.open { background: rgba(0,200,83,.12); color: var(--green); }
-  .fb-status-badge.closed { background: rgba(255,59,92,.1); color: var(--muted); }
+  .fb-status { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .fb-status.open { background: rgba(0,200,83,.12); color: var(--green); }
+  .fb-status.closed { background: rgba(255,59,92,.1); color: var(--muted); }
   .fb-content { font-size: 14px; color: #ccc; margin-bottom: 8px; line-height: 1.5; word-break: break-all; }
   .fb-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
   .fb-note { font-size: 12px; color: var(--orange); padding: 6px 10px; background: rgba(255,145,0,.08); border-radius: 6px; margin-bottom: 8px; }
   .fb-actions { display: flex; gap: 8px; align-items: center; }
   .fb-actions input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text); font-size:12px; outline:none; }
   .fb-actions input:focus { border-color:var(--accent); }
-  .fb-actions button {
-    padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background:var(--card);
-    color:var(--text); font-size: 12px; cursor: pointer; transition: all .2s;
-  }
+  .fb-actions button { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background:var(--card); color:var(--text); font-size: 12px; cursor: pointer; transition: all .2s; }
   .fb-actions button:hover { border-color: var(--accent); color: var(--accent); }
   .fb-actions button.close-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
 
@@ -130,18 +118,11 @@
   }
   .admin-add-box label { font-size: 13px; color: var(--text); margin-bottom: 8px; display: block; }
   .admin-add-row { display: flex; gap: 8px; }
-  .admin-add-row input {
-    flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 10px 14px; color: var(--text); font-size: 14px; outline: none;
-  }
+  .admin-add-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 14px; outline: none; }
   .admin-add-row input:focus { border-color: var(--accent); }
-  .admin-add-row button {
-    padding: 10px 20px; background: var(--accent); color: #fff; border: none;
-    border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500;
-  }
+  .admin-add-row button { padding: 10px 20px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; }
   .admin-add-row button:disabled { opacity: 0.5; cursor: not-allowed; }
   .admin-msg { margin-top: 8px; font-size: 12px; display: none; }
-
   .admin-list { display: flex; flex-direction: column; gap: 8px; }
   .admin-item {
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
@@ -149,11 +130,24 @@
   }
   .admin-item .admin-email { font-size: 14px; color: var(--text); }
   .admin-item .admin-since { font-size: 11px; color: var(--muted); margin-left: 8px; }
-  .admin-item .remove-btn {
-    padding: 5px 12px; border-radius: 6px; border: 1px solid var(--accent); background: transparent;
-    color: var(--accent); font-size: 12px; cursor: pointer; transition: all .2s;
-  }
+  .admin-item .remove-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-size: 12px; cursor: pointer; transition: all .2s; }
   .admin-item .remove-btn:hover { background: var(--accent); color: #fff; }
+
+  /* User table */
+  .user-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .user-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .user-table th { background: var(--card); border-bottom: 2px solid var(--border); padding: 10px 12px; text-align: left; color: var(--muted); font-size: 11px; white-space: nowrap; }
+  .user-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+  .user-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .user-table .num { color: var(--accent); font-weight: 600; }
+  .badge-admin { background: var(--accent); color: #fff; padding: 1px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px; }
+
+  /* Chart-like bars */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .bar-label { width: 100px; font-size: 12px; color: var(--muted); text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--card); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width .5s; }
+  .bar-val { width: 50px; font-size: 12px; color: var(--text); flex-shrink: 0; }
 
   /* Loading & Empty */
   .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
@@ -170,9 +164,14 @@
     color: #fff; text-decoration: none; border-radius: 24px; font-size: 14px;
   }
 
-  /* Quiz stats (keep) */
-  .quiz-tab-content { display: none; }
-  .quiz-tab-content.active { display: block; }
+  .pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin-top: 20px; padding: 10px 0;
+  }
+  .pagination button { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 13px; cursor: pointer; }
+  .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pagination button:disabled { opacity: 0.3; cursor: default; }
+  .pagination .page-info { font-size: 12px; color: var(--muted); }
 
   @media (max-width: 500px) {
     body { padding: 10px; }
@@ -181,6 +180,7 @@
     .act-meta { gap: 6px; }
     .filters { gap: 5px; }
     .filter-btn { padding: 5px 10px; font-size: 11px; }
+    .main-tab { padding: 6px 10px; font-size: 11px; }
   }
 </style>
 </head>
@@ -200,17 +200,33 @@
   </div>
 
   <div id="mainContent" style="display:none">
-
-    <!-- Main Tabs -->
     <div class="main-tabs">
-      <button class="main-tab active" data-tab="tab-activity">用户活动</button>
+      <button class="main-tab active" data-tab="tab-analytics">数据概览</button>
+      <button class="main-tab" data-tab="tab-activity">用户活动</button>
       <button class="main-tab" data-tab="tab-quiz">心理测评</button>
       <button class="main-tab" data-tab="tab-feedback">反馈管理</button>
+      <button class="main-tab" data-tab="tab-users">注册用户</button>
       <button class="main-tab" data-tab="tab-admins">管理员</button>
     </div>
 
+    <!-- Tab 0: Analytics -->
+    <div class="tab-content active" id="tab-analytics">
+      <div class="stats" id="analyticsStats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:12px">页面访问排行</div>
+          <div id="topPages"></div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:12px">内容统计</div>
+          <div id="contentStats"></div>
+        </div>
+      </div>
+      <div class="loading" id="analyticsLoading">加载中...</div>
+    </div>
+
     <!-- Tab 1: Activity -->
-    <div class="tab-content active" id="tab-activity">
+    <div class="tab-content" id="tab-activity">
       <div class="stats" id="stats"></div>
       <div class="filters">
         <button class="filter-btn active" data-action="">全部</button>
@@ -223,14 +239,11 @@
       <div class="pagination" id="pagination"></div>
     </div>
 
-    <!-- Tab 2: Quiz Stats -->
+    <!-- Tab 2: Quiz -->
     <div class="tab-content" id="tab-quiz">
-      <div class="loading" style="display:block">心理测评统计模块加载中...</div>
-      <div class="quiz-tab-content active">
-        <div class="stats" id="quizStats"></div>
-        <div class="activity-list" id="quizList"></div>
-        <div class="pagination" id="quizPagination"></div>
-      </div>
+      <div class="stats" id="quizStats"></div>
+      <div class="activity-list" id="quizList"></div>
+      <div class="pagination" id="quizPagination"></div>
     </div>
 
     <!-- Tab 3: Feedback -->
@@ -246,7 +259,19 @@
       <div class="loading" id="fbLoading">加载中...</div>
     </div>
 
-    <!-- Tab 4: Admins -->
+    <!-- Tab 4: Users -->
+    <div class="tab-content" id="tab-users">
+      <div class="user-table-wrap">
+        <table class="user-table" id="usersTable">
+          <thead><tr><th>ID</th><th>邮箱</th><th>昵称</th><th>注册时间</th><th>发帖</th><th>提问</th><th>回答</th><th>匿名操作</th><th>访问</th><th>角色</th></tr></thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+      <div class="loading" id="usersLoading">加载中...</div>
+      <div class="pagination" id="usersPagination"></div>
+    </div>
+
+    <!-- Tab 5: Admins -->
     <div class="tab-content" id="tab-admins">
       <div class="admin-add-box">
         <label>添加管理员（输入已注册用户的邮箱）</label>
@@ -259,7 +284,6 @@
       <div class="admin-list" id="adminList"></div>
       <div class="loading" id="adminLoading">加载中...</div>
     </div>
-
   </div>
 </div>
 
@@ -268,10 +292,8 @@
 (function(){
 'use strict';
 
-// ====== State ======
-var STATE = { page:1, action:'', totalPages:0, fbType:'', fbStatus:'', quizPage:1 };
+var STATE = { page:1, action:'', fbType:'', fbStatus:'', quizPage:1, usersPage:1 };
 
-// ====== Helpers ======
 function formatTime(ts) {
   var d = new Date(ts);
   var pad = function(n){ return String(n).padStart(2,'0'); };
@@ -299,6 +321,46 @@ function showMsg(containerId, msg, type) {
   setTimeout(function(){ el.style.display = 'none'; }, 3000);
 }
 
+// ====== Analytics ======
+async function loadAnalytics() {
+  document.getElementById('analyticsLoading').style.display = 'block';
+  try {
+    var r = await fetch('/api/admin/analytics', { credentials: 'include' });
+    var data = await r.json();
+    document.getElementById('analyticsLoading').style.display = 'none';
+    if (data.error) throw new Error(data.error);
+
+    var s = data.stats;
+    document.getElementById('analyticsStats').innerHTML =
+      '<div class="stat-card highlight"><div class="num">'+s.pageViews.total+'</div><div class="label">总访问量</div></div>' +
+      '<div class="stat-card"><div class="num">'+s.pageViews.today+'</div><div class="label">今日访问</div></div>' +
+      '<div class="stat-card"><div class="num">'+s.pageViews.week+'</div><div class="label">本周访问</div></div>' +
+      '<div class="stat-card"><div class="num">'+s.totalUsers+'</div><div class="label">注册用户</div></div>' +
+      '<div class="stat-card"><div class="num">'+s.activeUsersWeek+'</div><div class="label">本周活跃用户</div></div>';
+
+    // Top pages
+    var topMax = Math.max.apply(null, (data.topPages||[]).map(function(p){return p.views;})) || 1;
+    document.getElementById('topPages').innerHTML = (data.topPages||[]).map(function(p){
+      var pct = Math.round(p.views / topMax * 100);
+      return '<div class="bar-row"><span class="bar-label">'+esc(p.page)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bar-val">'+p.views+'</span></div>';
+    }).join('') || '<div class="empty" style="padding:20px">暂无数据</div>';
+
+    // Content stats
+    var maxContent = Math.max(s.content.wallPosts, s.content.questions, s.content.answers, 1);
+    document.getElementById('contentStats').innerHTML =
+      '<div class="bar-row"><span class="bar-label">表白墙发帖</span><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(s.content.wallPosts/maxContent*100)+'%"></div></div><span class="bar-val">'+s.content.wallPosts+'</span></div>' +
+      '<div class="bar-row"><span class="bar-label">提问箱提问</span><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(s.content.questions/maxContent*100)+'%"></div></div><span class="bar-val">'+s.content.questions+'</span></div>' +
+      '<div class="bar-row"><span class="bar-label">提问箱回答</span><div class="bar-track"><div class="bar-fill" style="width:'+Math.round(s.content.answers/maxContent*100)+'%"></div></div><span class="bar-val">'+s.content.answers+'</span></div>' +
+      '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">' +
+        '匿名发帖: '+s.anonymous.wallPosts+' | 匿名提问: '+s.anonymous.questions+' | 已登录用户匿名操作: '+s.anonymous.loggedInUsersWhoPostAnonymously+'<br>' +
+        '反馈: '+s.feedback.total+' (待处理: '+s.feedback.open+')' +
+      '</div>';
+  } catch (e) {
+    document.getElementById('analyticsLoading').style.display = 'none';
+    document.getElementById('analyticsStats').innerHTML = '<div class="error-msg">加载失败</div>';
+  }
+}
+
 // ====== Activity ======
 function apiUrl(page, action) { return '/admin-activity?page=' + page + '&action=' + (action || ''); }
 async function fetchActivities(page, action) {
@@ -310,10 +372,18 @@ function renderActivity(item) {
   var time = formatTime(item.created_at);
   var device = parseDevice(item.user_agent);
   var location = [item.country, item.city].filter(Boolean).join(' ') || '未知';
+
   var userTag = '';
-  if (item.is_anonymous) { userTag = '<span class="anon-tag">匿名</span>'; }
-  else if (item.user_email) { userTag = '<span class="user-tag">' + esc(item.user_email) + '</span>'; }
-  else { userTag = '<span class="anon-tag">匿名(未登录)</span>'; }
+  if (item.is_anonymous && item.user_email) {
+    userTag = '<span class="anon-logged-tag" title="已登录用户匿名操作">匿名(已登录)</span><span class="user-tag">' + esc(item.user_email) + '</span>';
+  } else if (item.is_anonymous) {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
+  } else if (item.user_email) {
+    userTag = '<span class="user-tag">' + esc(item.user_email) + '</span>';
+  } else {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
+  }
+
   var answerBlock = item.action === 'askbox_answer'
     ? '<div class="act-answer">' + esc(item.content) + '</div>'
     : '<div class="act-content">' + esc(item.content) + '</div>';
@@ -354,7 +424,6 @@ async function loadActivityPage(page, action) {
     var data = await fetchActivities(page, action);
     document.getElementById('loading').style.display = 'none';
     STATE.page = data.pagination.page;
-    STATE.totalPages = data.pagination.totalPages;
     renderStats(data);
     renderActivityList(data.activities);
     renderPagination(data.pagination, 'pagination', 'goActivityPage');
@@ -380,7 +449,7 @@ async function loadFeedback() {
     renderFeedbackList(data.feedback || []);
   } catch (e) {
     document.getElementById('fbLoading').style.display = 'none';
-    document.getElementById('feedbackList').innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+    document.getElementById('feedbackList').innerHTML = '<div class="error-msg">加载失败</div>';
   }
 }
 
@@ -393,8 +462,8 @@ function renderFeedbackList(items) {
     var noteInput = fb.status === 'open' ? '<input type="text" id="fbNote_'+fb.id+'" placeholder="填写处理备注...">' : '';
     return '<div class="feedback-item">' +
       '<div class="fb-header">' +
-        '<div><span class="fb-type ' + fb.type + '">' + (fb.type==='suggestion'?'💡 建议':'🐛 Bug') + '</span> ' +
-        '<span class="fb-status-badge ' + fb.status + '">' + (fb.status==='open'?'处理中':'已关闭') + '</span></div>' +
+        '<div><span class="fb-type ' + fb.type + '">' + (fb.type==='suggestion'?'建议':'Bug') + '</span> ' +
+        '<span class="fb-status ' + fb.status + '">' + (fb.status==='open'?'处理中':'已关闭') + '</span></div>' +
         '<span class="act-time">' + formatTime(fb.created_at) + '</span>' +
       '</div>' +
       '<div class="fb-content">' + esc(fb.content) + '</div>' +
@@ -403,12 +472,8 @@ function renderFeedbackList(items) {
       (fb.status==='open' ? '<div class="fb-actions">' + noteInput + closeBtn + '</div>' : '') +
     '</div>';
   });
-
-  // Attach close handlers
   el.querySelectorAll('.close-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      closeFeedback(btn.dataset.fbId);
-    });
+    btn.addEventListener('click', function(){ closeFeedback(btn.dataset.fbId); });
   });
 }
 
@@ -417,15 +482,52 @@ async function closeFeedback(id) {
   var noteVal = note ? note.value.trim() : '';
   try {
     var r = await fetch('/api/feedback', {
-      method: 'PUT',
-      credentials: 'include',
+      method: 'PUT', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: parseInt(id), status: 'closed', admin_note: noteVal || null })
     });
     var data = await r.json();
-    if (data.success) { loadFeedback(); }
-    else { alert(data.message || '操作失败'); }
+    if (data.success) { loadFeedback(); } else { alert(data.message || '操作失败'); }
   } catch (e) { alert('网络错误'); }
+}
+
+// ====== Users List ======
+async function loadUsers(page) {
+  document.getElementById('usersLoading').style.display = 'block';
+  try {
+    var r = await fetch('/api/admin/users?page=' + (page||1), { credentials: 'include' });
+    var data = await r.json();
+    document.getElementById('usersLoading').style.display = 'none';
+    if (data.error) throw new Error(data.message || data.error);
+    renderUsersTable(data.users || []);
+    renderPagination(data.pagination, 'usersPagination', 'goUsersPage');
+  } catch (e) {
+    document.getElementById('usersLoading').style.display = 'none';
+    document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="10" class="error-msg">加载失败</td></tr>';
+  }
+}
+window.goUsersPage = function(p) { loadUsers(p); };
+
+function renderUsersTable(users) {
+  var el = document.getElementById('usersTableBody');
+  if (!users || users.length === 0) {
+    el.innerHTML = '<tr><td colspan="10" class="empty">暂无注册用户</td></tr>';
+    return;
+  }
+  el.innerHTML = users.map(function(u){
+    return '<tr>' +
+      '<td>'+u.id+'</td>' +
+      '<td>' + esc(u.email) + (u.is_admin ? '<span class="badge-admin">管理员</span>' : '') + '</td>' +
+      '<td>' + esc(u.display_name || '-') + '</td>' +
+      '<td style="font-size:11px;color:var(--muted)">' + formatTime(u.created_at) + '</td>' +
+      '<td class="num">' + (u.wall_posts||0) + '</td>' +
+      '<td class="num">' + (u.questions||0) + '</td>' +
+      '<td class="num">' + (u.answers||0) + '</td>' +
+      '<td class="num" style="color:var(--orange)">' + (u.anonymous_actions||0) + '</td>' +
+      '<td class="num">' + (u.page_views||0) + '</td>' +
+      '<td style="font-size:11px">' + (u.is_admin?'管理员':'用户') + '</td>' +
+    '</tr>';
+  }).join('');
 }
 
 // ====== Admin Management ======
@@ -439,7 +541,7 @@ async function loadAdmins() {
     renderAdminList(data.admins || []);
   } catch (e) {
     document.getElementById('adminLoading').style.display = 'none';
-    document.getElementById('adminList').innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+    document.getElementById('adminList').innerHTML = '<div class="error-msg">加载失败</div>';
   }
 }
 
@@ -454,11 +556,8 @@ function renderAdminList(admins) {
       '<span><span class="admin-email">' + esc(a.email) + '</span><span class="admin-since">加入于 ' + formatTime(a.created_at) + '</span></span>' +
       '<button class="remove-btn" data-email="' + esc(a.email) + '">移除</button></div>';
   }).join('');
-
   el.querySelectorAll('.remove-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      removeAdmin(btn.dataset.email);
-    });
+    btn.addEventListener('click', function(){ removeAdmin(btn.dataset.email); });
   });
 }
 
@@ -466,23 +565,13 @@ async function addAdmin() {
   var input = document.getElementById('adminEmailInput');
   var email = input.value.trim();
   if (!email) { showMsg('adminMsg', '请输入邮箱', 'error'); return; }
-
   var btn = document.getElementById('addAdminBtn');
   btn.disabled = true; btn.textContent = '添加中...';
   try {
-    var r = await fetch('/api/admin-users', {
-      method: 'PUT', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email })
-    });
+    var r = await fetch('/api/admin-users', { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
     var data = await r.json();
-    if (data.success) {
-      showMsg('adminMsg', data.message, 'success');
-      input.value = '';
-      loadAdmins();
-    } else {
-      showMsg('adminMsg', data.message || '操作失败', 'error');
-    }
+    if (data.success) { showMsg('adminMsg', data.message, 'success'); input.value = ''; loadAdmins(); }
+    else { showMsg('adminMsg', data.message || '操作失败', 'error'); }
   } catch (e) { showMsg('adminMsg', '网络错误', 'error'); }
   btn.disabled = false; btn.textContent = '添加';
 }
@@ -490,21 +579,14 @@ async function addAdmin() {
 async function removeAdmin(email) {
   if (!confirm('确定移除管理员 ' + email + ' 吗？')) return;
   try {
-    var r = await fetch('/api/admin-users', {
-      method: 'PUT', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: email, action: 'remove' })
-    });
+    var r = await fetch('/api/admin-users', { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, action: 'remove' }) });
     var data = await r.json();
-    if (data.success) { loadAdmins(); }
-    else { alert(data.message || '操作失败'); }
+    if (data.success) { loadAdmins(); } else { alert(data.message || '操作失败'); }
   } catch (e) { alert('网络错误'); }
 }
 window.addAdmin = addAdmin;
-window.removeAdmin = removeAdmin;
 
-// ====== Quiz Stats (keep from existing) ======
-var QUIZ_STATE = { page: 1 };
+// ====== Quiz Stats ======
 async function loadQuizStats(page) {
   var p = page || 1;
   try {
@@ -529,9 +611,7 @@ async function loadQuizStats(page) {
 window.goQuizPage = function(p) { loadQuizStats(p); };
 
 // ====== Tab Switching ======
-var currentTab = 'tab-activity';
 function switchTab(tabId) {
-  currentTab = tabId;
   document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
   var target = document.getElementById(tabId);
   if (target) { target.classList.add('active'); }
@@ -539,8 +619,10 @@ function switchTab(tabId) {
   var tabBtn = document.querySelector('[data-tab="'+tabId+'"]');
   if (tabBtn) { tabBtn.classList.add('active'); }
 
+  if (tabId === 'tab-analytics') { loadAnalytics(); }
   if (tabId === 'tab-feedback') { loadFeedback(); }
   if (tabId === 'tab-admins') { loadAdmins(); }
+  if (tabId === 'tab-users') { loadUsers(1); }
   if (tabId === 'tab-quiz') { loadQuizStats(1); }
 }
 
@@ -552,19 +634,17 @@ function init() {
   }
   document.getElementById('mainContent').style.display = 'block';
   document.getElementById('loginPrompt').style.display = 'none';
-  loadActivityPage(1, '');
+  loadAnalytics();
 }
 
-if (Auth.isLoggedIn()) {
-  init();
-} else {
+if (Auth.isLoggedIn()) { init(); }
+else {
   Auth.onAuthChange(function(user){ if (user) init(); });
   setTimeout(function(){
     if (!Auth.isLoggedIn()) { document.getElementById('loginPrompt').style.display = 'block'; }
   }, 600);
 }
 
-// ====== Event Bindings ======
 document.addEventListener('DOMContentLoaded', function(){
   // Activity filter buttons
   document.querySelectorAll('#tab-activity .filter-btn').forEach(function(btn){
@@ -578,16 +658,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Main tab buttons
   document.querySelectorAll('.main-tab').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      switchTab(btn.dataset.tab);
-    });
+    btn.addEventListener('click', function(){ switchTab(btn.dataset.tab); });
   });
 
   // Feedback filter buttons
   document.querySelectorAll('#fbFilters .filter-btn').forEach(function(btn){
     btn.addEventListener('click', function(){
-      var type = btn.dataset.fbType;
-      var status = btn.dataset.fbStatus;
+      var type = btn.dataset.fbType; var status = btn.dataset.fbStatus;
       if (type !== undefined) {
         STATE.fbType = type;
         document.querySelectorAll('#fbFilters [data-fb-type]').forEach(function(b){ b.classList.remove('active'); });
