@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>管理后台 - 活动监控</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #111;
+    --border: #222;
+    --text: #ddd;
+    --muted: #888;
+    --accent: #FF3B5C;
+    --green: #00C853;
+    --blue: #448AFF;
+    --orange: #FF9100;
+    --purple: #AA00FF;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .header .sub { font-size: 12px; color: var(--muted); }
+  .back-btn {
+    color: var(--accent); text-decoration: none; font-size: 14px;
+    padding: 6px 14px; border: 1px solid var(--accent); border-radius: 20px;
+    transition: all .2s;
+  }
+  .back-btn:hover { background: var(--accent); color: #fff; }
+
+  /* Stats */
+  .stats { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .stat-card {
+    flex: 1; min-width: 100px; background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px; text-align: center;
+  }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: #fff; }
+  .stat-card .label { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Filters */
+  .filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--card); color: var(--muted); font-size: 12px; cursor: pointer;
+    transition: all .2s; white-space: nowrap;
+  }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  /* Activity list */
+  .activity-list { display: flex; flex-direction: column; gap: 8px; }
+  .activity-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; transition: border-color .2s;
+  }
+  .activity-item:hover { border-color: #333; }
+
+  .act-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .act-type {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .act-type.wall_post { background: rgba(255,59,92,.15); color: var(--accent); }
+  .act-type.askbox_question { background: rgba(68,138,255,.15); color: var(--blue); }
+  .act-type.askbox_answer { background: rgba(0,200,83,.15); color: var(--green); }
+
+  .act-time { font-size: 11px; color: var(--muted); }
+  .act-content { font-size: 14px; color: #ccc; margin-bottom: 8px; line-height: 1.5; word-break: break-all; }
+  .act-answer { font-size: 13px; color: var(--green); margin-bottom: 8px; padding: 8px 10px; background: rgba(0,200,83,.06); border-radius: 6px; }
+  .act-answer::before { content: '↳ 回复: '; color: var(--muted); font-size: 11px; }
+
+  .act-meta { display: flex; flex-wrap: wrap; gap: 10px; font-size: 11px; color: var(--muted); }
+  .act-meta span { display: flex; align-items: center; gap: 3px; }
+  .act-meta .user-tag {
+    background: rgba(170,0,255,.12); color: var(--purple);
+    padding: 1px 7px; border-radius: 3px; font-size: 10px;
+  }
+  .act-meta .anon-tag {
+    background: rgba(255,145,0,.12); color: var(--orange);
+    padding: 1px 7px; border-radius: 3px; font-size: 10px;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin-top: 20px; padding: 10px 0;
+  }
+  .pagination button {
+    padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 13px; cursor: pointer;
+    transition: all .2s;
+  }
+  .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .pagination button:disabled { opacity: 0.3; cursor: default; }
+  .pagination .page-info { font-size: 12px; color: var(--muted); }
+
+  /* Loading & Empty */
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 10px; }
+  .error-msg { text-align: center; padding: 40px; color: var(--accent); font-size: 14px; }
+
+  /* Login required */
+  .login-prompt {
+    text-align: center; padding: 60px 20px;
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  .login-prompt p { color: var(--muted); margin-bottom: 16px; }
+  .login-prompt a {
+    display: inline-block; padding: 10px 28px; background: var(--accent);
+    color: #fff; text-decoration: none; border-radius: 24px; font-size: 14px;
+  }
+
+  /* Mobile */
+  @media (max-width: 500px) {
+    body { padding: 10px; }
+    .stat-card { min-width: 70px; padding: 10px 8px; }
+    .stat-card .num { font-size: 22px; }
+    .act-meta { gap: 6px; }
+    .filters { gap: 5px; }
+    .filter-btn { padding: 5px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>管理后台</h1>
+      <div class="sub">用户活动监控</div>
+    </div>
+    <a href="/" class="back-btn">返回首页</a>
+  </div>
+
+  <div id="loginPrompt" class="login-prompt" style="display:none">
+    <p>需要登录后才能查看管理后台</p>
+    <a href="javascript:Auth.showLogin()">去登录</a>
+  </div>
+
+  <div id="mainContent" style="display:none">
+    <div class="stats" id="stats"></div>
+
+    <div class="filters">
+      <button class="filter-btn active" data-action="">全部</button>
+      <button class="filter-btn" data-action="wall_post">表白墙发帖</button>
+      <button class="filter-btn" data-action="askbox_question">提问箱提问</button>
+      <button class="filter-btn" data-action="askbox_answer">提问箱回答</button>
+    </div>
+
+    <div class="activity-list" id="activityList"></div>
+    <div class="loading" id="loading">加载中...</div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+
+<script>
+// ====== Auth Module ======
+const Auth = {
+  _cb: [],
+  async isLoggedIn() {
+    try {
+      const r = await fetch('/auth/me', { credentials: 'include' });
+      const d = await r.json();
+      return !!(d && d.user);
+    } catch (e) { return false; }
+  },
+  async getUserId() {
+    try {
+      const r = await fetch('/auth/me', { credentials: 'include' });
+      const d = await r.json();
+      return (d && d.user) ? d.user.id : null;
+    } catch (e) { return null; }
+  },
+  showLogin() {
+    window.location.href = '/login.html';
+  }
+};
+
+// ====== App ======
+const STATE = { page: 1, action: '', totalPages: 0 };
+
+function apiUrl(page, action) {
+  const p = new URLSearchParams({ page: String(page), action: action || '' });
+  return '/admin-activity?' + p.toString();
+}
+
+async function fetchActivities(page, action) {
+  const r = await fetch(apiUrl(page || 1, action || ''), { credentials: 'include' });
+  if (r.status === 401) throw new Error('unauthorized');
+  return r.json();
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function truncateUA(ua) {
+  if (!ua) return '';
+  if (ua.length <= 50) return ua;
+  return ua.slice(0, 47) + '...';
+}
+
+function parseDevice(ua) {
+  if (!ua) return '未知';
+  if (/iphone|ipad/i.test(ua)) return 'iOS';
+  if (/android/i.test(ua)) return 'Android';
+  if (/windows/i.test(ua)) return 'Windows';
+  if (/macintosh|mac os/i.test(ua)) return 'macOS';
+  if (/linux/i.test(ua)) return 'Linux';
+  return '其他';
+}
+
+function actionLabel(a) {
+  const map = {
+    wall_post: '表白墙发帖',
+    askbox_question: '提问箱提问',
+    askbox_answer: '提问箱回答'
+  };
+  return map[a] || a;
+}
+
+function renderActivity(item) {
+  const time = formatTime(item.created_at);
+  const device = parseDevice(item.user_agent);
+  const location = [item.country, item.city].filter(Boolean).join(' ') || '未知';
+
+  let userTag = '';
+  if (item.is_anonymous) {
+    userTag = '<span class="anon-tag">匿名</span>';
+  } else if (item.user_email) {
+    userTag = `<span class="user-tag">${escapeHtml(item.user_email)}</span>`;
+  } else {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
+  }
+
+  let answerBlock = '';
+  // For askbox_answer, the content is the answer; show the question context if available
+  if (item.action === 'askbox_answer') {
+    answerBlock = `<div class="act-answer">${escapeHtml(item.content)}</div>`;
+  } else {
+    answerBlock = `<div class="act-content">${escapeHtml(item.content)}</div>`;
+  }
+
+  // For askbox_question that has been answered, try to show answer too
+  // (answer content is in a different log entry, so we skip inline answer for questions)
+
+  return `
+    <div class="activity-item">
+      <div class="act-header">
+        <span class="act-type ${item.action}">${actionLabel(item.action)}</span>
+        <span class="act-time">${time}</span>
+      </div>
+      ${answerBlock}
+      <div class="act-meta">
+        ${userTag}
+        <span>IP: ${escapeHtml(item.ip || '未知')}</span>
+        <span>设备: ${device}</span>
+        <span>地区: ${escapeHtml(location)}</span>
+        <span title="${escapeHtml(item.user_agent || '')}" style="cursor:help">
+          UA: ${escapeHtml(truncateUA(item.user_agent))}
+        </span>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderStats(data) {
+  const total = data.pagination?.total || 0;
+  // Count by type from current page (approximate)
+  const counts = {};
+  if (data.activities) {
+    data.activities.forEach(a => { counts[a.action] = (counts[a.action] || 0) + 1; });
+  }
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card">
+      <div class="num">${total}</div>
+      <div class="label">总活动数</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${counts.wall_post || 0}</div>
+      <div class="label">表白墙</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${counts.askbox_question || 0}</div>
+      <div class="label">提问</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">${counts.askbox_answer || 0}</div>
+      <div class="label">回答</div>
+    </div>
+  `;
+}
+
+function renderPagination(pagination) {
+  const { page, totalPages } = pagination;
+  const p = document.getElementById('pagination');
+  if (totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML = `
+    <button ${page <= 1 ? 'disabled' : ''} onclick="goPage(${page - 1})">上一页</button>
+    <span class="page-info">第 ${page} / ${totalPages} 页</span>
+    <button ${page >= totalPages ? 'disabled' : ''} onclick="goPage(${page + 1})">下一页</button>
+  `;
+}
+
+function renderList(activities) {
+  const el = document.getElementById('activityList');
+  if (!activities || activities.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="icon">📭</div>暂无活动记录</div>';
+    return;
+  }
+  el.innerHTML = activities.map(renderActivity).join('');
+}
+
+async function loadPage(page, action) {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('activityList').innerHTML = '';
+  try {
+    const data = await fetchActivities(page, action);
+    document.getElementById('loading').style.display = 'none';
+    STATE.page = data.pagination.page;
+    STATE.totalPages = data.pagination.totalPages;
+    renderStats(data);
+    renderList(data.activities);
+    renderPagination(data.pagination);
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('activityList').innerHTML =
+      `<div class="error-msg">加载失败: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function goPage(p) { loadPage(p, STATE.action); }
+
+// Filter buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.action = btn.dataset.action;
+      loadPage(1, STATE.action);
+    });
+  });
+});
+
+// Init
+(async function init() {
+  const loggedIn = await Auth.isLoggedIn();
+  if (!loggedIn) {
+    document.getElementById('loginPrompt').style.display = 'block';
+    return;
+  }
+  document.getElementById('mainContent').style.display = 'block';
+  await loadPage(1, '');
+})();
+</script>
+</body>
+</html>
