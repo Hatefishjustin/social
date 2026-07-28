@@ -353,8 +353,12 @@ function initTarget() {
     dom.profileName.textContent = name + ' 的提问箱';
     dom.profileAvatar.textContent = (name[0] || '?').toUpperCase();
     dom.navTitle.textContent = name + ' · 轻匿提问箱';
-    // 访问别人提问箱：默认切到 mine（实际上是 TA 的提问箱），隐藏 badge
     dom.tabBadge.style.display = 'none';
+    // 尝试加载对方头像
+    var visitorAvatar = document.createElement('img');
+    visitorAvatar.src = '/api/avatar?userId=' + u;
+    visitorAvatar.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover';
+    visitorAvatar.onload = function() { dom.profileAvatar.innerHTML = ''; dom.profileAvatar.appendChild(visitorAvatar); };
   } else {
     state.targetId = null;
     state.isOwnerView = false;
@@ -378,11 +382,18 @@ function syncWithAuth() {
   if (Auth.isLoggedIn()) {
     state.targetId = String(uid);
     state.isOwnerView = true;
-    dom.profileName.textContent = (email ? email.split('@')[0] : '我') + ' 的提问箱';
-    dom.profileAvatar.textContent = email ? email[0].toUpperCase() : '?';
-    dom.navTitle.textContent = '我的 · 轻匿提问箱';
+    var displayName = Auth.getDisplayName();
+    var userName = displayName || (email ? email.split('@')[0] : '我');
+    dom.profileName.textContent = userName + ' 的提问箱';
+    var avatarUrl = Auth.getAvatarUrl();
+    if (avatarUrl) {
+      dom.profileAvatar.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + (userName[0] || '?').toUpperCase() + '\'">';
+    } else {
+      dom.profileAvatar.textContent = (userName[0] || '?').toUpperCase();
+    }
+    dom.navTitle.textContent = userName + ' · 轻匿提问箱';
     dom.askArea.style.opacity = '0.35';
-    dom.askArea.style.pointerEvents = 'none'; // 不能自己问自己
+    dom.askArea.style.pointerEvents = 'none';
   } else {
     state.targetId = null;
     state.isOwnerView = false;
