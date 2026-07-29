@@ -255,7 +255,7 @@ body {
       (p.tag?'<span class="card-tag">'+esc(p.tag)+'</span>':'')+
       '<div class="card-content">'+esc(p.content)+'</div>'+
       '<div class="card-meta">'+
-        '<span class="card-anon-badge">'+(p.is_anonymous?'匿名':'实名')+'</span>'+
+        (p.is_anonymous?'<span class="card-anon-badge">匿名</span>':'<a class="card-author" href="user.html?userId='+esc(p.user_id||'')+'">'+esc(p.nickname||'用户')+'</a>')+
         (p.school?'<span class="card-school">'+esc(p.school)+'</span>':'')+
         '<span class="card-meta-item">'+fmt(p.created_at)+'</span>'+
       '</div>'+
