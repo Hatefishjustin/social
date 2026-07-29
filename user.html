@@ -174,11 +174,15 @@ function renderProfile(d) {
         var asker = a.is_anonymous ? '匿名提问' : (a.asker_name || '匿名');
         var time = new Date(a.answered_at);
         var timeStr = time.getFullYear()+'-'+('0'+(time.getMonth()+1)).slice(-2)+'-'+('0'+time.getDate()).slice(-2);
+        var askerAvatarHtml = '';
+        if (a.asker_avatar) {
+          askerAvatarHtml = '<img src="'+a.asker_avatar+'" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.remove()">';
+        }
         return '<div class="answer-card">'+
           '<div class="answer-question"><span class="q-label">Q:</span>'+
           a.question.replace(/</g,'&lt;')+'</div>'+
           '<div class="answer-content">'+a.answer.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>'+
-          '<div class="answer-footer"><span class="answer-asker">'+asker+'</span><span>'+timeStr+'</span></div>'+
+          '<div class="answer-footer"><span class="answer-asker">'+askerAvatarHtml+asker+'</span><span>'+timeStr+'</span></div>'+
           '</div>';
       }).join('')+'</div>';
   } else {
