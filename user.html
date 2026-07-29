@@ -1,110 +1,159 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>心镜 · 用户主页</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>用户主页</title>
 <style>
-:root {
-  --bg: #0f0f14;
-  --bg-card: #1a1a24;
-  --bg-input: #12121a;
-  --surface-raised: #1e1e2c;
-  --text-primary: #f0f0f4;
-  --text-secondary: #b0b0be;
-  --text-tertiary: #7a7a8c;
-  --text-quaternary: #5a5a6c;
-  --accent: #a78bfa;
-  --accent-dim: #7c5ce0;
-  --border: rgba(255,255,255,0.06);
-  --danger: #ef4444;
-  --success: #4ade80;
-  --radius: 16px;
-  font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,system-ui,sans-serif;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text-primary);min-height:100vh}
-.container{max-width:640px;margin:0 auto;padding:0 16px 60px}
+  :root {
+    --bg: #0a0a0a;
+    --card: #111;
+    --border: #222;
+    --text: #ddd;
+    --muted: #888;
+    --accent: #FF3B5C;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .container { max-width: 500px; margin: 0 auto; }
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .back-btn { color: var(--muted); text-decoration: none; font-size: 14px; transition: color .2s; }
+  .back-btn:hover { color: var(--accent); }
 
-/* Top bar */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 0}
-.back-btn{background:none;border:none;color:var(--text-secondary);font-size:24px;cursor:pointer;padding:4px}
-.brand{font-size:15px;font-weight:600;color:var(--text-secondary)}
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card-title { font-size: 13px; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px; }
 
-/* Profile header */
-.profile-header{text-align:center;padding:32px 0 24px}
-.profile-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent-dim),var(--accent));display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;margin:0 auto 16px;border:3px solid rgba(167,139,250,0.3)}
-.profile-avatar img{width:80px;height:80px;border-radius:50%;object-fit:cover}
-.profile-nickname{font-size:24px;font-weight:700;margin-bottom:4px}
-.profile-bio{color:var(--text-tertiary);font-size:14px;max-width:300px;margin:0 auto}
-.profile-meta{display:flex;justify-content:center;gap:20px;margin-top:12px}
-.meta-badge{font-size:12px;padding:4px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;color:var(--text-secondary)}
+  .avatar-section { text-align: center; margin-bottom: 8px; }
+  .avatar-preview {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--border); background: #1a1a1e;
+  }
+  .avatar-placeholder {
+    width: 80px; height: 80px; border-radius: 50%; border: 2px dashed var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 28px;
+  }
+  .user-name { text-align: center; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .user-meta { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .user-bio { text-align: center; font-size: 14px; color: var(--text); line-height: 1.6; padding: 0 10px; }
 
-/* Scores preview */
-.scores-preview{display:flex;justify-content:center;gap:16px;margin-top:16px;flex-wrap:wrap}
-.score-item{text-align:center;min-width:70px}
-.score-tag{font-size:11px;color:var(--text-quaternary);margin-bottom:4px}
-.score-value{font-size:15px;font-weight:600;color:var(--accent)}
+  .tag-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .tag-pill {
+    padding: 4px 12px; border-radius: 100px; font-size: 12px;
+    background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--text);
+  }
+  .tag-pill.accent { border-color: var(--accent); color: var(--accent); background: rgba(255,59,92,.08); }
 
-/* Ask section */
-.ask-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:24px}
-.ask-section h3{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--text-primary)}
-.ask-textarea{width:100%;min-height:80px;background:var(--bg-input);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--text-primary);font-size:14px;resize:vertical;outline:none;font-family:inherit}
-.ask-textarea:focus{border-color:var(--accent)}
-.ask-row{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
-.anon-toggle{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-tertiary);cursor:pointer}
-.anon-toggle input[type=checkbox]{accent-color:var(--accent)}
-.ask-submit{padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer}
-.ask-submit:disabled{opacity:0.5;cursor:not-allowed}
+  .answer-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .answer-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .answer-q { font-size: 14px; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+  .answer-a { font-size: 15px; color: var(--text); line-height: 1.6; margin-bottom: 6px; }
+  .answer-time { font-size: 11px; color: var(--muted); }
 
-.chat-btn {
-  display: inline-block; padding: 10px 32px; background: var(--accent);
-  color: #fff; border-radius: 24px; font-size: 14px; font-weight: 600;
-  text-decoration: none; transition: all .2s;
-}
-.chat-btn:hover { background: var(--accent-dim); transform: translateY(-1px); }
-.chat-btn:active { transform: scale(.95); }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
 
-.ask-msg{margin-top:8px;font-size:13px}
-.ask-limit{font-size:12px;color:var(--text-quaternary);margin-top:8px;text-align:center}
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; width: calc(100% - 32px); max-width: 400px;
+  }
+  .modal h3 { font-size: 17px; color: #fff; margin-bottom: 16px; }
+  .modal textarea {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(255,255,255,.04);
+    color: #fff; font-size: 14px; outline: none; font-family: inherit;
+    resize: vertical; min-height: 100px; line-height: 1.5;
+  }
+  .modal textarea:focus { border-color: var(--accent); }
+  .modal-chars { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .btn {
+    flex: 1; padding: 12px; border-radius: 100px;
+    font-size: 14px; font-weight: 600; cursor: pointer; border: none;
+    font-family: inherit; transition: all .2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #C4293F; }
+  .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-secondary { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: rgba(255,255,255,.1); }
 
-/* Answers */
-.answers-section{margin-top:32px}
-.answers-section h3{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text-primary)}
-.answer-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px}
-.answer-question{font-size:15px;font-weight:500;color:var(--text-primary);margin-bottom:8px;line-height:1.5}
-.answer-question .q-label{color:var(--accent);font-size:12px;margin-right:4px}
-.answer-content{font-size:14px;color:var(--text-secondary);line-height:1.6;padding:10px 0;border-top:1px solid var(--border)}
-.answer-footer{font-size:12px;color:var(--text-quaternary);display:flex;justify-content:space-between}
-.answer-asker{color:var(--text-tertiary)}
+  .anon-toggle { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; color: var(--muted); }
+  .anon-toggle input[type="checkbox"] { accent-color: var(--accent); }
 
-/* Loading & errors */
-.loading{text-align:center;padding:60px 20px;color:var(--text-tertiary)}
-.loading-spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.error{text-align:center;padding:60px 20px;color:var(--danger)}
-.empty{text-align:center;padding:40px 20px;color:var(--text-quaternary);font-size:14px}
-
-/* Toast */
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:2000;padding:10px 24px;border-radius:20px;font-size:13px;font-weight:500;pointer-events:none;opacity:0;transition:opacity 0.3s}
-.toast.show{opacity:1}
-.toast.success{background:var(--success);color:#000}
-.toast.error{background:var(--danger);color:#fff}
-
-/* auth.js integration */
-.auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+  .ask-btn-bar { margin-top: 16px; }
+  .toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    padding: 10px 20px; border-radius: 100px; font-size: 14px;
+    background: #333; color: #fff; z-index: 9999; pointer-events: none;
+    opacity: 0; transition: opacity .3s;
+  }
+  .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="topbar">
-    <button class="back-btn" onclick="history.back()">&larr;</button>
-    <span class="brand">心镜 · 社交</span>
-    <button class="auth-login-btn" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;display:none" onclick="Auth.showLoginModal()">登录</button>
+  <div class="header">
+    <h1 id="pageTitle">用户主页</h1>
+    <a href="javascript:history.back()" class="back-btn">返回</a>
   </div>
 
-  <div id="content">
-    <div class="loading"><div class="loading-spinner"></div>加载用户资料...</div>
+  <div class="card" id="profileCard">
+    <div class="avatar-section">
+      <img id="avatarImg" class="avatar-preview" src="" style="display:none" alt="头像">
+      <div id="avatarPlaceholder" class="avatar-placeholder">?</div>
+    </div>
+    <div id="userName" class="user-name">...</div>
+    <div id="userMeta" class="user-meta"></div>
+    <div id="userBio" class="user-bio"></div>
+    <div id="scoresRow" class="tag-row"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">公开回答</div>
+    <div id="answersList">
+      <div class="empty-state"><div class="empty-icon">💬</div>加载中...</div>
+    </div>
+  </div>
+
+  <div class="ask-btn-bar">
+    <button class="btn btn-primary" id="askBtn" onclick="showAskModal()" style="display:none">向TA提问</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="askModal" style="display:none" onclick="if(event.target===this)hideAskModal()">
+  <div class="modal">
+    <h3>向 <span id="askTargetName">TA</span> 提问</h3>
+    <textarea id="askContent" placeholder="写下你想问的问题..." maxlength="500" oninput="updateAskChars()"></textarea>
+    <div class="modal-chars"><span id="askChars">0</span>/500</div>
+    <div class="anon-toggle">
+      <input type="checkbox" id="askAnonymous" checked>
+      <label for="askAnonymous">匿名提问</label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="hideAskModal()">取消</button>
+      <button class="btn btn-primary" id="askSubmit" onclick="submitAsk()">发送</button>
+    </div>
   </div>
 </div>
 
@@ -112,169 +161,165 @@ body{background:var(--bg);color:var(--text-primary);min-height:100vh}
 
 <script src="/auth.js"></script>
 <script>
-'use strict';
+(function() {
+  var userId = new URLSearchParams(location.search).get('userId');
+  var targetNickname = '';
 
-var state = { userId: null, profile: null };
-
-function toast(msg, type) {
-  var el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast '+(type||'success')+' show';
-  clearTimeout(el._t);
-  el._t = setTimeout(function(){el.classList.remove('show')},2500);
-}
-
-function getUserId() {
-  var p = new URLSearchParams(location.search);
-  return p.get('userId') || p.get('id') || p.get('u');
-}
-
-function escHtml(s) { if(!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-async function loadProfile() {
-  var uid = getUserId();
-  if (!uid) {
-    document.getElementById('content').innerHTML = '<div class="error">缺少用户 ID</div>';
+  if (!userId) {
+    document.getElementById('profileCard').innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div>未指定用户</div>';
+    document.getElementById('answersList').innerHTML = '';
     return;
   }
-  state.userId = uid;
 
-  try {
-    var r = await fetch('/api/user-public?userId=' + uid, { credentials: 'same-origin' });
-    var d = await r.json();
-    if (d.error) {
-      document.getElementById('content').innerHTML = '<div class="error">'+(d.message||'用户不存在')+'</div>';
-      return;
-    }
-    state.profile = d;
-    renderProfile(d);
-  } catch(e) {
-    document.getElementById('content').innerHTML = '<div class="error">加载失败，请刷新重试</div>';
-  }
-}
-
-function renderProfile(d) {
-  var avatarHtml = d.avatar && !/^javascript:/i.test(d.avatar)
-    ? '<img src="'+d.avatar.replace(/"/g,'&quot;')+'" alt="头像">'
-    : (d.nickname||'?')[0];
-
-  var scoresHtml = '';
-  if (d.scoresPreview) {
-    var items = [];
-    if (d.scoresPreview.attachment) items.push('<div class="score-item"><div class="score-tag">依恋类型</div><div class="score-value">'+d.scoresPreview.attachment+'</div></div>');
-    if (d.scoresPreview.loveLang) items.push('<div class="score-item"><div class="score-tag">爱之语</div><div class="score-value">'+d.scoresPreview.loveLang+'</div></div>');
-    if (d.scoresPreview.mbti) items.push('<div class="score-item"><div class="score-tag">MBTI</div><div class="score-value">'+d.scoresPreview.mbti+'</div></div>');
-    if (items.length) scoresHtml = '<div class="scores-preview">'+items.join('')+'</div>';
+  function esc(s) {
+    if (!s) return '';
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
   }
 
-  var answersHtml = '';
-  if (d.answers && d.answers.length > 0) {
-    answersHtml = '<div class="answers-section"><h3>回答</h3>'+
-      d.answers.map(function(a){
-        var asker = a.is_anonymous ? '匿名提问' : (a.asker_name || '匿名');
-        var time = new Date(a.answered_at);
-        var timeStr = time.getFullYear()+'-'+('0'+(time.getMonth()+1)).slice(-2)+'-'+('0'+time.getDate()).slice(-2);
-        var askerAvatarHtml = '';
-        if (a.asker_avatar) {
-          askerAvatarHtml = '<img src="'+a.asker_avatar+'" style="width:20px;height:20px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.remove()">';
+  function fmtTime(t) {
+    if (!t) return '';
+    var now = Date.now();
+    var d = now - (typeof t === 'number' ? t : new Date(t).getTime());
+    var s = Math.floor(d / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60), day = Math.floor(h / 24);
+    if (s < 60) return '刚刚';
+    if (m < 60) return m + '分钟前';
+    if (h < 24) return h + '小时前';
+    if (day < 30) return day + '天前';
+    var dt = new Date(t);
+    return dt.getFullYear() + '-' + (dt.getMonth()+1) + '-' + dt.getDate();
+  }
+
+  fetch('/api/user-public?userId=' + encodeURIComponent(userId))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        var msg = data.error === 'inactive' ? '该用户已注销' : '用户不存在';
+        document.getElementById('profileCard').innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div>' + msg + '</div>';
+        document.getElementById('answersList').innerHTML = '';
+        return;
+      }
+
+      targetNickname = data.nickname || '用户';
+      document.title = targetNickname + ' 的主页';
+      document.getElementById('pageTitle').textContent = targetNickname + ' 的主页';
+
+      var avatarImg = document.getElementById('avatarImg');
+      var avatarPlaceholder = document.getElementById('avatarPlaceholder');
+      if (data.avatar) {
+        avatarImg.src = data.avatar;
+        avatarImg.style.display = 'inline-block';
+        avatarPlaceholder.style.display = 'none';
+      } else {
+        avatarImg.style.display = 'none';
+        avatarPlaceholder.style.display = 'inline-flex';
+        avatarPlaceholder.textContent = (data.nickname || '?')[0].toUpperCase();
+      }
+
+      document.getElementById('userName').textContent = data.nickname || '用户';
+      var meta = [];
+      if (data.gender) meta.push(data.gender === 'male' ? '男' : data.gender === 'female' ? '女' : data.gender);
+      if (data.ageGroup) meta.push(data.ageGroup === 'teen' ? '18岁以下' : data.ageGroup === 'young' ? '18-24岁' : data.ageGroup === 'adult' ? '25-34岁' : data.ageGroup === 'mid' ? '35-44岁' : data.ageGroup === 'senior' ? '45岁以上' : data.ageGroup);
+      document.getElementById('userMeta').textContent = meta.join(' · ') || '';
+      document.getElementById('userBio').textContent = data.bio || '';
+
+      var scoresRow = document.getElementById('scoresRow');
+      var tags = [];
+      var sp = data.scoresPreview;
+      if (sp) {
+        if (sp.mbti) tags.push('<span class="tag-pill accent">' + esc(sp.mbti) + '</span>');
+        if (sp.attachment) {
+          var attLabels = {secure:'安全型',anxious:'焦虑型',avoidant:'回避型',fearful:'恐惧型'};
+          tags.push('<span class="tag-pill">' + esc(attLabels[sp.attachment] || sp.attachment) + '</span>');
         }
-        return '<div class="answer-card">'+
-          '<div class="answer-question"><span class="q-label">Q:</span>'+
-          a.question.replace(/</g,'&lt;')+'</div>'+
-          '<div class="answer-content">'+a.answer.replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div>'+
-          '<div class="answer-footer"><span class="answer-asker">'+askerAvatarHtml+asker+'</span><span>'+timeStr+'</span></div>'+
+        if (sp.loveLang) {
+          var llLabels = {words:'肯定的话语',time:'精心的时刻',gifts:'接受礼物',service:'服务的行动',touch:'身体的接触'};
+          tags.push('<span class="tag-pill">' + esc(llLabels[sp.loveLang] || sp.loveLang) + '</span>');
+        }
+      }
+      scoresRow.innerHTML = tags.join('');
+
+      // Only non-anonymous answers
+      var answers = (data.answers || []).filter(function(a) { return !a.is_anonymous; });
+      var answersList = document.getElementById('answersList');
+      if (answers.length === 0) {
+        answersList.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div>暂无公开回答</div>';
+      } else {
+        answersList.innerHTML = answers.map(function(a) {
+          return '<div class="answer-item">' +
+            '<div class="answer-q">Q: ' + esc(a.question) + '</div>' +
+            '<div class="answer-a">' + esc(a.answer) + '</div>' +
+            '<div class="answer-time">' + fmtTime(a.answered_at) + '</div>' +
           '</div>';
-      }).join('')+'</div>';
-  } else {
-    answersHtml = '<div class="answers-section"><h3>回答</h3><div class="empty">暂无公开回答</div></div>';
-  }
+        }).join('');
+      }
 
-  var askHtml = '';
-  if (Auth.isLoggedIn() && Auth.getUserId() !== state.userId) {
-    askHtml = d.canAsk
-      ? '<div class="ask-section"><h3>向 '+escHtml(d.nickname)+' 匿名提问</h3>'+
-        '<textarea class="ask-textarea" id="askContent" placeholder="想问什么？..." maxlength="500"></textarea>'+
-        '<div class="ask-row">'+
-          '<label class="anon-toggle"><input type="checkbox" id="askAnonymous" checked> 匿名提问</label>'+
-          '<button class="ask-submit" id="askSubmit" onclick="submitAsk()">提交</button>'+
-        '</div>'+
-        '<div class="ask-msg" id="askMsg" style="display:none"></div>'+
-        '<div class="ask-limit">每天最多向每位用户提问 5 次</div>'+
-        '</div>'
-      : '<div class="ask-section"><div class="empty">你已向 TA 提问，请等待回答</div></div>';
-  } else if (!Auth.isLoggedIn()) {
-    askHtml = '<div class="ask-section" style="text-align:center"><div class="empty">登录后可向 '+escHtml(d.nickname)+' 匿名提问</div></div>';
-  }
+      var askBtn = document.getElementById('askBtn');
+      if (data.canAsk && Auth.isLoggedIn() && String(data.userId) !== String(Auth.currentUser?.id)) {
+        askBtn.style.display = 'block';
+        askBtn.textContent = '向' + targetNickname + '提问';
+      }
+    })
+    .catch(function(e) {
+      console.error(e);
+      document.getElementById('profileCard').innerHTML = '<div class="empty-state"><div class="empty-icon">😿</div>加载失败</div>';
+      document.getElementById('answersList').innerHTML = '';
+    });
+})();
 
-  document.getElementById('content').innerHTML =
-    '<div class="profile-header">'+
-      '<div class="profile-avatar">'+avatarHtml+'</div>'+
-      '<div class="profile-nickname">'+escHtml(d.nickname||'匿名用户')+'</div>'+
-      (d.bio ? '<div class="profile-bio">'+d.bio.replace(/</g,'&lt;')+'</div>' : '')+
-      '<div class="profile-meta">'+
-        '<span class="meta-badge">'+d.gender+'</span>'+
-        '<span class="meta-badge">'+d.ageGroup+'</span>'+
-      '</div>'+
-      (Auth.isLoggedIn() && Auth.getUserId() !== state.userId ? '<div style="margin-top:16px"><a href="/chat.html?userId='+state.userId+'" class="chat-btn">去聊天</a></div>' : '')+
-      scoresHtml+
-    '</div>'+
-    askHtml+
-    answersHtml;
+function showAskModal() {
+  if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+  document.getElementById('askTargetName').textContent = targetNickname;
+  document.getElementById('askModal').style.display = 'flex';
+  document.getElementById('askContent').value = '';
+  document.getElementById('askChars').textContent = '0';
+  document.getElementById('askSubmit').disabled = true;
 }
 
-async function submitAsk() {
-  if (!Auth.isLoggedIn()) {
-    Auth.showLoginModal();
-    return;
-  }
+function hideAskModal() { document.getElementById('askModal').style.display = 'none'; }
+
+function updateAskChars() {
+  var len = document.getElementById('askContent').value.length;
+  document.getElementById('askChars').textContent = len;
+  document.getElementById('askSubmit').disabled = len < 2;
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+function submitAsk() {
   var content = document.getElementById('askContent').value.trim();
-  if (!content || content.length < 2) {
-    var el = document.getElementById('askMsg');
-    el.textContent = '问题至少2个字';
-    el.style.color = 'var(--danger)';
-    el.style.display = 'block';
-    return;
-  }
+  var isAnonymous = document.getElementById('askAnonymous').checked;
+  if (content.length < 2) return;
+  var targetId = new URLSearchParams(location.search).get('userId');
 
   var btn = document.getElementById('askSubmit');
-  btn.disabled = true;
-  document.getElementById('askMsg').style.display = 'none';
+  btn.disabled = true; btn.textContent = '发送中...';
 
-  try {
-    var r = await fetch('/api/user-public', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: state.userId,
-        content: content,
-        isAnonymous: document.getElementById('askAnonymous').checked
-      }),
-      credentials: 'same-origin'
-    });
-    var d = await r.json();
-    if (d.ok) {
-      toast('提问成功！等待对方回答');
-      document.getElementById('askContent').value = '';
-      // Replace ask section
-      var askSec = document.querySelector('.ask-section');
-      if (askSec) askSec.innerHTML = '<div class="empty">提问成功！等待 '+state.profile.nickname+' 回答</div>';
-    } else {
-      var el2 = document.getElementById('askMsg');
-      el2.textContent = d.message || '提问失败';
-      el2.style.color = 'var(--danger)';
-      el2.style.display = 'block';
-      btn.disabled = false;
-    }
-  } catch(e) {
-    document.getElementById('askMsg').textContent = '网络错误';
-    document.getElementById('askMsg').style.color = 'var(--danger)';
-    document.getElementById('askMsg').style.display = 'block';
-    btn.disabled = false;
-  }
+  fetch('/api/user-public', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: targetId, content: content, isAnonymous: isAnonymous })
+  })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok) {
+        hideAskModal();
+        toast('提问已发送');
+        document.getElementById('askBtn').disabled = true;
+        document.getElementById('askBtn').textContent = '已提问，等待回复';
+      } else {
+        toast(data.message || '发送失败');
+      }
+    })
+    .catch(function() { toast('网络错误'); })
+    .finally(function() { btn.disabled = false; btn.textContent = '发送'; });
 }
-
-document.addEventListener('DOMContentLoaded', loadProfile);
-Auth.onAuthChange(function(){ if(state.userId) loadProfile(); });
 </script>
 </body>
 </html>
