@@ -110,11 +110,27 @@ export const onRequestPost = async ({ request, env }) => {
   }
 
   if (!fakeTarget) {
-    fakeTarget = await env.DB.prepare(
-      `SELECT * FROM profiles
-       WHERE is_active = 1 AND user_id != ? AND age_group = ?
-       ORDER BY RANDOM() LIMIT 1`
+    // Optimized: pre-filter then random sort (avoids full table scan at scale)
+    const profileCount = await env.DB.prepare(
+      `SELECT COUNT(*) as cnt FROM profiles
+       WHERE is_active = 1 AND user_id != ? AND age_group = ?`
     ).bind(user.id, myProfile.age_group).first();
+
+    if (profileCount && profileCount.cnt > 500) {
+      // For large pools, use offset-based random with LIMIT
+      const randOffset = Math.floor(Math.random() * Math.min(profileCount.cnt, 1000));
+      fakeTarget = await env.DB.prepare(
+        `SELECT * FROM profiles
+         WHERE is_active = 1 AND user_id != ? AND age_group = ?
+         LIMIT 1 OFFSET ?`
+      ).bind(user.id, myProfile.age_group, randOffset).first();
+    } else {
+      fakeTarget = await env.DB.prepare(
+        `SELECT * FROM profiles
+         WHERE is_active = 1 AND user_id != ? AND age_group = ?
+         ORDER BY RANDOM() LIMIT 1`
+      ).bind(user.id, myProfile.age_group).first();
+    }
   }
 
   let staff = await env.DB.prepare(
