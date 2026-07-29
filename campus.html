@@ -130,6 +130,35 @@ body {
 .toast.success { border-color:#4ade80; color:#4ade80; }
 .toast.error { border-color:#f87171; color:#f87171; }
 @media (min-width:640px) { .modal-overlay { align-items:center; } .modal-sheet { border-radius:var(--radius-lg); margin-bottom:20px; max-height:80vh; } .fab { right:calc((100vw - var(--max-width)) / 2 + 24px); bottom:28px; } }
+
+.comment-overlay { position:fixed; inset:0; z-index:110; background:rgba(0,0,0,.78); display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s var(--ease-out); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+.comment-overlay.active { opacity:1; pointer-events:auto; }
+.comment-sheet { width:100%; max-width:var(--max-width); background:var(--surface); border-radius:20px 20px 0 0; padding:20px 24px calc(20px + var(--safe-bottom)); transform:translateY(100%); transition:transform .4s cubic-bezier(.32,.72,0,1); max-height:75vh; display:flex; flex-direction:column; border:1px solid var(--hairline); border-bottom:none; }
+.comment-overlay.active .comment-sheet { transform:translateY(0); }
+.comment-sheet-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-shrink:0; }
+.comment-sheet-title { font-size:16px; font-weight:700; color:var(--text-primary); }
+.comment-sheet-close { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.06); border:none; color:var(--text-secondary); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; touch-action:manipulation; transition:all .2s var(--ease-out); }
+.comment-sheet-close:hover { background:rgba(255,255,255,.12); color:var(--text-primary); }
+.comment-sheet-close:active { transform:scale(.9); }
+.comment-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding-right:4px; margin-bottom:12px; }
+.comment-item { display:flex; gap:10px; align-items:flex-start; }
+.comment-avatar { width:28px; height:28px; border-radius:50%; background:var(--accent-soft); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--accent); font-weight:600; }
+.comment-body { flex:1; min-width:0; }
+.comment-author { font-size:12px; color:var(--text-secondary); margin-bottom:3px; font-weight:500; }
+.comment-text { font-size:14px; color:var(--text-primary); line-height:1.5; word-break:break-word; }
+.comment-time { font-size:11px; color:var(--text-tertiary); margin-top:4px; }
+.comment-empty { text-align:center; padding:30px 0; color:var(--text-tertiary); font-size:13px; }
+.comment-loading { text-align:center; padding:20px 0; display:none; }
+.comment-loading.show { display:flex; justify-content:center; }
+.comment-input-row { display:flex; gap:10px; align-items:flex-end; flex-shrink:0; padding-top:8px; border-top:1px solid var(--hairline); }
+.comment-input { flex:1; background:rgba(255,255,255,.04); border:1px solid var(--hairline); border-radius:var(--radius-pill); padding:10px 16px; color:var(--text-primary); font-size:14px; font-family:var(--font-sans); outline:none; transition:border-color .2s; line-height:1.4; }
+.comment-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+.comment-input::placeholder { color:var(--text-tertiary); }
+.comment-send-btn { padding:10px 18px; border:none; border-radius:var(--radius-pill); background:var(--accent); color:#fff; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font-sans); transition:all .2s var(--ease-out); flex-shrink:0; touch-action:manipulation; white-space:nowrap; }
+.comment-send-btn:hover { background:var(--accent-dim); }
+.comment-send-btn:active { transform:scale(.93); }
+.comment-send-btn:disabled { opacity:.35; pointer-events:none; }
+@media (min-width:640px) { .comment-overlay { align-items:center; } .comment-sheet { border-radius:var(--radius-lg); margin-bottom:20px; max-height:70vh; } }
 @media (max-width:380px) { .card { padding:14px 16px; } .card-content { font-size:14px; } .tag-chip { padding:6px 12px; font-size:12px; } }
 </style>
 </head>
@@ -181,6 +210,25 @@ body {
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="comment-overlay" id="commentOverlay">
+  <div class="comment-sheet">
+    <div class="comment-sheet-header">
+      <div class="comment-sheet-title">评论</div>
+      <button class="comment-sheet-close" id="commentClose" aria-label="关闭">&times;</button>
+    </div>
+    <div class="comment-list" id="commentList">
+      <div class="comment-empty">暂无评论</div>
+    </div>
+    <div class="comment-loading" id="commentLoading">
+      <div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div>
+    </div>
+    <div class="comment-input-row">
+      <input class="comment-input" id="commentInput" placeholder="写下你的评论..." maxlength="500" autocomplete="off">
+      <button class="comment-send-btn" id="commentSendBtn">发送</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   var state = { currentTag:'', selectedModalTag:'#表白', likedPosts:new Set(), page:1, isLoading:false, hasMore:true, school:localStorage.getItem('mirror_school')||'' };
@@ -215,7 +263,7 @@ body {
         '<button class="action-btn like-btn'+(liked?' liked':'')+'" data-post-id="'+p.id+'" aria-label="点赞">'+
           '<span class="heart-icon">'+(liked?'♥':'♡')+'</span><span class="like-count">'+(p.likes_count||0)+'</span>'+
         '</button>'+
-        '<button class="action-btn" data-post-id="'+p.id+'" aria-label="评论"><span>💬</span><span>'+(p.comments_count||0)+'</span></button>'+
+        '<button class="action-btn comment-btn" data-post-id="'+p.id+'" aria-label="评论"><span>💬</span><span>'+(p.comments_count||0)+'</span></button>'+
         (p.tag==='#捞人' ? '<button class="action-btn contact-btn" data-post-id="'+p.id+'" data-action="contact" aria-label="我想认识TA"><span>👋</span><span>我想认识TA</span></button>' : '')+
       '</div></article>';
   }
@@ -264,6 +312,7 @@ body {
     else{btn.classList.remove('liked');btn.querySelector('.heart-icon').textContent='♡';if(cnt)cnt.textContent=Math.max(0,orig-1);state.likedPosts.delete(pid);}}
     try{
       var r=await fetch('/wall-like',{method:'POST',headers:{'Content-Type':'application/json; charset=utf-8'},body:JSON.stringify({postId:pid,action:act})});
+      if(r.status===401){if(btn){if(act==='like'){btn.classList.remove('liked');btn.querySelector('.heart-icon').textContent='\u2661';if(cnt)cnt.textContent=orig;state.likedPosts.delete(pid);}else{btn.classList.add('liked');btn.querySelector('.heart-icon').textContent='\u2665';if(cnt)cnt.textContent=orig;state.likedPosts.add(pid);}}Auth.showLoginModal();return;}
       if(!r.ok)throw new Error('HTTP '+r.status);
       var d=await r.json();if(d.ok&&cnt&&d.likesCount!==undefined)cnt.textContent=d.likesCount;
     }catch(e){console.error(e);if(btn){if(act==='like'){btn.classList.remove('liked');btn.querySelector('.heart-icon').textContent='♡';if(cnt)cnt.textContent=orig;state.likedPosts.delete(pid);}
@@ -281,7 +330,7 @@ body {
   });
   dom.feedConfession.addEventListener('click',function(e){
     var btn=e.target.closest('.like-btn');if(btn){e.preventDefault();var pid=parseInt(btn.dataset.postId,10);if(pid&&!isNaN(pid))likePost(pid);return;}
-    var cmt=e.target.closest('.comment-btn');if(cmt){e.preventDefault();toast('评论功能即将开放','');return;}
+    var cmt=e.target.closest('.comment-btn');if(cmt){e.preventDefault();var pid=parseInt(cmt.dataset.postId,10);if(pid&&!isNaN(pid))openCommentOverlay(pid);return;}
     var contact=e.target.closest('.contact-btn');if(contact){e.preventDefault();handleContact(parseInt(contact.dataset.postId,10));return;}
   });
 
@@ -306,6 +355,96 @@ body {
   });
   var st=false;
   window.addEventListener('scroll',function(){if(st)return;st=true;requestAnimationFrame(function(){st=false;if(state.isLoading)return;if(window.innerHeight+window.scrollY>=document.documentElement.scrollHeight-300&&state.hasMore){state.page++;load();}});},{passive:true});
+  
+  // ── 评论面板 ──
+  var commentState = { postId:null, loading:false };
+  var commentOverlay = document.getElementById('commentOverlay');
+  var commentList = document.getElementById('commentList');
+  var commentInput = document.getElementById('commentInput');
+  var commentSendBtn = document.getElementById('commentSendBtn');
+  var commentLoading = document.getElementById('commentLoading');
+  var commentClose = document.getElementById('commentClose');
+
+  function openCommentOverlay(postId) {
+    commentState.postId = postId;
+    commentList.innerHTML = '<div class="comment-empty">加载中...</div>';
+    commentInput.value = '';
+    commentOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    loadComments();
+  }
+
+  function closeCommentOverlay() {
+    commentOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    commentState.postId = null;
+  }
+
+  async function loadComments() {
+    if (commentState.loading) return;
+    commentState.loading = true;
+    commentLoading.classList.add('show');
+    try {
+      var r = await fetch('/wall-comments?postId=' + commentState.postId, { headers: { 'Accept': 'application/json; charset=utf-8' } });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      var d = await r.json();
+      var comments = d.comments || [];
+      if (comments.length === 0) {
+        commentList.innerHTML = '<div class="comment-empty">暂无评论，快来抢沙发</div>';
+      } else {
+        commentList.innerHTML = comments.map(function(c) {
+          var initials = (c.nickname || (c.is_anonymous ? '\u533f' : '\u7528'))[0];
+          return '<div class="comment-item">' +
+            '<div class="comment-avatar">' + esc(initials) + '</div>' +
+            '<div class="comment-body">' +
+              '<div class="comment-author">' + (c.is_anonymous ? '\u533f\u540d\u7528\u6237' : esc(c.nickname || '\u7528\u6237')) + '</div>' +
+              '<div class="comment-text">' + esc(c.content) + '</div>' +
+              '<div class="comment-time">' + fmt(c.created_at) + '</div>' +
+            '</div></div>';
+        }).join('');
+      }
+    } catch (e) {
+      console.error(e);
+      commentList.innerHTML = '<div class="comment-empty">加载失败</div>';
+    } finally {
+      commentState.loading = false;
+      commentLoading.classList.remove('show');
+    }
+  }
+
+  async function submitComment() {
+    var ct = commentInput.value.trim();
+    if (!ct) return;
+    if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+    commentSendBtn.disabled = true;
+    try {
+      var r = await fetch('/wall-comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({ postId: commentState.postId, content: ct, is_anonymous: false })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      commentInput.value = '';
+      loadComments();
+      var card = document.querySelector('.confession-card[data-post-id="' + commentState.postId + '"]');
+      if (card) {
+        var cntEl = card.querySelector('.comment-btn span:last-child');
+        if (cntEl) cntEl.textContent = (parseInt(cntEl.textContent, 10) || 0) + 1;
+      }
+    } catch (e) {
+      console.error(e);
+      toast('\u8bc4\u8bba\u5931\u8d25', 'error');
+    } finally {
+      commentSendBtn.disabled = false;
+    }
+  }
+
+  commentClose.addEventListener('click', closeCommentOverlay);
+  commentOverlay.addEventListener('click', function(e) { if (e.target === commentOverlay) closeCommentOverlay(); });
+  commentSendBtn.addEventListener('click', submitComment);
+  commentInput.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(); } });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && commentOverlay.classList.contains('active')) closeCommentOverlay(); });
+
   function init(){load();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
