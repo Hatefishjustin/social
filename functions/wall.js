@@ -89,7 +89,7 @@ export const onRequestGet = async ({ request, env }) => {
     countSql += ` WHERE tag = ?`;
     params.push(tag);
   }
-  sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  sql += ` ORDER BY w.created_at DESC LIMIT ? OFFSET ?`;
 
   const { results } = await env.DB.prepare(sql).bind(...params, PAGE_SIZE, offset).all();
   const countRow = await env.DB.prepare(countSql).bind(...params).first();
