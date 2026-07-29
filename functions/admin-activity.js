@@ -15,11 +15,12 @@ async function getCurrentUser(request, env) {
   const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
   if (!sessionToken) return null;
   const row = await env.DB.prepare(
-    `SELECT sessions.expires_at as expires_at, users.id as user_id, users.email as email
+    `SELECT sessions.expires_at as expires_at, users.id as user_id, users.email as email, users.is_admin
      FROM sessions JOIN users ON sessions.user_id = users.id
      WHERE sessions.token = ?`
   ).bind(sessionToken).first();
   if (!row || Date.now() > row.expires_at) return null;
+  if (!row.is_admin) return null;
   return { id: row.user_id, email: row.email };
 }
 
