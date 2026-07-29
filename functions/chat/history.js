@@ -49,7 +49,7 @@ export const onRequestGet = async ({ request, env }) => {
   if (!match) return jsonResponse({ error: 'not_found' }, 404);
 
   const { results } = await env.DB.prepare(
-    `SELECT m.id, m.sender_id, m.content, m.created_at, p.nickname as sender_name
+    `SELECT m.id, m.sender_id, m.content, m.created_at, COALESCE(p.nickname, '系统') as sender_name
      FROM messages m
      LEFT JOIN profiles p ON p.user_id = m.sender_id
      WHERE m.match_id = ? AND m.id < ?
