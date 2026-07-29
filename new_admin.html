@@ -595,7 +595,7 @@ async function loadQuizStats() {
   loading.style.display = 'block';
   dashboard.innerHTML = '';
   try {
-    var r = await fetch('/admin/quiz-stats', { credentials: 'include' });
+    var r = await fetch('/api/admin/quiz-stats', { credentials: 'include' });
     var data = await r.json();
     loading.style.display = 'none';
     if (data.error) {
