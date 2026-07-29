@@ -54,7 +54,7 @@ export const onRequestGet = async ({ request, env }) => {
     db.prepare('SELECT COUNT(*) as n FROM page_views WHERE visited_at >= ?').bind(Date.now() - 604800000).first(),
     db.prepare('SELECT COUNT(*) as n FROM wall_posts').first(),
     db.prepare('SELECT COUNT(*) as n FROM askbox_questions').first(),
-    db.prepare('SELECT COUNT(*) as n FROM askbox_questions WHERE answer IS NOT NULL AND answer != \'\'').first(),
+    db.prepare('SELECT COUNT(*) as n FROM askbox_questions WHERE answer_content IS NOT NULL AND answer_content != \'\'').first(),
     db.prepare('SELECT COUNT(*) as n FROM feedback').first(),
     db.prepare('SELECT COUNT(*) as n FROM feedback WHERE status = \'open\'').first(),
     db.prepare('SELECT COUNT(*) as n FROM activity_log WHERE is_anonymous = 1 AND action = \'wall_post\'').first(),
