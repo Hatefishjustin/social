@@ -51,7 +51,8 @@ async function codeLogin(code) {
   var r = await fetch('/auth/code-login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: code })
+    body: JSON.stringify({ code: code }),
+    credentials: 'same-origin'
   });
   return await r.json();
 }
@@ -222,6 +223,7 @@ function showUserMenu(btn) {
   var html = '';
   html += '<div class="auth-dd-email">' + email + '</div>';
   html += '<a class="auth-dd-item" href="/profile.html" style="text-decoration:none;display:block;text-align:left">个人设置</a>';
+  html += '<a class="auth-dd-item" href="/user.html?userId=' + getUserId() + '" style="text-decoration:none;display:block;text-align:left">我的主页</a>';
   html += '<button class="auth-dd-item" id="authLogoutBtn">退出登录</button>';
   menu.innerHTML = html;
 
