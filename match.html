@@ -2777,12 +2777,12 @@ function generateShareImage(data){
   ctx.textAlign = 'center';
   ctx.fillText('心镜 · 社交  —  找到最懂你的那个人', 375, 930);
 
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.font = '11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-  ctx.fillText('扫码体验心镜测评  ·  powered by Justin', 375, 958);
-
-  // 显示弹窗
-  showShareModal(canvas);
+  // QR code
+  var qrImg = new Image();
+  qrImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAYAAABRRIOnAAADO0lEQVR4nO3dwY7jNhAFQDvI///y5JI9PC0QotFsillUXS1LHOOhyREp6vv5fH4+8K+/3m4AdxEIgkAQBIIgEASBIAgE4e/VAT8/P98TDfnl+/3+532RZ3tWx690z7f6fap/z7RVe1QIgkAQBIKwHEM8dfvsp1UfWv382b5uH79SvV71fF3V9qgQBIEgCAShPIZ4qvZR1T5y1Ud3z/e0+z5H1/Tv+6RCEASCIBCE9hjiNtX7Es/Pu3MZb485ulQIgkAQBIJw/Rii+394d26hOkaYnjuZpkIQBIIgEIT2GGK6T1yNCbr3Fap9/m1rIHdTIQgCQRAIQnkMcboP7a6ZrN5HqM59dNu3au9pKgRBIAgCQfh+7DEVTq9hvI0KQRAIgkAQyvtDTP+f/n9/bmL3cySnfx8VgiAQBIEglO9DTP+ffnrPpuk++e32VI9XIQgCQRAIwvhcxvQeULu/f3pM0b3e7jGKCkEQCIJAEJZjiNPrA07Pnew2vc+kuQyOEgiCQBDa9yGmn408PSapum1upXtfRoUgCARBIAjHn+3c3efu3ndy95rI07pjJBWCIBAEgSBs32OqugdU951bq+NvGxNMv8ez+30VgiAQBIEgjL9zq7qnU/V602smq5/vfg9o9frd9qgQBIEgCARh+/sypvvA6TWF0+sRblsP8qRCEASCIBCE8hji9H4Pq/Odvo+xctvfYz0ELQJBEAjC9n0qV257h9Xb79N4mn6H2IoKQRAIgkAQ2vtU3r4nU9fbe2J1j7ceghaBIAgEobzH1O75+d8a9PJcQNXbY5rdVAiCQBAEgrCcy9jdZ932HMbT6XeLr5xeo6lCEASCIBCE8nqIadX5/+r+FKvvV9v3tHs/i+rx1kOwlUAQBIIw/lzGSrfPrZp+VnL3+okqz2WwlUAQBIIwvsfU023rFXZfb/r81kNwlEAQBIKwfY+p3XY/K7k6//Qayem5kC4VgiAQBIEgXD+G6K5pfHvfyd3PXk4/66pCEASCIBCE7e/c2q27p9Pb559uz+p69oegRSAIAkE4/u7v269Xvf7pNZTTYwoVgiAQBIEglPep5M+mQhAEgiAQBIEgCARBIAgCQfgHIa3DQwJtMEYAAAAASUVORK5CYII=';
+  qrImg.onload = function() { window._qrDrawn = true; ctx.drawImage(qrImg, 375 - 50, 860, 100, 100); showShareModal(canvas); };
+  qrImg.onerror = function() { showShareModal(canvas); };
+  setTimeout(function() { if(!window._qrDrawn) showShareModal(canvas); }, 500);
 }
 
 function drawCard(ctx, label, title, desc, x, y, w, bgColor){
@@ -2850,12 +2850,19 @@ function drawRadarChart(scores){
   ctx.clearRect(0, 0, W, H);
   var labels = ['开放性','尽责性','外向性','宜人性','情绪稳定'];
   var keys = ['openness','conscientiousness','extraversion','agreeableness','neuroticism'];
-  var colors = ['#C4526E','#8b5cf6','#3b82f6','#f59e0b','#10b981'];
+  var colorsSelf = ['#C4526E','#8b5cf6','#3b82f6','#f59e0b','#10b981'];
   var N = keys.length;
-  var values = keys.map(function(k){
+
+  var selfValues = keys.map(function(k){
     var raw = (scores.big5[k] || 0);
     return Math.max(0.1, Math.min(1, (raw + 10) / 22));
   });
+
+  var matchValues = selfValues.map(function(v, i){
+    if(i === 4) return Math.min(1, v * 1.2);
+    return Math.max(0.1, Math.min(1, v * 0.7 + 0.25));
+  });
+
   for(var ring=1; ring<=4; ring++){
     ctx.beginPath();
     for(var i=0; i<=N; i++){
@@ -2868,13 +2875,8 @@ function drawRadarChart(scores){
     ctx.strokeStyle = ring===4 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
     ctx.lineWidth = ring===4 ? 1.5 : 0.5;
     ctx.stroke();
-    if(ring===4){
-      ctx.fillStyle = 'rgba(255,255,255,0.15)';
-      ctx.font = '10px -apple-system,"PingFang SC",sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('100%', cx, cy-R-8);
-    }
   }
+
   for(var i=0; i<N; i++){
     var angle = (Math.PI*2/N)*i - Math.PI/2;
     ctx.beginPath();
@@ -2889,30 +2891,75 @@ function drawRadarChart(scores){
     ctx.textBaseline = 'middle';
     ctx.fillText(labels[i], lx, ly);
   }
+
   ctx.beginPath();
   for(var i=0; i<=N; i++){
-    var idx = i % N;
-    var angle = (Math.PI*2/N)*idx - Math.PI/2;
-    var r = R * values[idx];
-    var x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    var idx2 = i % N;
+    var angle2 = (Math.PI*2/N)*idx2 - Math.PI/2;
+    var r2 = R * selfValues[idx2];
+    var x2 = cx + r2*Math.cos(angle2), y2 = cy + r2*Math.sin(angle2);
+    if(i===0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
   }
   ctx.closePath();
-  var fillGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
-  fillGrad.addColorStop(0, 'rgba(196,82,110,0.25)');
-  fillGrad.addColorStop(1, 'rgba(196,82,110,0.02)');
-  ctx.fillStyle = fillGrad;
+  var fillGradSelf = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  fillGradSelf.addColorStop(0, 'rgba(196,82,110,0.2)');
+  fillGradSelf.addColorStop(1, 'rgba(196,82,110,0.03)');
+  ctx.fillStyle = fillGradSelf;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(196,82,110,0.6)';
+  ctx.strokeStyle = 'rgba(196,82,110,0.5)';
   ctx.lineWidth = 2;
   ctx.stroke();
-  for(var i=0; i<N; i++){
-    var angle = (Math.PI*2/N)*i - Math.PI/2;
-    var r = R * values[i];
-    var x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
-    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fillStyle = colors[i]; ctx.fill();
-    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.strokeStyle = colors[i]; ctx.lineWidth = 1.5; ctx.stroke();
+
+  ctx.beginPath();
+  for(var i=0; i<=N; i++){
+    var idx3 = i % N;
+    var angle3 = (Math.PI*2/N)*idx3 - Math.PI/2;
+    var r3 = R * matchValues[idx3];
+    var x3 = cx + r3*Math.cos(angle3), y3 = cy + r3*Math.sin(angle3);
+    if(i===0) ctx.moveTo(x3, y3); else ctx.lineTo(x3, y3);
   }
+  ctx.closePath();
+  ctx.setLineDash([6, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  for(var i=0; i<N; i++){
+    var angle4 = (Math.PI*2/N)*i - Math.PI/2;
+    var r4 = R * selfValues[i];
+    var x4 = cx + r4*Math.cos(angle4), y4 = cy + r4*Math.sin(angle4);
+    ctx.beginPath(); ctx.arc(x4, y4, 4, 0, Math.PI*2);
+    ctx.fillStyle = colorsSelf[i]; ctx.fill();
+    ctx.beginPath(); ctx.arc(x4, y4, 6, 0, Math.PI*2);
+    ctx.strokeStyle = colorsSelf[i]; ctx.lineWidth = 1.5; ctx.stroke();
+  }
+
+  for(var i=0; i<N; i++){
+    var angle5 = (Math.PI*2/N)*i - Math.PI/2;
+    var r5 = R * matchValues[i];
+    var x5 = cx + r5*Math.cos(angle5), y5 = cy + r5*Math.sin(angle5);
+    ctx.beginPath(); ctx.arc(x5, y5, 3, 0, Math.PI*2);
+    ctx.fillStyle = 'transparent';
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1; ctx.stroke();
+  }
+
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  ctx.fillRect(30, 10, 130, 22);
+  ctx.fillStyle = '#C4526E';
+  ctx.fillRect(36, 16, 8, 8);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font = '11px -apple-system,"PingFang SC",sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('你的画像', 50, 24);
+
+  ctx.setLineDash([4, 3]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(120, 20); ctx.lineTo(148, 20); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillText('理想共鸣', 152, 24);
 }
 
 function showShareModal(canvas){
