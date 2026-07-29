@@ -1100,7 +1100,30 @@ body.export-mode .result-screen{
 .history-empty{
   text-align:center;padding:60px 20px;color:var(--parchment-dim);font-size:13.5px;line-height:1.8;
 }
-.nav-home-link{font-size:13px;color:var(--text-tertiary);text-decoration:none;display:inline-flex;align-items:center;gap:2px;transition:color .2s}.nav-home-link:hover{color:var(--accent)}</style>
+.nav-home-link{font-size:13px;color:var(--text-tertiary);text-decoration:none;display:inline-flex;align-items:center;gap:2px;transition:color .2s}.nav-home-link:hover{color:var(--accent)}
+
+/* ── 分享图弹窗 ── */
+.share-modal-overlay{
+  display:none; position:fixed; inset:0; z-index:9999;
+  background:rgba(0,0,0,0.92); align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; padding:20px;
+}
+.share-modal-overlay.active{display:flex;}
+.share-modal-overlay img{
+  max-width:90vw; max-height:70vh; border-radius:16px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.06);
+}
+.share-modal-actions{display:flex; gap:12px; flex-wrap:wrap; justify-content:center;}
+.share-modal-actions button{
+  padding:10px 24px; border-radius:100px; font-size:13.5px; font-weight:600;
+  border:none; cursor:pointer; font-family:inherit; transition:all 0.2s;
+}
+.share-btn-download{background:var(--accent); color:#fff;}
+.share-btn-download:hover{background:var(--rouge-dim);}
+.share-btn-close{background:rgba(255,255,255,0.08); color:var(--text-secondary); border:1px solid var(--hairline)!important;}
+.share-btn-close:hover{background:rgba(255,255,255,0.14); color:var(--text-primary);}
+.share-modal-tip{font-size:12px; color:var(--text-tertiary); text-align:center; line-height:1.6;}
+</style>
 </head>
 <body>
 
@@ -2048,7 +2071,7 @@ function renderResult(scores, options){
 
   html += `
     <div class="result-actions">
-      <button class="btn-primary" style="padding:13px 26px;font-size:14.5px;" onclick="exportResultAsImage()">导出报告</button>
+      <button class="btn-primary" style="padding:13px 26px;font-size:14.5px;" onclick="exportResultAsImage()">生成分享图</button>
       <button class="btn-secondary" onclick="restartQuiz()">重新测一次</button>
     </div>
   `;
@@ -2230,7 +2253,7 @@ function renderAiSuccess(analysis){
   html += `
     <div class="result-actions" style="margin-top:8px;">
       <button class="btn-secondary" style="padding:10px 22px;font-size:13px;" onclick="fetchAiAnalysis(window._rawText)">重新生成一次</button>
-      <button class="btn-secondary" style="padding:10px 22px;font-size:13px;" onclick="exportResultAsImage()">导出为图片</button>
+      <button class="btn-secondary" style="padding:10px 22px;font-size:13px;" onclick="exportResultAsImage()">生成分享图</button>
     </div>
   `;
 
@@ -2315,30 +2338,6 @@ function personalitySummary(p){
 /* =========================================================
    导出结果：使用浏览器原生打印能力生成 PDF（零外部依赖）。
    之所以不用 html2canvas 等第三方截图库，是因为那类库需要从 CDN 加载，
-   而这个项目此前正因为加载了 Google Fonts 这样的外部资源在国内被卡死，
-   所以这里刻意选择"浏览器自带能力"而不是再引入一个新的外部依赖点。
-   点击后会：切到"你的报告"这个信息最完整的Tab → 进入导出模式（隐藏交互控件，
-   换成适合打印的浅色排版）→ 调起系统打印对话框，用户选"另存为PDF"即可导出。
-   ========================================================= */
-function exportResultAsImage(){
-  switchTab('report'); // 导出内容以报告Tab为主，信息最完整
-  document.body.classList.add('export-mode');
-
-  // 给浏览器一点时间应用样式切换，再调起打印，体验更顺滑
-  setTimeout(()=>{
-    window.print();
-  }, 150);
-
-  // 打印对话框关闭后（无论是否真的保存了）恢复正常界面
-  const restore = () => {
-    document.body.classList.remove('export-mode');
-    window.removeEventListener('afterprint', restore);
-  };
-  window.addEventListener('afterprint', restore);
-  // 兜底：部分移动端浏览器不触发 afterprint 事件，加一个超时兜底恢复
-  setTimeout(restore, 5000);
-}
-
 function restartQuiz(){
   current=0;
   answers=[];
@@ -2678,6 +2677,177 @@ checkResumeOnLoad();
 // 页面加载即检查登录状态，并处理可能存在的登录跳转参数
 checkSession().then(handleLoginRedirectParams);
 fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'match'})}).catch(function(){});
+
+// ── 分享图生成 ──
+function exportResultAsImage(){
+  try{
+    var raw = localStorage.getItem('xinjing_quiz_result_v2');
+    if(!raw){ alert('暂无测评结果，请先完成测评'); return; }
+    var data = JSON.parse(raw);
+    generateShareImage(data);
+  }catch(e){
+    alert('生成分享图失败，请重试');
+  }
+}
+
+function generateShareImage(data){
+  var canvas = document.createElement('canvas');
+  var W = 750, H = 1000;
+  canvas.width = W; canvas.height = H;
+  var ctx = canvas.getContext('2d');
+
+  // 背景
+  var bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+  bgGrad.addColorStop(0, '#0d0d14');
+  bgGrad.addColorStop(0.5, '#111118');
+  bgGrad.addColorStop(1, '#0a0a10');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // 顶部装饰光晕
+  var glow = ctx.createRadialGradient(W/2, 120, 20, W/2, 120, 350);
+  glow.addColorStop(0, 'rgba(255,59,92,0.15)');
+  glow.addColorStop(1, 'rgba(255,59,92,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, 500);
+
+  // Logo
+  ctx.fillStyle = '#FF3B5C';
+  ctx.beginPath(); ctx.arc(375, 80, 6, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 0.25;
+  ctx.beginPath(); ctx.arc(375, 80, 14, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 22px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('心镜', 375, 70);
+
+  // 标题
+  ctx.font = 'bold 36px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('你的心理画像', 375, 150);
+
+  // 分隔线
+  ctx.strokeStyle = 'rgba(255,59,92,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(200, 170); ctx.lineTo(550, 170); ctx.stroke();
+
+  // 依恋类型卡片
+  var y = 220;
+  drawCard(ctx, '依恋模式', data.attachmentLabel, attachInfo[data.attachmentType] ? attachInfo[data.attachmentType].desc.substring(0,80)+'...' : '', 30, y, W-60, '#1a1a28');
+
+  // 爱的语言
+  y = y + 200;
+  drawCard(ctx, '爱的语言', data.loveLang, loveDesc[data.loveLangKey] ? loveDesc[data.loveLangKey] : '', 30, y, W-60, '#1a1a28');
+
+  // MBTI
+  y = y + 180;
+  drawCard(ctx, 'MBTI 倾向（辅助参照）', data.mbti, '', 30, y, W-60, '#1a1a28');
+
+  // 底部
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('心镜 · 社交  —  找到最懂你的那个人', 375, 930);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.font = '11px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('扫码体验心镜测评  ·  powered by Justin', 375, 958);
+
+  // 显示弹窗
+  showShareModal(canvas);
+}
+
+function drawCard(ctx, label, title, desc, x, y, w, bgColor){
+  var r = 16;
+
+  // 卡片背景
+  ctx.fillStyle = bgColor;
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+160);
+  ctx.lineTo(x, y+160);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
+  ctx.fill();
+
+  // 标签
+  ctx.fillStyle = '#FF3B5C';
+  ctx.font = 'bold 13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x+24, y+30);
+
+  // 标题
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 26px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText(title, x+24, y+66);
+
+  // 描述（换行处理）
+  if(desc){
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    var lines = wrapText(ctx, desc, w-48);
+    lines.slice(0, 4).forEach(function(line, i){
+      ctx.fillText(line, x+24, y+100 + i*20);
+    });
+  }
+}
+
+function wrapText(ctx, text, maxWidth){
+  var words = text.split('');
+  var lines = [];
+  var current = '';
+  for(var i=0; i<words.length; i++){
+    var test = current + words[i];
+    if(ctx.measureText(test).width > maxWidth && current.length > 0){
+      lines.push(current);
+      current = words[i];
+    }else{
+      current = test;
+    }
+  }
+  if(current) lines.push(current);
+  return lines;
+}
+
+function showShareModal(canvas){
+  var overlay = document.getElementById('shareModalOverlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'shareModalOverlay';
+    overlay.className = 'share-modal-overlay';
+    overlay.innerHTML =
+      '<img id="shareImagePreview" src="" alt="心理画像" style="cursor:default"/>' +
+      '<div class="share-modal-actions">' +
+        '<button class="share-btn-download" onclick="downloadShareImage()">保存到相册</button>' +
+        '<button class="share-btn-close" onclick="closeShareModal()">关闭</button>' +
+      '</div>' +
+      '<div class="share-modal-tip">长按上方图片即可保存，或点击「保存到相册」下载</div>';
+    document.body.appendChild(overlay);
+  }
+  var src = canvas.toDataURL('image/png');
+  document.getElementById('shareImagePreview').src = src;
+  window._shareImageDataUrl = src;
+  overlay.classList.add('active');
+}
+
+function closeShareModal(){
+  document.getElementById('shareModalOverlay').classList.remove('active');
+}
+
+function downloadShareImage(){
+  if(!window._shareImageDataUrl) return;
+  var a = document.createElement('a');
+  a.href = window._shareImageDataUrl;
+  a.download = '心镜-心理画像.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 </script>
 </body>
 </html>
