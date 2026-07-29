@@ -170,7 +170,7 @@ function renderMatchList() {
       <div class="match-avatar">👤</div>
       <div class="match-info">
         <div class="match-name">
-          ${m.user_nickname}
+          ${escapeHtml(m.user_nickname || '')}
           <span class="match-badge ${m.unread_count > 0 ? '' : 'hidden'}">${m.unread_count}</span>
         </div>
         <div class="match-meta">${m.age_group} · ${new Date(m.created_at).toLocaleTimeString()}</div>
