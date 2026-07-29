@@ -27,10 +27,10 @@
   --text-secondary: rgba(255,255,255,0.62);
   --text-tertiary: rgba(255,255,255,0.38);
 
-  --accent: #FF3B5C;
-  --accent-dim: #C4293F;
-  --accent-glow: rgba(255,59,92,0.16);
-  --accent-soft: rgba(255,59,92,0.10);
+  --accent: #C4526E;
+  --accent-dim: #A33E55;
+  --accent-glow: rgba(196,82,110,0.16);
+  --accent-soft: rgba(196,82,110,0.10);
 
   /* 向后兼容旧变量名，避免文件中大量既有引用需要逐一替换 */
   --ink: var(--bg);
@@ -658,7 +658,7 @@ body{
   padding:26px 24px;
   border-radius:22px;
   background:linear-gradient(155deg, var(--accent-soft), rgba(255,255,255,0.02));
-  border:1px solid rgba(255,59,92,0.25);
+  border:1px solid rgba(196,82,110,0.25);
   margin-bottom:24px;
 }
 .ai-source-tag{
@@ -853,8 +853,8 @@ body.export-mode .result-screen{
   display:inline-flex;
   align-items:center;
   gap:7px;
-  background:rgba(255,59,92,0.08);
-  border:1px solid rgba(255,59,92,0.32);
+  background:rgba(196,82,110,0.08);
+  border:1px solid rgba(196,82,110,0.32);
   color:var(--accent);
   font-family:var(--font-sans);
   font-size:12.5px;
@@ -868,10 +868,10 @@ body.export-mode .result-screen{
 }
 .account-link svg{width:13px;height:13px;flex-shrink:0;opacity:0.9;}
 .account-link:hover{
-  background:rgba(255,59,92,0.15);
+  background:rgba(196,82,110,0.15);
   border-color:var(--accent);
   transform:translateY(-1px);
-  box-shadow:0 6px 18px rgba(255,59,92,0.22);
+  box-shadow:0 6px 18px rgba(196,82,110,0.22);
 }
 .account-email{
   color:var(--text-secondary, var(--parchment-dim));
@@ -916,8 +916,8 @@ body.export-mode .result-screen{
 .login-icon-mark{
   width:46px;height:46px;
   border-radius:50%;
-  background:rgba(255,59,92,0.1);
-  border:1px solid rgba(255,59,92,0.28);
+  background:rgba(196,82,110,0.1);
+  border:1px solid rgba(196,82,110,0.28);
   display:flex;align-items:center;justify-content:center;
   margin-bottom:18px;
 }
@@ -959,7 +959,7 @@ body.export-mode .result-screen{
 .login-email-input:focus{
   outline:none;
   border-color:var(--accent);
-  background:rgba(255,59,92,0.04);
+  background:rgba(196,82,110,0.04);
 }
 .login-panel-msg{
   font-size:12.5px;
@@ -1009,14 +1009,14 @@ body.export-mode .result-screen{
   animation:overlayFadeIn .25s ease both;
 }
 .egg-panel{
-  background:radial-gradient(ellipse 140% 100% at 50% 0%, rgba(255,59,92,0.14), var(--surface, #141416) 60%);
-  border:1px solid rgba(255,59,92,0.3);
+  background:radial-gradient(ellipse 140% 100% at 50% 0%, rgba(196,82,110,0.14), var(--surface, #141416) 60%);
+  border:1px solid rgba(196,82,110,0.3);
   border-radius:16px;
   padding:36px 28px 26px;
   max-width:380px;
   width:100%;
   text-align:center;
-  box-shadow:0 24px 70px rgba(0,0,0,0.6), 0 0 40px rgba(255,59,92,0.08);
+  box-shadow:0 24px 70px rgba(0,0,0,0.6), 0 0 40px rgba(196,82,110,0.08);
   position:relative;
   animation:panelPopIn .4s cubic-bezier(.16,1,.3,1) both;
 }
@@ -1025,7 +1025,7 @@ body.export-mode .result-screen{
   font-size:10.5px;
   letter-spacing:0.14em;
   color:var(--accent);
-  border:1px solid rgba(255,59,92,0.4);
+  border:1px solid rgba(196,82,110,0.4);
   padding:4px 12px;
   border-radius:100px;
   margin-bottom:20px;
@@ -1043,7 +1043,7 @@ body.export-mode .result-screen{
 .egg-spinner{
   width:34px;height:34px;
   border-radius:50%;
-  border:2px solid rgba(255,59,92,0.2);
+  border:2px solid rgba(196,82,110,0.2);
   border-top-color:var(--accent);
   margin:8px auto 18px;
   animation:spin 0.8s linear infinite;
@@ -1066,7 +1066,7 @@ body.export-mode .result-screen{
   color:var(--accent);
   line-height:1.1;
   margin-bottom:4px;
-  text-shadow:0 0 30px rgba(255,59,92,0.35);
+  text-shadow:0 0 30px rgba(196,82,110,0.35);
 }
 .egg-result-pct{
   font-size:13px;
@@ -2706,13 +2706,13 @@ function generateShareImage(data){
 
   // 顶部装饰光晕
   var glow = ctx.createRadialGradient(W/2, 120, 20, W/2, 120, 350);
-  glow.addColorStop(0, 'rgba(255,59,92,0.15)');
-  glow.addColorStop(1, 'rgba(255,59,92,0)');
+  glow.addColorStop(0, 'rgba(196,82,110,0.15)');
+  glow.addColorStop(1, 'rgba(196,82,110,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, 500);
 
   // Logo
-  ctx.fillStyle = '#FF3B5C';
+  ctx.fillStyle = '#C4526E';
   ctx.beginPath(); ctx.arc(375, 80, 6, 0, Math.PI*2); ctx.fill();
   ctx.globalAlpha = 0.25;
   ctx.beginPath(); ctx.arc(375, 80, 14, 0, Math.PI*2); ctx.fill();
@@ -2729,7 +2729,7 @@ function generateShareImage(data){
   ctx.fillText('你的心理画像', 375, 150);
 
   // 分隔线
-  ctx.strokeStyle = 'rgba(255,59,92,0.3)';
+  ctx.strokeStyle = 'rgba(196,82,110,0.3)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(200, 170); ctx.lineTo(550, 170); ctx.stroke();
 
@@ -2776,7 +2776,7 @@ function drawCard(ctx, label, title, desc, x, y, w, bgColor){
   ctx.fill();
 
   // 标签
-  ctx.fillStyle = '#FF3B5C';
+  ctx.fillStyle = '#C4526E';
   ctx.font = 'bold 13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(label, x+24, y+30);
