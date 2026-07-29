@@ -50,8 +50,8 @@ export const onRequestGet = async ({ request, env }) => {
   ] = await Promise.all([
     db.prepare('SELECT COUNT(*) as n FROM users').first(),
     db.prepare('SELECT COUNT(*) as n FROM page_views').first(),
-    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE visited_at >= ?').bind(Date.now() - 86400000).first(),
-    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE visited_at >= ?').bind(Date.now() - 604800000).first(),
+    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE created_at >= ?').bind(Date.now() - 86400000).first(),
+    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE created_at >= ?').bind(Date.now() - 604800000).first(),
     db.prepare('SELECT COUNT(*) as n FROM wall_posts').first(),
     db.prepare('SELECT COUNT(*) as n FROM askbox_questions').first(),
     db.prepare('SELECT COUNT(*) as n FROM askbox_questions WHERE answer_content IS NOT NULL AND answer_content != \'\'').first(),
@@ -60,7 +60,7 @@ export const onRequestGet = async ({ request, env }) => {
     db.prepare('SELECT COUNT(*) as n FROM activity_log WHERE is_anonymous = 1 AND action = \'wall_post\'').first(),
     db.prepare('SELECT COUNT(*) as n FROM activity_log WHERE is_anonymous = 1 AND action = \'askbox_question\'').first(),
     db.prepare('SELECT COUNT(DISTINCT user_email) as n FROM activity_log WHERE is_anonymous = 1 AND user_email IS NOT NULL').first(),
-    db.prepare('SELECT COUNT(DISTINCT user_id) as n FROM page_views WHERE user_id IS NOT NULL AND visited_at >= ?').bind(Date.now() - 604800000).first(),
+    db.prepare('SELECT COUNT(DISTINCT user_id) as n FROM page_views WHERE user_id IS NOT NULL AND created_at >= ?').bind(Date.now() - 604800000).first(),
   ]);
 
   // Top 5 pages by views
@@ -70,8 +70,8 @@ export const onRequestGet = async ({ request, env }) => {
 
   // Today's hourly breakdown  
   const todayHourly = await db.prepare(
-    `SELECT (visited_at / 3600000) * 3600000 as hour, COUNT(*) as views
-     FROM page_views WHERE visited_at >= ?
+    `SELECT (created_at / 3600000) * 3600000 as hour, COUNT(*) as views
+     FROM page_views WHERE created_at >= ?
      GROUP BY hour ORDER BY hour ASC`
   ).bind(Date.now() - 86400000).all();
 
