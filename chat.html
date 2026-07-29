@@ -31,7 +31,6 @@ body {
   min-height:100vh; display:flex; flex-direction:column; align-items:center;
 }
 
-/* ── Navigation bar ── */
 .topbar {
   width:100%; max-width:640px; display:flex; align-items:center; justify-content:space-between;
   padding:12px 16px; margin:0 auto;
@@ -44,29 +43,67 @@ body {
 .brand { font-size:15px; font-weight:600; color:var(--text-secondary); }
 .topbar-right { display:flex; align-items:center; gap:8px; }
 
-/* ── Main layout ── */
 .main {
   width:100%; max-width:640px; flex:1; display:flex; flex-direction:column;
   margin:0 auto; overflow:hidden; position:relative;
 }
 
-/* ── Match init screen ── */
-.match-init {
-  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:40px 24px; text-align:center;
+/* ── Conversation list ── */
+.match-btn-bar {
+  padding:12px 16px; flex-shrink:0;
 }
-.match-init-icon { font-size:64px; margin-bottom:20px; }
-.match-init h2 { font-size:20px; font-weight:600; color:var(--text-primary); margin-bottom:8px; }
-.match-init p { color:var(--text-secondary); font-size:14px; line-height:1.6; max-width:340px; margin-bottom:28px; }
 .match-btn {
-  background:var(--accent); color:#fff; border:none; padding:14px 48px; border-radius:28px;
-  font-size:16px; font-weight:600; cursor:pointer; transition:all 0.2s;
+  width:100%; background:var(--accent); color:#fff; border:none;
+  padding:12px 0; border-radius:24px; font-size:15px; font-weight:600;
+  cursor:pointer; transition:all 0.2s;
 }
-.match-btn:hover { background:var(--accent-dim); transform:translateY(-1px); }
-.match-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-.match-status { margin-top:16px; font-size:13px; color:var(--text-tertiary); }
+.match-btn:hover { background:var(--accent-dim); }
+.match-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.match-status { text-align:center; margin-top:8px; font-size:13px; color:var(--text-tertiary); }
 
-/* ── Chat header ── */
+.conv-list {
+  flex:1; overflow-y:auto; padding:0 16px 16px;
+}
+.conv-list::-webkit-scrollbar { width:4px; }
+.conv-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+
+.conv-item {
+  display:flex; align-items:center; gap:12px; padding:14px 12px;
+  border-radius:14px; cursor:pointer; transition:background 0.15s;
+}
+.conv-item:hover { background:var(--bg-card); }
+.conv-item + .conv-item { border-top:1px solid var(--border); }
+
+.conv-avatar {
+  width:48px; height:48px; border-radius:50%; background:var(--accent-dim);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:700; color:#fff; flex-shrink:0;
+}
+
+.conv-body { flex:1; min-width:0; }
+.conv-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+.conv-name { font-size:15px; font-weight:600; color:var(--text-primary); }
+.conv-time { font-size:11px; color:var(--text-quaternary); flex-shrink:0; margin-left:8px; }
+.conv-preview {
+  font-size:13px; color:var(--text-tertiary);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:260px;
+}
+.conv-preview.system { color:var(--text-quaternary); font-style:italic; }
+
+.conv-badge {
+  background:var(--accent); color:#fff; font-size:11px; font-weight:600;
+  min-width:20px; height:20px; border-radius:10px; display:flex;
+  align-items:center; justify-content:center; padding:0 6px; flex-shrink:0;
+}
+
+.empty-state { text-align:center; padding:60px 20px; color:var(--text-tertiary); font-size:14px; }
+
+.loading-center {
+  display:flex; align-items:center; justify-content:center; padding:60px;
+}
+
+/* ── Chat screen ── */
 .chat-header {
   display:flex; align-items:center; padding:10px 16px; gap:12px;
   border-bottom:1px solid var(--border); background:var(--bg-card);
@@ -174,13 +211,6 @@ body {
 .toast.success { background:var(--success); color:#000; }
 .toast.error { background:var(--danger); color:#fff; }
 
-/* ── Auth overlay styles (from auth.js) ── */
-.auth-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9999;
-  display:flex; align-items:center; justify-content:center;
-  backdrop-filter:blur(4px);
-}
-
 /* ── Loading ── */
 .loading-spinner {
   display:flex; align-items:center; justify-content:center; padding:40px;
@@ -190,21 +220,12 @@ body {
   border-radius:50%; animation:spin 0.7s linear infinite;
 }
 @keyframes spin { to{transform:rotate(360deg)} }
-
-/* ── Empty state ── */
-.empty-state { text-align:center; padding:40px 20px; color:var(--text-tertiary); font-size:14px; }
-
-/* ── Notification dot ── */
-.new-msg-marker {
-  text-align:center; padding:8px 0; font-size:11px; color:var(--accent);
-  border-bottom:1px solid rgba(167,139,250,0.2); margin-bottom:8px;
-}
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <button class="back-btn" onclick="history.back()">&larr;</button>
+  <button class="back-btn" id="topBackBtn" onclick="goBack()">&larr;</button>
   <span class="brand">心镜 · 对话</span>
   <div class="topbar-right">
     <button class="auth-login-btn" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;display:none;" onclick="Auth.showLoginModal()">登录</button>
@@ -212,16 +233,19 @@ body {
 </div>
 
 <div class="main" id="mainContainer">
-  <!-- Match init screen (shown when no active match) -->
-  <div class="match-init" id="matchInit">
-    <div class="match-init-icon">💬</div>
-    <h2>开始对话</h2>
-    <p>系统会根据你的心理测评结果，为你匹配一个与你最合拍的对话伙伴。匹配完成后，你们可以立即开始聊天。</p>
-    <button class="match-btn" id="startMatchBtn" onclick="startMatch()">开始匹配</button>
-    <div class="match-status" id="matchStatus"></div>
+
+  <!-- Conversation List Screen -->
+  <div id="convListScreen" style="display:flex;flex-direction:column;height:100%">
+    <div class="match-btn-bar">
+      <button class="match-btn" id="startMatchBtn" onclick="startMatch()">开始匹配</button>
+      <div class="match-status" id="matchStatus"></div>
+    </div>
+    <div class="conv-list" id="convList">
+      <div class="loading-center"><div class="spinner"></div></div>
+    </div>
   </div>
 
-  <!-- Chat screen (hidden initially) -->
+  <!-- Chat Screen -->
   <div id="chatScreen" style="display:none;flex:1;flex-direction:column;height:100%">
     <div class="chat-header" id="chatHeader">
       <div class="partner-avatar" id="partnerAvatar">?</div>
@@ -277,7 +301,9 @@ var chatState = {
   messages: [],
   pollingActive: false,
   pollTimer: null,
-  sending: false
+  sending: false,
+  activeRefreshTimer: null,
+  isInChat: false       // true = chat view, false = conversation list
 };
 
 // ── Helpers ──
@@ -302,48 +328,213 @@ function fmtTime(ts) {
   return ('0'+d.getHours()).slice(-2) + ':' + ('0'+d.getMinutes()).slice(-2);
 }
 
+// ── Navigation ──
+function goBack() {
+  if (chatState.isInChat) {
+    // back to conversation list
+    showConvList();
+  } else {
+    history.back();
+  }
+}
+
+function showConvList() {
+  stopPolling();
+  chatState.isInChat = false;
+  chatState.matchId = null;
+  chatState.partner = null;
+  chatState.messages = [];
+  document.getElementById('chatScreen').style.display = 'none';
+  document.getElementById('convListScreen').style.display = 'flex';
+  loadConversations();
+}
+
+function showChatView() {
+  chatState.isInChat = true;
+  document.getElementById('convListScreen').style.display = 'none';
+  var cs = document.getElementById('chatScreen');
+  cs.style.display = 'flex';
+}
+
 // ── Init ──
 async function init() {
   if (Auth.isLoggedIn()) {
-    checkActiveMatch();
+    routeEntry();
   } else {
     Auth.onAuthChange(function(user) {
-      if (user) checkActiveMatch();
+      if (user) routeEntry();
     });
   }
 }
 
-async function checkActiveMatch() {
-  try {
-    var r = await fetch('/chat/match', { credentials: 'same-origin' });
-    if (!r.ok) return;
-    var d = await r.json();
-    var active = (d.matches || []).filter(function(m){ return m.status === 'accepted'; });
-    if (active.length > 0) {
-      var m = active[0];
-      chatState.matchId = m.id;
-      chatState.partner = m;
-      showChatScreen(m);
-    }
-  } catch(e) {
-    console.error('checkActiveMatch:', e);
+async function routeEntry() {
+  var params = new URLSearchParams(location.search);
+  var matchId = params.get('matchId');
+  var userId = params.get('userId');
+
+  if (matchId) {
+    // 直接进入指定会话
+    showChatView();
+    try {
+      var r = await fetch('/chat/match?' + new URLSearchParams({}), { credentials: 'same-origin' });
+      var d = await r.json();
+      var found = (d.matches || []).filter(function(m){ return String(m.id) === matchId && m.status === 'accepted'; });
+      if (found.length > 0) {
+        chatState.matchId = found[0].id;
+        chatState.partner = found[0];
+        setupChatHeader(found[0]);
+        loadHistory();
+        startPolling();
+        if (history.replaceState) {
+          history.replaceState(null, '', '?matchId=' + matchId);
+        }
+        return;
+      }
+    } catch(e) { console.error(e); }
+    toast('会话不存在或已关闭', 'error');
+    showConvList();
+
+  } else if (userId) {
+    // 定向私信
+    showChatView();
+    try {
+      var sr = await fetch('/chat/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: parseInt(userId) }),
+        credentials: 'same-origin'
+      });
+      var sd = await sr.json();
+      if (sd.ok) {
+        chatState.matchId = sd.matchId;
+        if (history.replaceState) {
+          history.replaceState(null, '', '?matchId=' + sd.matchId);
+        }
+        // 从 /chat/match 列表拿 partner 信息
+        try {
+          var mr = await fetch('/chat/match', { credentials: 'same-origin' });
+          var md = await mr.json();
+          var mf = (md.matches || []).filter(function(m){ return m.id === sd.matchId; });
+          if (mf.length > 0) {
+            chatState.partner = mf[0];
+            setupChatHeader(mf[0]);
+          }
+        } catch(e) {}
+        loadHistory();
+        startPolling();
+        return;
+      }
+      toast(sd.message || '发起对话失败', 'error');
+    } catch(e) { toast('网络错误', 'error'); }
+    showConvList();
+
+  } else {
+    // 默认：会话列表
+    showConvList();
   }
 }
 
-function showChatScreen(match) {
-  document.getElementById('matchInit').style.display = 'none';
-  var cs = document.getElementById('chatScreen');
-  cs.style.display = 'flex';
+// ── Conversation List ──
+async function loadConversations() {
+  var list = document.getElementById('convList');
+  list.innerHTML = '<div class="loading-center"><div class="spinner"></div></div>';
 
+  try {
+    var r = await fetch('/chat/list', { credentials: 'same-origin' });
+    var d = await r.json();
+    var convs = d.conversations || [];
+
+    if (convs.length === 0) {
+      list.innerHTML = '<div class="empty-state">还没有对话<br>点击上方「开始匹配」开启一段新对话</div>';
+      return;
+    }
+
+    var html = '';
+    convs.forEach(function(c) {
+      var p = c.partner;
+      var initial = (p.nickname || '?')[0];
+      var last = c.lastMessage;
+      var preview = '';
+      var previewClass = '';
+      if (last) {
+        if (last.isSystem) {
+          preview = last.content;
+          previewClass = ' system';
+        } else if (last.isMine) {
+          preview = '我: ' + last.content;
+        } else {
+          preview = last.content;
+        }
+      } else {
+        preview = '暂无消息';
+      }
+
+      html += '<div class="conv-item" onclick="enterConversation(\'' + c.matchId + '\', \'' + p.nickname.replace(/'/g, "\\'") + '\')">' +
+        '<div class="conv-avatar">' + initial + '</div>' +
+        '<div class="conv-body">' +
+          '<div class="conv-top">' +
+            '<span class="conv-name">' + p.nickname.replace(/</g,'&lt;') + '</span>' +
+            '<span class="conv-time">' + (last ? timeAgo(last.time) : '') + '</span>' +
+          '</div>' +
+          '<div class="conv-preview' + previewClass + '">' + preview.replace(/</g,'&lt;') + '</div>' +
+        '</div>' +
+        (c.unread > 0 ? '<div class="conv-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
+      '</div>';
+    });
+
+    list.innerHTML = html;
+  } catch(e) {
+    console.error('loadConversations:', e);
+    list.innerHTML = '<div class="empty-state">加载失败，请刷新重试</div>';
+  }
+}
+
+function enterConversation(matchId, partnerName) {
+  showChatView();
+  chatState.matchId = matchId;
+  document.getElementById('partnerName').textContent = partnerName;
+  document.getElementById('partnerBio').textContent = '';
+  document.getElementById('partnerAvatar').textContent = (partnerName || '?')[0];
+  document.getElementById('matchScoreBadge').textContent = '';
+  chatState.messages = [];
+
+  if (history.replaceState) {
+    history.replaceState(null, '', '?matchId=' + matchId);
+  }
+
+  // 加载完整 partner 信息
+  fetch('/chat/match', { credentials: 'same-origin' }).then(function(r){ return r.json(); }).then(function(d){
+    var found = (d.matches || []).filter(function(m){ return String(m.id) === String(matchId); });
+    if (found.length > 0) {
+      chatState.partner = found[0];
+      setupChatHeader(found[0]);
+    }
+  }).catch(function(){});
+
+  loadHistory();
+  startPolling();
+  markAsRead();
+}
+
+function setupChatHeader(match) {
   document.getElementById('partnerName').textContent = match.nickname || '匿名用户';
   document.getElementById('partnerBio').textContent = match.bio || '';
   document.getElementById('matchScoreBadge').textContent = (match.match_score || 88) + '%';
   document.getElementById('partnerAvatar').textContent = (match.nickname || '?')[0];
-
-  loadHistory();
-  startPolling();
 }
 
+async function markAsRead() {
+  try {
+    await fetch('/chat/mark_read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId: chatState.matchId }),
+      credentials: 'same-origin'
+    });
+  } catch(e) {}
+}
+
+// ── Messages ──
 async function loadHistory(before) {
   try {
     var url = '/chat/history?matchId=' + chatState.matchId + '&limit=50';
@@ -388,7 +579,7 @@ function scrollToBottom() {
   setTimeout(function() { list.scrollTop = list.scrollHeight; }, 50);
 }
 
-// ── Matching ──
+// ── Matching (random) ──
 async function startMatch() {
   if (!Auth.isLoggedIn()) {
     Auth.showLoginModal();
@@ -408,10 +599,16 @@ async function startMatch() {
     });
     var d = await r.json();
     if (d.ok) {
+      st.textContent = '匹配成功！';
+      showChatView();
       chatState.matchId = d.matchId;
       chatState.partner = d.partner;
-      st.textContent = '匹配成功！';
-      setTimeout(function(){ showChatScreen(d.partner); }, 500);
+      if (history.replaceState) {
+        history.replaceState(null, '', '?matchId=' + d.matchId);
+      }
+      setupChatHeader(d.partner);
+      loadHistory();
+      startPolling();
     } else {
       st.textContent = d.message || '匹配失败';
       toast(d.message || '匹配失败，请重试', 'error');
@@ -454,13 +651,11 @@ async function poll() {
     }
     var d = await r.json();
     if (d.messages && d.messages.length > 0) {
-      // Filter out _temp optimistic messages, then dedup by real ids
       var incomingIds = {};
       d.messages.forEach(function(m){ incomingIds[m.id] = true; });
       var merged = chatState.messages.filter(function(m){
         return !m._temp || !incomingIds[m.id];
       });
-      // Remove temp messages whose real version arrived
       merged = merged.filter(function(m){ return !m._temp; });
       var existingIds = {};
       merged.forEach(function(m){ existingIds[m.id] = true; });
@@ -494,7 +689,6 @@ async function sendMessage() {
     });
     var d = await r.json();
     if (d.ok) {
-      // Optimistically add with _temp flag
       var tempId = Date.now();
       chatState.messages.push({
         id: tempId,
@@ -537,13 +731,12 @@ async function closeMatch() {
         id: Date.now(),
         sender_id: 0,
         is_system: 1,
-        content: '对话已结束，你可以开始新的匹配。',
+        content: '对话已结束，你可以返回对话列表。',
         created_at: Date.now()
       });
       renderMessages();
       toast('对话已结束');
-      // Reload after 2s to go back to match init
-      setTimeout(function(){ location.reload(); }, 2000);
+      setTimeout(function(){ showConvList(); }, 2000);
     }
   } catch(e) {
     toast('操作失败', 'error');
@@ -606,12 +799,16 @@ async function submitReport() {
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', init);
 
-// Auth change → check for matches
 Auth.onAuthChange(function(user) {
-  if (user) checkActiveMatch();
+  if (user) routeEntry();
 });
 
-// Notification sounds could be added here
+// Periodically refresh conversation list when in list view
+setInterval(function() {
+  if (!chatState.isInChat && Auth.isLoggedIn()) {
+    loadConversations();
+  }
+}, 15000);
 </script>
 
 </body>
