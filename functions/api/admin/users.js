@@ -51,7 +51,7 @@ export const onRequestGet = async ({ request, env }) => {
       u.id, u.email, u.display_name, u.avatar_url, u.is_admin, u.created_at,
       (SELECT COUNT(*) FROM wall_posts WHERE user_id = u.id) as wall_posts,
       (SELECT COUNT(*) FROM askbox_questions WHERE user_id = u.id) as questions,
-      (SELECT COUNT(*) FROM askbox_questions WHERE user_id = u.id AND answer IS NOT NULL AND answer != '') as answers,
+      (SELECT COUNT(*) FROM askbox_questions WHERE user_id = u.id AND answer_content IS NOT NULL AND answer_content != '') as answers,
       (SELECT COUNT(*) FROM activity_log WHERE user_id = u.id AND is_anonymous = 1) as anonymous_actions,
       (SELECT COUNT(*) FROM page_views WHERE user_id = u.id) as page_views
     FROM users u
