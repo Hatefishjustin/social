@@ -342,7 +342,8 @@ async function loadAnalytics() {
     var topMax = Math.max.apply(null, (data.topPages||[]).map(function(p){return p.views;})) || 1;
     document.getElementById('topPages').innerHTML = (data.topPages||[]).map(function(p){
       var pct = Math.round(p.views / topMax * 100);
-      return '<div class="bar-row"><span class="bar-label">'+esc(p.page)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bar-val">'+p.views+'</span></div>';
+      var pageNames = {'qa':'提问箱','campus':'表白墙','match':'匹配','/':'首页','wall':'表白墙','index':'首页','quiz':'心理测评','profile':'个人主页'};
+      return '<div class="bar-row"><span class="bar-label">'+(pageNames[p.page]||p.page)+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div><span class="bar-val">'+p.views+'</span></div>';
     }).join('') || '<div class="empty" style="padding:20px">暂无数据</div>';
 
     // Content stats
