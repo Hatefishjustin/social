@@ -454,13 +454,19 @@ async function poll() {
     }
     var d = await r.json();
     if (d.messages && d.messages.length > 0) {
+      // Filter out _temp optimistic messages, then dedup by real ids
+      var incomingIds = {};
+      d.messages.forEach(function(m){ incomingIds[m.id] = true; });
+      var merged = chatState.messages.filter(function(m){
+        return !m._temp || !incomingIds[m.id];
+      });
+      // Remove temp messages whose real version arrived
+      merged = merged.filter(function(m){ return !m._temp; });
       var existingIds = {};
-      chatState.messages.forEach(function(m){ existingIds[m.id] = true; });
+      merged.forEach(function(m){ existingIds[m.id] = true; });
       var newMsgs = d.messages.filter(function(m){ return !existingIds[m.id]; });
-      if (newMsgs.length > 0) {
-        chatState.messages = chatState.messages.concat(newMsgs);
-        renderMessages();
-      }
+      chatState.messages = merged.concat(newMsgs);
+      renderMessages();
     }
     chatState.pollTimer = setTimeout(poll, 2000);
   } catch(e) {
@@ -488,14 +494,15 @@ async function sendMessage() {
     });
     var d = await r.json();
     if (d.ok) {
-      // Message will come back through polling
-      // Also optimistically add
+      // Optimistically add with _temp flag
+      var tempId = Date.now();
       chatState.messages.push({
-        id: Date.now(),
+        id: tempId,
         sender_id: Auth.getUserId(),
         content: content,
-        created_at: Date.now(),
-        sender_name: Auth.getDisplayName()
+        created_at: tempId,
+        sender_name: Auth.getDisplayName(),
+        _temp: true
       });
       renderMessages();
     } else {
@@ -529,6 +536,7 @@ async function closeMatch() {
       chatState.messages.push({
         id: Date.now(),
         sender_id: 0,
+        is_system: 1,
         content: '对话已结束，你可以开始新的匹配。',
         created_at: Date.now()
       });
