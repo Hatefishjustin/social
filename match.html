@@ -453,6 +453,11 @@ body{
 .result-tab.active{color:var(--text-primary);background:var(--surface-hover);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both;}
+.radar-canvas-wrap { text-align:center; padding:20px 0; }
+.radar-canvas-wrap canvas { max-width:100%; height:auto; }
+.radar-legend { display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-top:12px; }
+.radar-legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-secondary); }
+.radar-legend-dot { width:8px; height:8px; border-radius:50%; }
 
 .ai-spinner{
   width:32px;height:32px;
@@ -1932,6 +1937,7 @@ function renderResult(scores, options){
     <div class="result-tabs">
       <button class="result-tab active" onclick="switchTab('report')" id="tabBtnReport">你的报告</button>
       <button class="result-tab" onclick="switchTab('ai')" id="tabBtnAi">AI 深度解读</button>
+      <button class="result-tab" onclick="switchTab('radar')" id="tabBtnRadar">共鸣图谱</button>
       <button class="result-tab" onclick="switchTab('raw')" id="tabBtnRaw">原始作答记录</button>
     </div>
 
@@ -2043,6 +2049,21 @@ function renderResult(scores, options){
   `;
   html += `</div>`; // end tabReport
 
+    <!-- 共鸣图谱 Tab -->
+    <div class="tab-panel" id="tabRadar">
+      <div class="radar-canvas-wrap">
+        <canvas id="radarCanvas" width="600" height="500"></canvas>
+      </div>
+      <div class="radar-legend">
+        <div class="radar-legend-item"><span class="radar-legend-dot" style="background:#C4526E"></span>开放性</div>
+        <div class="radar-legend-item"><span class="radar-legend-dot" style="background:#8b5cf6"></span>尽责性</div>
+        <div class="radar-legend-item"><span class="radar-legend-dot" style="background:#3b82f6"></span>外向性</div>
+        <div class="radar-legend-item"><span class="radar-legend-dot" style="background:#f59e0b"></span>宜人性</div>
+        <div class="radar-legend-item"><span class="radar-legend-dot" style="background:#10b981"></span>情绪稳定</div>
+      </div>
+      <p style="text-align:center;color:var(--text-tertiary);font-size:12px;margin-top:8px;">五个维度构成你的心理画像光谱</p>
+    </div>
+
   // ---- Tab 2: AI 深度解读 ----
   html += `
     <div class="tab-panel" id="tabAi">
@@ -2078,6 +2099,8 @@ function renderResult(scores, options){
 
   resultScreen.innerHTML = html;
   window._rawText = rawText;
+  window._currentScores = scores;
+  setTimeout(function(){ drawRadarChart(scores); }, 200);
   fetchAiAnalysis(rawText);
 
   // 无论是否登录，都记一笔"完成事件"，用于后台统计真实使用量
@@ -2158,10 +2181,13 @@ function escapeHtml(str){
 function switchTab(name){
   document.getElementById('tabReport').classList.toggle('active', name==='report');
   document.getElementById('tabAi').classList.toggle('active', name==='ai');
+  document.getElementById('tabRadar').classList.toggle('active', name==='radar');
   document.getElementById('tabRaw').classList.toggle('active', name==='raw');
   document.getElementById('tabBtnReport').classList.toggle('active', name==='report');
   document.getElementById('tabBtnAi').classList.toggle('active', name==='ai');
+  document.getElementById('tabBtnRadar').classList.toggle('active', name==='radar');
   document.getElementById('tabBtnRaw').classList.toggle('active', name==='raw');
+  if(name==='radar' && window._currentScores){ setTimeout(function(){ drawRadarChart(window._currentScores); }, 100); }
 }
 
 /* =========================================================
@@ -2812,6 +2838,81 @@ function wrapText(ctx, text, maxWidth){
   }
   if(current) lines.push(current);
   return lines;
+}
+
+
+function drawRadarChart(scores){
+  var canvas = document.getElementById('radarCanvas');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W/2, cy = H/2 - 20, R = 180;
+  ctx.clearRect(0, 0, W, H);
+  var labels = ['开放性','尽责性','外向性','宜人性','情绪稳定'];
+  var keys = ['openness','conscientiousness','extraversion','agreeableness','neuroticism'];
+  var colors = ['#C4526E','#8b5cf6','#3b82f6','#f59e0b','#10b981'];
+  var N = keys.length;
+  var values = keys.map(function(k){
+    var raw = (scores.big5[k] || 0);
+    return Math.max(0.1, Math.min(1, (raw + 10) / 22));
+  });
+  for(var ring=1; ring<=4; ring++){
+    ctx.beginPath();
+    for(var i=0; i<=N; i++){
+      var angle = (Math.PI*2/N)*i - Math.PI/2;
+      var r = R * ring/4;
+      var x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ring===4 ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = ring===4 ? 1.5 : 0.5;
+    ctx.stroke();
+    if(ring===4){
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = '10px -apple-system,"PingFang SC",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('100%', cx, cy-R-8);
+    }
+  }
+  for(var i=0; i<N; i++){
+    var angle = (Math.PI*2/N)*i - Math.PI/2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + R*Math.cos(angle), cy + R*Math.sin(angle));
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.stroke();
+    var lx = cx + (R+38)*Math.cos(angle), ly = cy + (R+38)*Math.sin(angle);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = '12px -apple-system,"PingFang SC",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i], lx, ly);
+  }
+  ctx.beginPath();
+  for(var i=0; i<=N; i++){
+    var idx = i % N;
+    var angle = (Math.PI*2/N)*idx - Math.PI/2;
+    var r = R * values[idx];
+    var x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  var fillGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  fillGrad.addColorStop(0, 'rgba(196,82,110,0.25)');
+  fillGrad.addColorStop(1, 'rgba(196,82,110,0.02)');
+  ctx.fillStyle = fillGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(196,82,110,0.6)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  for(var i=0; i<N; i++){
+    var angle = (Math.PI*2/N)*i - Math.PI/2;
+    var r = R * values[i];
+    var x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI*2); ctx.fillStyle = colors[i]; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI*2); ctx.strokeStyle = colors[i]; ctx.lineWidth = 1.5; ctx.stroke();
+  }
 }
 
 function showShareModal(canvas){
