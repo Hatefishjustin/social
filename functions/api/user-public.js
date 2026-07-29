@@ -51,11 +51,11 @@ export const onRequestGet = async ({ request, env }) => {
 
   // Get public answers (published answered questions)
   const { results: answers } = await env.DB.prepare(
-    `SELECT q.id, q.content as question, q.answer, q.answered_at, q.is_anonymous,
+    `SELECT q.id, q.content as question, q.answer_content as answer, q.answered_at, q.is_anonymous,
             p.nickname as asker_name
-     FROM askbox q
+     FROM askbox_questions q
      LEFT JOIN profiles p ON p.user_id = q.asker_id
-     WHERE q.owner_id = ? AND q.is_published = 1 AND q.answer IS NOT NULL
+     WHERE q.target_id = ? AND q.answered_at IS NOT NULL
      ORDER BY q.answered_at DESC
      LIMIT 30`
   ).bind(userId).all();
@@ -64,8 +64,8 @@ export const onRequestGet = async ({ request, env }) => {
   let canAsk = true;
   if (viewer && viewer.id !== userId) {
     const existing = await env.DB.prepare(
-      `SELECT COUNT(*) as cnt FROM askbox
-       WHERE owner_id = ? AND asker_id = ? AND answer IS NULL AND created_at > ?`
+      `SELECT COUNT(*) as cnt FROM askbox_questions
+       WHERE target_id = ? AND asker_id = ? AND answer_content IS NULL AND created_at > ?`
     ).bind(userId, viewer.id, Date.now() - 86400000).first();
     if (existing.cnt > 0) canAsk = false;
   }
@@ -116,13 +116,13 @@ export const onRequestPost = async ({ request, env }) => {
 
   // Rate limit: max 5 questions per user per day
   const { results: recent } = await env.DB.prepare(
-    `SELECT COUNT(*) as cnt FROM askbox
-     WHERE owner_id = ? AND asker_id = ? AND created_at > ?`
+    `SELECT COUNT(*) as cnt FROM askbox_questions
+     WHERE target_id = ? AND asker_id = ? AND created_at > ?`
   ).bind(userId, viewer.id, Date.now() - 86400000).all();
 
   const unansweredCnt = await env.DB.prepare(
-    `SELECT COUNT(*) as cnt FROM askbox
-     WHERE owner_id = ? AND asker_id = ? AND answer IS NULL`
+    `SELECT COUNT(*) as cnt FROM askbox_questions
+     WHERE target_id = ? AND asker_id = ? AND answer_content IS NULL`
   ).bind(userId, viewer.id).first();
 
   if (unansweredCnt.cnt >= 1) {
@@ -130,7 +130,7 @@ export const onRequestPost = async ({ request, env }) => {
   }
 
   const result = await env.DB.prepare(
-    `INSERT INTO askbox (owner_id, asker_id, content, is_anonymous, created_at)
+    `INSERT INTO askbox_questions (target_id, asker_id, content, is_anonymous, created_at)
      VALUES (?, ?, ?, ?, ?)`
   ).bind(userId, viewer.id, content.trim(), isAnonymous ? 1 : 0, Date.now()).run();
 
