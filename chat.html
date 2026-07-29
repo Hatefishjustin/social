@@ -15,11 +15,11 @@
   --text-tertiary: #7a7a8c;
   --text-quaternary: #5a5a6c;
   --accent: #C4526E;
-  --accent-dim: #7c5ce0;
+  --accent-dim: rgba(196,82,110,0.25);
   --border: rgba(255,255,255,0.06);
   --danger: #ef4444;
   --success: #4ade80;
-  --msg-mine: var(--accent-dim);
+  --msg-mine: linear-gradient(135deg, var(--accent), rgba(196,82,110,0.45));
   --msg-other: #262634;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
 }
@@ -75,9 +75,10 @@ body {
 .conv-item + .conv-item { border-top:1px solid var(--border); }
 
 .conv-avatar {
-  width:48px; height:48px; border-radius:50%; background:var(--accent-dim);
+  width:48px; height:48px; border-radius:16px; background:linear-gradient(135deg, var(--accent), #883a50);
   display:flex; align-items:center; justify-content:center;
   font-size:20px; font-weight:700; color:#fff; flex-shrink:0;
+  box-shadow: 0 2px 12px rgba(196,82,110,0.25);
 }
 
 .conv-body { flex:1; min-width:0; }
@@ -110,9 +111,10 @@ body {
   flex-shrink:0;
 }
 .partner-avatar {
-  width:40px; height:40px; border-radius:50%; background:var(--accent-dim);
+  width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg, var(--accent), #883a50);
   display:flex; align-items:center; justify-content:center;
   font-size:18px; font-weight:700; color:#fff; flex-shrink:0;
+  box-shadow: 0 2px 10px rgba(196,82,110,0.2);
 }
 .partner-info { flex:1; min-width:0; }
 .partner-name { font-size:15px; font-weight:600; color:var(--text-primary); }
@@ -144,10 +146,16 @@ body {
   line-height:1.5; word-break:break-word; position:relative;
 }
 .msg-row.mine .msg-bubble {
-  background:var(--msg-mine); color:#fff; border-bottom-right-radius:4px;
+  background:linear-gradient(135deg, var(--accent), rgba(196,82,110,0.55));
+  color:#fff; border-bottom-right-radius:4px;
+  box-shadow: 0 2px 16px rgba(196,82,110,0.2);
+  border: 1px solid rgba(196,82,110,0.15);
 }
 .msg-row.other .msg-bubble {
-  background:var(--msg-other); color:var(--text-primary); border-bottom-left-radius:4px;
+  background:linear-gradient(135deg, rgba(38,38,52,0.9), rgba(30,30,44,0.8));
+  color:var(--text-primary); border-bottom-left-radius:4px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.04);
 }
 .msg-row.system .msg-bubble {
   background:transparent; color:var(--text-tertiary); font-size:12px;
