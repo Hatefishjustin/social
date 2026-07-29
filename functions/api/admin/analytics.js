@@ -50,8 +50,8 @@ export const onRequestGet = async ({ request, env }) => {
   ] = await Promise.all([
     db.prepare('SELECT COUNT(*) as n FROM users').first(),
     db.prepare('SELECT COUNT(*) as n FROM page_views').first(),
-    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE created_at >= ?').bind(Date.now() - 86400000).first(),
-    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE created_at >= ?').bind(Date.now() - 604800000).first(),
+    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE visited_at >= ?').bind(Date.now() - 86400000).first(),
+    db.prepare('SELECT COUNT(*) as n FROM page_views WHERE visited_at >= ?').bind(Date.now() - 604800000).first(),
     db.prepare('SELECT COUNT(*) as n FROM wall_posts').first(),
     db.prepare('SELECT COUNT(*) as n FROM askbox_questions').first(),
     db.prepare('SELECT COUNT(*) as n FROM askbox_questions WHERE answer IS NOT NULL AND answer != \'\'').first(),
@@ -71,7 +71,7 @@ export const onRequestGet = async ({ request, env }) => {
   // Today's hourly breakdown  
   const todayHourly = await db.prepare(
     `SELECT (created_at / 3600000) * 3600000 as hour, COUNT(*) as views
-     FROM page_views WHERE created_at >= ?
+     FROM page_views WHERE visited_at >= ?
      GROUP BY hour ORDER BY hour ASC`
   ).bind(Date.now() - 86400000).all();
 
