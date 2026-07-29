@@ -71,6 +71,29 @@ export const onRequestGet = async ({ request, env }) => {
     if (existing.cnt > 0) canAsk = false;
   }
 
+  // Log visit
+  if (viewer && String(viewer.id) !== userId) {
+    try {
+      await env.DB.prepare(
+        'INSERT OR IGNORE INTO profile_visits (visitor_id, target_user_id, visited_at) VALUES (?, ?, ?)'
+      ).bind(viewer.id, userId, Date.now()).run();
+    } catch(e) { /* non-fatal */ }
+  }
+
+  // Get recent visitors
+  let visitors = [];
+  try {
+    const v = await env.DB.prepare(
+      `SELECT pv.visitor_id, pv.visited_at, p.nickname, a.image_data as avatar
+       FROM profile_visits pv
+       JOIN profiles p ON p.user_id = pv.visitor_id
+       LEFT JOIN avatars a ON a.user_id = pv.visitor_id
+       WHERE pv.target_user_id = ?
+       ORDER BY pv.visited_at DESC LIMIT 10`
+    ).bind(userId).all();
+    visitors = v.results || [];
+  } catch(e) { /* non-fatal */ }
+
   return json({
     userId,
     nickname: profile.nickname,
@@ -84,7 +107,8 @@ export const onRequestGet = async ({ request, env }) => {
       mbti: scores.mbti?.type || null
     } : null,
     answers: answers || [],
-    canAsk: canAsk
+    canAsk: canAsk,
+    visitors: visitors || []
   });
 };
 
