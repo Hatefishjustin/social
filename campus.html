@@ -72,6 +72,7 @@ body {
 .card:active { transform:scale(.985); transition:transform .1s ease; }
 .card-tag { display:inline-block; font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft); padding:3px 10px; border-radius:var(--radius-pill); margin-bottom:10px; letter-spacing:.3px; }
 .card-content { font-size:15px; line-height:1.7; color:rgba(255,255,255,.85); word-break:break-word; white-space:pre-wrap; margin-bottom:10px; }
+.feat-badge { display:inline-block; font-size:10px; background:linear-gradient(135deg,var(--accent),#f59e0b); color:#fff; padding:2px 8px; border-radius:4px; margin-right:6px; vertical-align:middle; font-weight:600; }
 .card-meta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--text-tertiary); margin-bottom:4px; }
 .card-meta-item { display:flex; align-items:center; gap:4px; }
 .card-anon-badge { font-size:11px; color:var(--text-tertiary); background:rgba(255,255,255,.05); padding:2px 10px; border-radius:var(--radius-pill); font-weight:500; }
@@ -176,7 +177,8 @@ body {
       <button class="auth-login-btn" style="margin-left:auto">登录</button>
     </div>
     <div class="tag-filter-row" id="tagFilterRow">
-      <button class="tag-chip active" data-tag="">全部</button>
+      <button class="tag-chip active" data-tag="">最新</button>
+      <button class="tag-chip feature-chip" data-tag="">精选</button>
       <button class="tag-chip" data-tag="#表白">#表白</button>
       <button class="tag-chip" data-tag="#树洞">#树洞</button>
       <button class="tag-chip" data-tag="#捞人">#捞人</button>
@@ -233,7 +235,7 @@ body {
 
 <script>
 (function() {
-  var state = { currentTag:'', selectedModalTag:'#表白', likedPosts:new Set(), page:1, isLoading:false, hasMore:true, school:localStorage.getItem('mirror_school')||'' };
+  var state = { currentTag:'', sort:'', selectedModalTag:'#表白', likedPosts:new Set(), page:1, isLoading:false, hasMore:true, school:localStorage.getItem('mirror_school')||'' };
   var $=function(s){return document.querySelector(s);};
   var dom = {
     tagFilterRow:$('#tagFilterRow'), feedConfession:$('#feed-confession'), feedLoader:$('#feedLoader'), fabBtn:$('#fabBtn'),
@@ -255,7 +257,7 @@ body {
     var liked=state.likedPosts.has(p.id);
     return'<article class="card confession-card" data-post-id="'+p.id+'">'+
       (p.tag?'<span class="card-tag">'+esc(p.tag)+'</span>':'')+
-      '<div class="card-content">'+esc(p.content)+'</div>'+
+      '<div class="card-content">'+(p.is_featured?'<span class="feat-badge">精选</span> ':'')+esc(p.content)+'</div>'+
       '<div class="card-meta">'+
         (p.is_anonymous?'<span class="card-anon-badge">匿名</span>':'<a class="card-author" href="user.html?userId='+esc(p.user_id||'')+'">'+esc(p.nickname||'用户')+'</a>')+
         (p.school?'<span class="card-school">'+esc(p.school)+'</span>':'')+
@@ -273,7 +275,7 @@ body {
   async function load() {
     if(state.isLoading)return; state.isLoading=true; sl(); dom.feedConfession.classList.add('loading');
     try{
-      var u='/wall?page='+state.page+(state.currentTag?'&tag='+encodeURIComponent(state.currentTag):'');
+      var u='/wall?page='+state.page+(state.currentTag?'&tag='+encodeURIComponent(state.currentTag):'')+(state.sort?'&sort='+state.sort:'');
       var r=await fetch(u,{headers:{'Accept':'application/json; charset=utf-8'}});
       if(!r.ok)throw new Error('HTTP '+r.status);
       var d=await r.json(), posts=d.posts||[], pag=d.pagination||{};
@@ -322,8 +324,16 @@ body {
   }
 
   dom.tagFilterRow.addEventListener('click',function(e){
-    var c=e.target.closest('.tag-chip');if(!c)return;var t=c.dataset.tag||'';if(state.currentTag===t)return;state.currentTag=t;
-    dom.tagFilterRow.querySelectorAll('.tag-chip').forEach(function(x){x.classList.toggle('active',x.dataset.tag===t);});
+    var c=e.target.closest('.tag-chip');if(!c)return;
+    if(c.classList.contains('feature-chip')){
+      state.sort = state.sort ? '' : 'featured'; state.currentTag = '';
+      c.classList.toggle('active', !!state.sort);
+      var lb = dom.tagFilterRow.querySelector('.tag-chip[data-tag=""]:not(.feature-chip)');
+      if(lb) lb.classList.toggle('active', !state.sort);
+      state.page=1;state.hasMore=true;load();return;
+    }
+    var t=c.dataset.tag||'';if(state.currentTag===t)return;state.currentTag=t;state.sort='';
+    dom.tagFilterRow.querySelectorAll('.tag-chip:not(.feature-chip)').forEach(function(x){x.classList.toggle('active',x.dataset.tag===t);});
     state.page=1;state.hasMore=true;load();
   });
   dom.modalTagRow.addEventListener('click',function(e){
