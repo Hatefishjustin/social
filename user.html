@@ -129,6 +129,8 @@ function getUserId() {
   return p.get('userId') || p.get('id') || p.get('u');
 }
 
+function escHtml(s) { if(!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
 async function loadProfile() {
   var uid = getUserId();
   if (!uid) {
@@ -152,8 +154,8 @@ async function loadProfile() {
 }
 
 function renderProfile(d) {
-  var avatarHtml = d.avatar
-    ? '<img src="'+d.avatar+'" alt="头像">'
+  var avatarHtml = d.avatar && !/^javascript:/i.test(d.avatar)
+    ? '<img src="'+d.avatar.replace(/"/g,'&quot;')+'" alt="头像">'
     : (d.nickname||'?')[0];
 
   var scoresHtml = '';
@@ -186,7 +188,7 @@ function renderProfile(d) {
   var askHtml = '';
   if (Auth.isLoggedIn() && Auth.getUserId() !== state.userId) {
     askHtml = d.canAsk
-      ? '<div class="ask-section"><h3>向 '+d.nickname+' 匿名提问</h3>'+
+      ? '<div class="ask-section"><h3>向 '+escHtml(d.nickname)+' 匿名提问</h3>'+
         '<textarea class="ask-textarea" id="askContent" placeholder="想问什么？..." maxlength="500"></textarea>'+
         '<div class="ask-row">'+
           '<label class="anon-toggle"><input type="checkbox" id="askAnonymous" checked> 匿名提问</label>'+
@@ -197,13 +199,13 @@ function renderProfile(d) {
         '</div>'
       : '<div class="ask-section"><div class="empty">你已向 TA 提问，请等待回答</div></div>';
   } else if (!Auth.isLoggedIn()) {
-    askHtml = '<div class="ask-section" style="text-align:center"><div class="empty">登录后可向 '+d.nickname+' 匿名提问</div></div>';
+    askHtml = '<div class="ask-section" style="text-align:center"><div class="empty">登录后可向 '+escHtml(d.nickname)+' 匿名提问</div></div>';
   }
 
   document.getElementById('content').innerHTML =
     '<div class="profile-header">'+
       '<div class="profile-avatar">'+avatarHtml+'</div>'+
-      '<div class="profile-nickname">'+(d.nickname||'匿名用户')+'</div>'+
+      '<div class="profile-nickname">'+escHtml(d.nickname||'匿名用户')+'</div>'+
       (d.bio ? '<div class="profile-bio">'+d.bio.replace(/</g,'&lt;')+'</div>' : '')+
       '<div class="profile-meta">'+
         '<span class="meta-badge">'+d.gender+'</span>'+
