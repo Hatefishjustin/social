@@ -196,7 +196,7 @@
 
   <div id="loginPrompt" class="login-prompt" style="display:none">
     <p>需要管理员登录后才能查看</p>
-    <a href="javascript:Auth.showLogin()">去登录</a>
+    <a href="javascript:Auth.showLoginModal()">去登录</a>
   </div>
 
   <div id="mainContent" style="display:none">
@@ -620,6 +620,7 @@ function switchTab(tabId) {
   if (tabBtn) { tabBtn.classList.add('active'); }
 
   if (tabId === 'tab-analytics') { loadAnalytics(); }
+  if (tabId === 'tab-activity') { loadActivityPage(1, ''); }
   if (tabId === 'tab-feedback') { loadFeedback(); }
   if (tabId === 'tab-admins') { loadAdmins(); }
   if (tabId === 'tab-users') { loadUsers(1); }
