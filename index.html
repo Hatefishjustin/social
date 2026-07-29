@@ -185,49 +185,30 @@ html, body {
 .glow-orb-1 { top: -100px; left: -100px; background: var(--accent); }
 .glow-orb-2 { bottom: -100px; right: -100px; background: var(--purple); }
 
-/* ── Assessment Preview Card ── */
-.assess-preview {
-  margin: 0 auto 40px; max-width: 640px; padding: 28px 32px;
+/* ── Assessment Preview Banner (compact) ── */
+.assess-banner {
+  margin: 24px auto 0; max-width: 640px; padding: 12px 18px;
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); position: relative; overflow: hidden;
+  border-radius: var(--radius-md); cursor: pointer;
+  display: flex; align-items: center; gap: 12px;
+  transition: border-color .2s, background .2s;
 }
-.assess-preview::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--purple), var(--blue));
+.assess-banner:hover { border-color: var(--border-hover); background: var(--surface-raised); }
+.assess-banner .assess-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), #883a50);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
 }
-.assess-preview h3 {
-  font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 6px;
+.assess-banner .assess-info { flex: 1; min-width: 0; }
+.assess-banner .assess-info h4 {
+  font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 2px;
 }
-.assess-preview .assess-subtitle {
-  font-size: 12px; color: var(--text-tertiary); margin-bottom: 20px;
+.assess-banner .assess-info p {
+  font-size: 11px; color: var(--text-tertiary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.assess-dimension { margin-bottom: 14px; }
-.assess-dimension:last-child { margin-bottom: 0; }
-.assess-label {
-  display: flex; justify-content: space-between; font-size: 12px;
-  color: var(--text-secondary); margin-bottom: 5px;
-}
-.assess-label .dim-high { color: var(--accent); }
-.assess-bar {
-  height: 6px; border-radius: 3px; background: var(--border);
-  overflow: hidden;
-}
-.assess-bar-fill {
-  height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-.assess-bar-fill.warm { background: linear-gradient(90deg, var(--accent), #e88a9e); }
-.assess-bar-fill.cool { background: linear-gradient(90deg, var(--purple), #a78bfa); }
-.assess-bar-fill.neutral { background: linear-gradient(90deg, var(--blue), #60a5fa); }
-.assess-cta {
-  margin-top: 20px; text-align: center;
-}
-.assess-cta a {
-  display: inline-block; padding: 10px 28px; background: var(--accent);
-  color: #fff; border-radius: var(--radius-sm); font-size: 14px;
-  font-weight: 500; text-decoration: none;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.assess-cta a:hover { background: #a33e55; box-shadow: 0 0 20px var(--accent-glow); }
+.assess-banner .assess-arrow { color: var(--text-tertiary); font-size: 14px; flex-shrink: 0; }
+.assess-banner:hover .assess-arrow { color: var(--accent); }
 
 .footer {
   max-width: 640px; margin: 0 auto; padding: 24px 20px 40px;
@@ -324,6 +305,15 @@ html, body {
 <div class="glow-orb glow-orb-1"></div>
 <div class="glow-orb glow-orb-2"></div>
 
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
+
 <div class="header">
   <div class="header-inner">
     <div class="brand">
@@ -340,6 +330,15 @@ html, body {
   </div>
 </div>
 
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
+
 <div id="notifPanel" class="notif-panel" style="display:none">
   <div class="notif-header">
     <span class="notif-title">通知</span>
@@ -348,35 +347,29 @@ html, body {
   <div id="notifList" class="notif-list"></div>
 </div>
 
-<div class="hero">
-  <div class="hero-tag">一次测评，看清你爱人的方式</div>
-  <div class="assess-preview">
-    <h3>你的性格画像</h3>
-    <p class="assess-subtitle">基于依恋理论、大五人格与五种爱之语的系统化测评，发现你独特的相处模式</p>
-    <div class="assess-dimension">
-      <div class="assess-label"><span>情感表达</span><span class="dim-high">温暖型</span></div>
-      <div class="assess-bar"><div class="assess-bar-fill warm" style="width:82%"></div></div>
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
     </div>
-    <div class="assess-dimension">
-      <div class="assess-label"><span>安全感</span><span class="dim-high">安全型</span></div>
-      <div class="assess-bar"><div class="assess-bar-fill warm" style="width:75%"></div></div>
-    </div>
-    <div class="assess-dimension">
-      <div class="assess-label"><span>开放性</span><span>探索型</span></div>
-      <div class="assess-bar"><div class="assess-bar-fill cool" style="width:68%"></div></div>
-    </div>
-    <div class="assess-dimension">
-      <div class="assess-label"><span>沟通偏好</span><span>直接型</span></div>
-      <div class="assess-bar"><div class="assess-bar-fill neutral" style="width:71%"></div></div>
-    </div>
-    <div class="assess-cta">
-      <a href="/match.html">开始测评 &rarr;</a>
-    </div>
+    <span class="assess-arrow">&rarr;</span>
   </div>
 
+<div class="hero">
+  <div class="hero-tag">一次测评，看清你爱人的方式</div>
   <h1 class="hero-title"><span>找到真正</span><br>契合的聊天伙伴</h1>
   <p class="hero-sub">匿名、安全、基于科学心理测评的校园社交空间。在这里，你可以遇见懂你的人。</p>
 </div>
+
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
 
 <div class="cards">
 
@@ -427,10 +420,28 @@ html, body {
 
 </div>
 
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
+
 <div class="footer">
   心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间<br>
   <a class="feedback-link" onclick="showFeedback()" style="margin-top:6px;display:inline-block;">意见反馈</a>
 </div>
+
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
 
 <div class="feedback-modal" id="feedbackModal">
   <div class="feedback-card">
@@ -447,6 +458,15 @@ html, body {
     </div>
   </div>
 </div>
+
+  <div class="assess-banner" onclick="location.href='/match.html'">
+    <div class="assess-icon">🧬</div>
+    <div class="assess-info">
+      <h4>探索你的性格画像</h4>
+      <p>41 题系统化测评 · 依恋理论 · 大五人格 · 五种爱之语</p>
+    </div>
+    <span class="assess-arrow">&rarr;</span>
+  </div>
 
 <div class="feedback-toast" id="feedbackToast"></div>
 
