@@ -30,28 +30,54 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-const SENSITIVE_WORDS = [
-  '色情', '赌博', '毒品', '诈骗', '传销', '裸聊', '约炮', '包养', '裸贷',
-  '自杀', '自残', '杀人', '暴力', '血腥', '邪教', '极端', '恐怖主义',
-  '微信', 'QQ', 'qq', '电话', '手机号', '支付宝', '银行卡', '转账', '汇款',
-  '加v', '加V', '加微', 'vx', 'VX', 'wx', 'WX', '二维码',
-  '出来', '见面', '开房', '酒店', '宾馆', '地址', '定位', '位置'
-];
+// 敏感词分级
+// HIGH: 明确恶意/违规，命中即计入违规计数
+// LOW: 常见口语易误伤，仅过滤不单独计入违规计数
+const SENSITIVE_WORDS = {
+  high: [
+    '色情', '赌博', '毒品', '诈骗', '传销', '裸聊', '约炮', '包养', '裸贷',
+    '自杀', '自残', '杀人', '暴力', '血腥', '邪教', '极端', '恐怖主义',
+  ],
+  low: [
+    '微信', 'QQ', '电话', '手机号', '支付宝', '银行卡', '转账', '汇款',
+    '加v', '加V', '加微', 'vx', 'VX', 'wx', 'WX', '二维码',
+    '出来', '见面', '开房', '酒店', '宾馆', '地址', '定位', '位置'
+  ]
+};
 
-const VIOLATION_THRESHOLD = 3;
+// 累计严重度阈值：单次≥3 或累计≥6 触发自动关闭
+const SEVERITY_THRESHOLD_SINGLE = 3;
+const SEVERITY_THRESHOLD_CUMULATIVE = 6;
+
+function buildRegex(word) {
+  // 对正则特殊字符转义后构建忽略大小写的全局匹配
+  return new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+}
 
 function filterContent(text) {
-  if (!text) return { filtered: '', violations: [] };
+  if (!text) return { filtered: '', highViolations: [], lowViolations: [], severity: 0 };
+
   let filtered = text;
-  const violations = [];
-  SENSITIVE_WORDS.forEach(word => {
+  const highViolations = [];
+  const lowViolations = [];
+
+  // 先匹配 HIGH（优先级更高，避免被 LOW 的 ** 覆盖后误判）
+  SENSITIVE_WORDS.high.forEach(word => {
     if (text.toLowerCase().includes(word.toLowerCase())) {
-      violations.push(word);
-      const regex = new RegExp(word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-      filtered = filtered.replace(regex, '**');
+      highViolations.push(word);
+      filtered = filtered.replace(buildRegex(word), '**');
     }
   });
-  return { filtered, violations };
+
+  SENSITIVE_WORDS.low.forEach(word => {
+    if (text.toLowerCase().includes(word.toLowerCase())) {
+      lowViolations.push(word);
+      filtered = filtered.replace(buildRegex(word), '**');
+    }
+  });
+
+  const severity = highViolations.length * 2 + lowViolations.length * 1;
+  return { filtered, highViolations, lowViolations, severity };
 }
 
 export const onRequestPost = async ({ request, env }) => {
@@ -83,19 +109,33 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'not_found', message: '对话不存在或已关闭' }, 404);
   }
 
-  const { filtered, violations } = filterContent(content);
+  const { filtered, highViolations, lowViolations, severity } = filterContent(content);
+  const allViolations = [...highViolations, ...lowViolations];
 
-  if (violations.length > 0) {
+  if (allViolations.length > 0) {
+    // 记录违规（带严重度，方便后续统计）
     await env.DB.prepare(
       `INSERT INTO content_violations (match_id, sender_id, content, violation_type, created_at)
        VALUES (?, ?, ?, ?, ?)`
-    ).bind(matchId, user.id, content, violations.join(','), Date.now()).run();
+    ).bind(
+      matchId, user.id, content,
+      `severity=${severity} high=[${highViolations.join(',')}] low=[${lowViolations.join(',')}]`,
+      Date.now()
+    ).run();
 
-    const violationCount = await env.DB.prepare(
-      `SELECT COUNT(*) as cnt FROM content_violations WHERE match_id = ?`
-    ).bind(matchId).first();
+    // 查询该对话的历史累计严重度
+    const severityRows = await env.DB.prepare(
+      `SELECT violation_type FROM content_violations WHERE match_id = ?`
+    ).bind(matchId).all();
 
-    if (violationCount && violationCount.cnt >= VIOLATION_THRESHOLD) {
+    let cumulativeSeverity = 0;
+    (severityRows.results || []).forEach(row => {
+      const m = (row.violation_type || '').match(/severity=(\d+)/);
+      if (m) cumulativeSeverity += parseInt(m[1]) || 0;
+    });
+
+    // 单次严重触发 或 累计严重触发 → 自动关闭
+    if (severity >= SEVERITY_THRESHOLD_SINGLE || cumulativeSeverity >= SEVERITY_THRESHOLD_CUMULATIVE) {
       await env.DB.prepare(
         `UPDATE matches SET status = 'closed', closed_at = ? WHERE id = ?`
       ).bind(Date.now(), matchId).run();
@@ -128,6 +168,5 @@ export const onRequestPost = async ({ request, env }) => {
     ).bind(recipientId, matchId, user.email, preview, Date.now()).run();
   }
 
-  return jsonResponse({ ok: true, filtered: violations.length > 0 });
+  return jsonResponse({ ok: true, filtered: allViolations.length > 0 });
 };
-
