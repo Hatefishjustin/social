@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS wall_comments (
     post_id INTEGER NOT NULL,
     user_id INTEGER,
     content TEXT NOT NULL,
+    is_anonymous INTEGER NOT NULL DEFAULT 1,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (post_id) REFERENCES wall_posts(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
