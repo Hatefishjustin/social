@@ -78,14 +78,22 @@ export const onRequestGet = async ({ request, env }) => {
 
   let sql, countSql, params;
   if (targetId) {
-    sql = `SELECT id, asker_id, content, is_anonymous, created_at, answered_at, answer_content
-           FROM askbox_questions WHERE target_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+                  p.nickname as asker_name, a.image_data as asker_avatar
+           FROM askbox_questions q
+           LEFT JOIN profiles p ON p.user_id = q.asker_id
+           LEFT JOIN avatars a ON a.user_id = q.asker_id
+           WHERE q.target_id = ? ORDER BY q.created_at DESC LIMIT ? OFFSET ?`;
     countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE target_id = ?`;
     params = [targetId];
   } else {
-    sql = `SELECT id, asker_id, content, is_anonymous, created_at, answered_at, answer_content
-           FROM askbox_questions WHERE answered_at IS NOT NULL
-           ORDER BY answered_at DESC LIMIT ? OFFSET ?`;
+    sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+                  p.nickname as asker_name, a.image_data as asker_avatar
+           FROM askbox_questions q
+           LEFT JOIN profiles p ON p.user_id = q.asker_id
+           LEFT JOIN avatars a ON a.user_id = q.asker_id
+           WHERE q.answered_at IS NOT NULL
+           ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
     countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE answered_at IS NOT NULL`;
     params = [];
   }
