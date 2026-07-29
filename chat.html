@@ -366,14 +366,14 @@ function renderMessages() {
   var currentUserId = Auth.getUserId();
   var html = chatState.messages.map(function(m) {
     var isMine = m.sender_id === currentUserId;
-    var isSystem = m.sender_id === 0;
+    var isSystem = m.sender_id === 0 || m.is_system === 1 || m.sender_id === null;
     var name = m.sender_name || '';
     if (isSystem) {
       return '<div class="msg-row system"><div class="msg-bubble">' + m.content.replace(/</g,'&lt;') + '</div></div>';
     }
     return '<div class="msg-row '+(isMine?'mine':'other')+'">' +
       '<div class="msg-bubble">' +
-        (!isMine ? '<div style="font-size:10px;color:var(--accent);margin-bottom:2px">' + name + '</div>' : '') +
+        (!isMine ? '<div style="font-size:10px;color:var(--accent);margin-bottom:2px">' + name.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>' : '') +
         m.content.replace(/</g,'&lt;') +
         '<div class="msg-time">' + fmtTime(m.created_at) + '</div>' +
       '</div>' +
