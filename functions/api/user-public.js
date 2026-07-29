@@ -52,9 +52,10 @@ export const onRequestGet = async ({ request, env }) => {
   // Get public answers (published answered questions)
   const { results: answers } = await env.DB.prepare(
     `SELECT q.id, q.content as question, q.answer_content as answer, q.answered_at, q.is_anonymous,
-            p.nickname as asker_name
+            p.nickname as asker_name, a.image_data as asker_avatar
      FROM askbox_questions q
      LEFT JOIN profiles p ON p.user_id = q.asker_id
+     LEFT JOIN avatars a ON a.user_id = q.asker_id
      WHERE q.target_id = ? AND q.answered_at IS NOT NULL
      ORDER BY q.answered_at DESC
      LIMIT 30`
