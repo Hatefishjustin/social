@@ -519,7 +519,7 @@ function renderCard(q) {
       '<div class="card-q-body">' +
         '<div class="card-q-text">' + esc(q.content) + '</div>' +
         '<div class="card-q-meta">' +
-          '<span class="card-q-badge">' + (q.is_anonymous ? '匿名' : '实名') + '</span>' +
+          (q.is_anonymous ? '<span class="card-q-badge">匿名</span>' : '<a class="card-q-badge card-q-link" href="user.html?userId=' + esc(q.asker_id||'') + '">' + esc(q.asker_name||'用户') + '</a>') +
           '<span>' + fmtTime(q.created_at) + '</span>' +
         '</div>' +
       '</div>' +
