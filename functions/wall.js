@@ -77,9 +77,11 @@ export const onRequestGet = async ({ request, env }) => {
   const tag = url.searchParams.get('tag') || null;
   const offset = (page - 1) * PAGE_SIZE;
 
-  let sql = `SELECT id, content, tag, is_anonymous, school, created_at, likes_count, comments_count
-             FROM wall_posts`;
-  let countSql = `SELECT COUNT(*) as total FROM wall_posts`;
+  let sql = `SELECT w.id, w.content, w.tag, w.is_anonymous, w.school, w.created_at, w.likes_count, w.comments_count, w.user_id, p.nickname
+             FROM wall_posts w
+             LEFT JOIN profiles p ON w.user_id = p.user_id`;
+  let countSql = `SELECT COUNT(*) as total FROM wall_posts w
+                     LEFT JOIN profiles p ON w.user_id = p.user_id`;
   const params = [];
 
   if (tag) {
