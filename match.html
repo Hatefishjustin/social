@@ -1774,15 +1774,27 @@ function saveResultToStorage(scores) {
       (scores.mbti.mbti_P >= scores.mbti.mbti_J ? 'P' : 'J');
     var attachKey = attachSorted[0][0];
     var attachName = attachInfo[attachKey] ? attachInfo[attachKey].name : attachKey;
-    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify({
+    var result = {
       attachmentType: attachKey,
       attachmentLabel: attachName,
       loveLang: loveLabels[loveSorted[0][0]] || loveSorted[0][0],
       loveLangKey: loveSorted[0][0],
       mbti: mbtiType,
       topValues: valuesSorted.slice(0,3).map(function(v){return valueLabels[v[0]]||v[0]}),
+      big5: scores.big5,
       savedAt: Date.now()
-    }));
+    };
+    localStorage.setItem(RESULT_STORAGE_KEY, JSON.stringify(result));
+    // 追加到测评历史（保留最近20次）
+    var historyKey = 'xinjing_quiz_history_v2';
+    var history = [];
+    try {
+      var rawHist = localStorage.getItem(historyKey);
+      if (rawHist) history = JSON.parse(rawHist);
+    } catch(e) {}
+    history.push(result);
+    if (history.length > 20) history = history.slice(-20);
+    localStorage.setItem(historyKey, JSON.stringify(history));
   } catch(e) {}
 }
 
