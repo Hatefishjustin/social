@@ -6,6 +6,9 @@
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
+    display_name TEXT,
+    avatar_url TEXT,
+    is_admin INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL
 );
 
@@ -31,6 +34,12 @@ CREATE TABLE IF NOT EXISTS quiz_results (
     answers_json TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS avatars (
+    user_id INTEGER PRIMARY KEY,
+    image_data TEXT NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 
 CREATE TABLE IF NOT EXISTS profiles (
     user_id INTEGER PRIMARY KEY,
@@ -43,6 +52,12 @@ CREATE TABLE IF NOT EXISTS profiles (
     is_active INTEGER DEFAULT 1,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS avatars (
+    user_id INTEGER PRIMARY KEY,
+    image_data TEXT NOT NULL,
+    created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
