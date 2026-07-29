@@ -138,6 +138,23 @@ export const onRequestPost = async ({ request, env }) => {
   return jsonResponse({ ok: true, id: postId });
 };
 
+export const onRequestPatch = async ({ request, env }) => {
+  const user = await getCurrentUser(request, env);
+  if (!user) return jsonResponse({ error: 'unauthorized' }, 401);
+
+  // Check admin
+  const adminRow = await env.DB.prepare('SELECT is_admin FROM users WHERE id = ?').bind(user.id).first();
+  if (!adminRow || !adminRow.is_admin) return jsonResponse({ error: 'forbidden' }, 403);
+
+  let body;
+  try { body = await request.json(); } catch (e) { return jsonResponse({ error: 'invalid_body' }, 400); }
+  const { postId, featured } = body || {};
+  if (!postId || typeof featured !== 'boolean') return jsonResponse({ error: 'invalid_params' }, 400);
+
+  await env.DB.prepare('UPDATE wall_posts SET is_featured = ? WHERE id = ?').bind(featured ? 1 : 0, postId).run();
+  return jsonResponse({ ok: true, postId, is_featured: featured });
+};
+
 export const onRequestOptions = async () => {
   return new Response(null, { status: 204, headers: {
     'Access-Control-Allow-Origin': '*',
