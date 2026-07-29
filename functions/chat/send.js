@@ -118,5 +118,16 @@ export const onRequestPost = async ({ request, env }) => {
      VALUES (?, ?, ?, ?)`
   ).bind(matchId, user.id, filtered, Date.now()).run();
 
+  // 通知对方有新消息
+  const recipientId = match.user_a === user.id ? match.user_b : match.user_a;
+  if (recipientId) {
+    const preview = filtered.length > 40 ? filtered.substring(0, 37) + '...' : filtered;
+    await env.DB.prepare(
+      `INSERT INTO notifications (user_id, type, target_type, target_id, actor_email, content_preview, is_read, created_at)
+       VALUES (?, 'chat_message', 'chat', ?, ?, ?, 0, ?)`
+    ).bind(recipientId, matchId, user.email, preview, Date.now()).run();
+  }
+
   return jsonResponse({ ok: true, filtered: violations.length > 0 });
 };
+
