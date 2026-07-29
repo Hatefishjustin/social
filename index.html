@@ -422,7 +422,8 @@ async function loadNotifications() {
     var html = '';
     d.notifications.forEach(function(n){
       var cls = n.is_read ? '' : ' unread';
-      html += '<div class="notif-item' + cls + '" onclick="markNotifRead(' + n.id + ')">' +
+      var onClick = 'markNotifRead(' + n.id + ', \'' + (n.target_type||'') + '\', \'' + (n.target_id||'') + '\')';
+      html += '<div class="notif-item' + cls + '" onclick="' + onClick + '">' +
         (n.is_read ? '' : '<div class="notif-dot"></div>') +
         '<div class="notif-body">' +
           '<div class="notif-text">' + esc(n.content_preview || n.content || '') + '</div>' +
@@ -431,7 +432,7 @@ async function loadNotifications() {
       '</div>';
     });
     list.innerHTML = html;
-    notificationState.unseen = d.unseen || d.notifications.filter(function(n){ return !n.is_read; }).length;
+    notificationState.unseen = d.unread || d.notifications.filter(function(n){ return !n.is_read; }).length;
     updateBadge();
   } catch(e) {
     list.innerHTML = '<div class="notif-empty">加载失败</div>';
@@ -448,12 +449,18 @@ function updateBadge() {
   }
 }
 
-window.markNotifRead = function(id) {
+window.markNotifRead = function(id, targetType, targetId) {
   fetch('/api/notifications', {
-    method: 'POST',
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: id, read: true })
-  }).then(function(){ loadNotifications(); }).catch(function(){});
+    body: JSON.stringify({ id: id })
+  }).then(function(){
+    loadNotifications();
+    // 如果是聊天消息，跳转到聊天页
+    if (targetType === 'chat') {
+      location.href = '/chat.html';
+    }
+  }).catch(function(){});
 };
 
 // Poll for notifications when logged in
@@ -462,7 +469,7 @@ function startNotifPoll() {
   if (Auth.isLoggedIn()) {
     fetch('/api/notifications', { credentials: 'same-origin' }).then(function(r){ return r.json(); })
       .then(function(d){
-        notificationState.unseen = d.unseen || 0;
+        notificationState.unseen = d.unread || 0;
         updateBadge();
       }).catch(function(){});
   }
