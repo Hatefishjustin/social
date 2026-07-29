@@ -64,9 +64,9 @@ body {
 .tag-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; box-shadow:0 4px 16px var(--accent-glow); }
 .tag-chip:active { transform:scale(.94); }
 .feed-section { flex:1; padding-top:8px; padding-bottom:16px; }
-.feed-container { display:flex; flex-direction:column; gap:10px; transition:opacity .25s; }
+.feed-container { display:flex; flex-direction:column; gap:18px; transition:opacity .25s; }
 .feed-container.loading { opacity:.5; pointer-events:none; }
-.card { background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-lg); padding:18px 20px; transition:all .3s var(--ease-out); animation:cardIn .4s var(--ease-out) forwards; position:relative; }
+.card { background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-lg); padding:22px 24px; transition:all .3s var(--ease-out); animation:cardIn .4s var(--ease-out) forwards; position:relative; }
 @keyframes cardIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 .card:hover { border-color:var(--hairline-strong); box-shadow:0 8px 32px rgba(0,0,0,.5); }
 .card:active { transform:scale(.985); transition:transform .1s ease; }
@@ -82,8 +82,8 @@ body {
 .action-btn.liked { color:var(--accent); }
 .action-btn:active { transform:scale(.9); }
 .action-btn .heart-icon { transition:transform .3s cubic-bezier(.175,.885,.32,1.275); display:inline-block; }
-.action-btn.liked .heart-icon { animation:heartPop .4s cubic-bezier(.175,.885,.32,1.275); }
-@keyframes heartPop { 0% { transform:scale(1); } 30% { transform:scale(1.35); } 60% { transform:scale(.85); } 100% { transform:scale(1); } }
+.action-btn.liked .heart-icon { animation:heartPop .5s cubic-bezier(.175,.885,.32,1.275); }
+@keyframes heartPop { 0% { transform:scale(1); } 20% { transform:scale(1.5); } 40% { transform:scale(0.8); } 60% { transform:scale(1.2); } 80% { transform:scale(0.9); } 100% { transform:scale(1); } }
 .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; color:var(--text-tertiary); animation:cardIn .4s var(--ease-out) forwards; }
 .empty-icon { font-size:48px; margin-bottom:16px; opacity:.4; }
 .empty-title { font-size:16px; font-weight:600; color:var(--text-secondary); margin-bottom:6px; }
