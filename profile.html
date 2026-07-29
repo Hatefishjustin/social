@@ -110,6 +110,18 @@
 .psych-item-value{font-size:16px;font-weight:700;color:var(--accent)}
 .psych-values{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
 .psych-value-tag{padding:3px 10px;background:rgba(167,139,250,0.12);color:var(--accent);border-radius:12px;font-size:12px}
+
+/* Quiz History Timeline + Canvas */
+.timeline-list{position:relative;padding-left:20px;margin-top:12px}
+.timeline-list::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:1px;background:var(--border)}
+.timeline-item{position:relative;margin-bottom:14px;padding-left:14px}
+.timeline-item::before{content:'';position:absolute;left:-17px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--card)}
+.timeline-date{font-size:11px;color:var(--muted);margin-bottom:3px}
+.timeline-summary{font-size:13px;color:var(--text);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.timeline-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(196,82,110,.15);color:var(--accent)}
+.timeline-canvas-wrap{margin-top:14px;text-align:center}
+.timeline-canvas-wrap canvas{max-width:100%;height:auto}
+.history-empty{color:var(--muted);font-size:12px;text-align:center;padding:16px 0}
 </style>
 </head>
 <body>
@@ -158,6 +170,14 @@
       <div class="card-title">我的心理画像</div>
       <div id="psychProfileContent">
         <div class="psych-empty">还没有测评记录？去 <a href="/match.html">心理测评</a> 做一个吧，完成后这里会自动显示你的心理画像。</div>
+      </div>
+    </div>
+
+    <div class="card" id="quizHistoryCard">
+      <div class="card-title">测评时间线</div>
+      <div class="timeline-canvas-wrap"><canvas id="trendCanvas" width="360" height="200"></canvas></div>
+      <div id="timelineContent">
+        <div class="history-empty">暂无历史测评记录</div>
       </div>
     </div>
 
@@ -220,11 +240,131 @@ function loadPsychProfile() {
   } catch(e) {}
 }
 
+function loadQuizHistory() {
+  var timeline = document.getElementById('timelineContent');
+  var canvas = document.getElementById('trendCanvas');
+  var ctx = canvas.getContext('2d');
+  try {
+    var raw = localStorage.getItem('xinjing_quiz_history_v2');
+    if (!raw) { canvas.style.display='none'; return; }
+    var history = JSON.parse(raw);
+    if (!history.length) { canvas.style.display='none'; return; }
+
+    // 按时间正序排列（最旧在前）
+    history.sort(function(a,b){return a.savedAt-b.savedAt});
+
+    // 渲染时间线条目（最新在前）
+    var html = '<div class="timeline-list">';
+    for (var i=history.length-1;i>=0;i--) {
+      var h = history[i];
+      var d = new Date(h.savedAt);
+      var ds = d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+      html += '<div class="timeline-item">'+
+        '<div class="timeline-date">'+ds+'</div>'+
+        '<div class="timeline-summary">'+
+          '<span class="timeline-badge">'+h.mbti+'</span>'+
+          '<span style="font-size:12px;color:var(--muted)">'+h.attachmentLabel+' | '+h.loveLang+'</span>'+
+        '</div>'+
+      '</div>';
+    }
+    html += '</div>';
+    timeline.innerHTML = html;
+
+    // 绘制 Canvas 趋势图（Big5 五维折线）
+    var W = canvas.width, H = canvas.height;
+    var pad = {top:20,right:30,bottom:28,left:32};
+    var pw = W-pad.left-pad.right, ph = H-pad.top-pad.bottom;
+
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#111'; ctx.fillRect(0,0,W,H);
+
+    if (history.length < 2) {
+      ctx.fillStyle = '#888'; ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('至少需要两次测评才能生成趋势图', W/2, H/2);
+      canvas.style.display='block';
+      return;
+    }
+
+    var traits = ['O','C','E','A','N'];
+    var colors = ['#E06C75','#98C379','#61AFEF','#E5C07B','#C678DD'];
+    var labels = ['开放性 O','尽责性 C','外向性 E','宜人性 A','神经质 N'];
+    var allVals = {};
+    traits.forEach(function(t){allVals[t]=[]});
+    history.forEach(function(h){
+      traits.forEach(function(t){
+        allVals[t].push(h.big5 ? h.big5[t] : 0);
+      });
+    });
+
+    // Y轴范围：0-100%
+    var yMin=0, yMax=100;
+    var xStep = pw/(history.length-1);
+
+    // 网格线
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+    for (var yi=0;yi<=4;yi++) {
+      var y = pad.top + yi*ph/4;
+      ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    }
+
+    // Y轴标签
+    ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.textAlign = 'right';
+    for (var yi=0;yi<=4;yi++) {
+      var y = pad.top + yi*ph/4;
+      ctx.fillText((100-yi*25)+'%', pad.left-6, y+3);
+    }
+
+    // X轴标签（日期）
+    ctx.textAlign = 'center';
+    var maxLabels = Math.min(history.length, 6);
+    var labelStep = Math.max(1, Math.floor((history.length-1)/(maxLabels-1)));
+    for (var xi=0;xi<history.length;xi+=labelStep) {
+      var x = pad.left + xi*xStep;
+      var dd = new Date(history[xi].savedAt);
+      var lbl = (dd.getMonth()+1)+'/'+dd.getDate();
+      ctx.fillText(lbl, x, H-pad.bottom+14);
+    }
+    // 确保最后一个点也有标签
+    if ((history.length-1) % labelStep !== 0) {
+      var lx = pad.left + (history.length-1)*xStep;
+      var ld = new Date(history[history.length-1].savedAt);
+      ctx.fillText((ld.getMonth()+1)+'/'+ld.getDate(), lx, H-pad.bottom+14);
+    }
+
+    // 折线
+    traits.forEach(function(t,ti){
+      ctx.strokeStyle = colors[ti]; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      var first = true;
+      history.forEach(function(h,hi){
+        var x = pad.left + hi*xStep;
+        var v = (h.big5 && h.big5[t] != null) ? h.big5[t] : 0;
+        var y = pad.top + ph * (1 - v/100);
+        if (first) { ctx.moveTo(x,y); first=false; }
+        else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+
+      // 图例
+      var lx = pad.left + ti*55;
+      ctx.fillStyle = colors[ti];
+      ctx.fillRect(lx, 4, 10, 10);
+      ctx.fillStyle = '#aaa';
+      ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
+      ctx.fillText(labels[ti], lx+13, 13);
+    });
+
+    canvas.style.display='block';
+  } catch(e) { canvas.style.display='none'; }
+}
+
 // Check login
 if (Auth.isLoggedIn()) {
   init();
 } else {
   loadPsychProfile();
+  loadQuizHistory();
 
   Auth.onAuthChange(function(user){
     if (user) init();
@@ -260,6 +400,7 @@ function init() {
 
   // ── 加载心理画像 ──
   loadPsychProfile();
+  loadQuizHistory();
 
   avatarFileInput.addEventListener('change', function(){
     var file = this.files[0];
