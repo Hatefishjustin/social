@@ -88,9 +88,10 @@ CREATE TABLE IF NOT EXISTS matches (
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     match_id INTEGER NOT NULL,
-    sender_id INTEGER NOT NULL,
+    sender_id INTEGER,
     content TEXT NOT NULL,
     is_read INTEGER DEFAULT 0,
+    is_system INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
     FOREIGN KEY (sender_id) REFERENCES users(id)
