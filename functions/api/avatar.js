@@ -96,17 +96,18 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'too_large', message: '图片过大，请压缩后重试' }, 400);
   }
 
-  // Auto-create avatars table
+  // Auto-create avatars table (match schema.sql)
   try {
     await env.DB.prepare(
-      `CREATE TABLE IF NOT EXISTS avatars (user_id TEXT PRIMARY KEY, image_data TEXT NOT NULL, updated_at INTEGER NOT NULL)`
+      `CREATE TABLE IF NOT EXISTS avatars (user_id INTEGER PRIMARY KEY, image_data TEXT NOT NULL, created_at INTEGER NOT NULL DEFAULT (unixepoch() * 1000), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`
     ).run();
   } catch(e) { console.error('create avatars table:', e.message); }
 
   // Upsert avatar
+  // Insert new or update existing avatar
   await env.DB.prepare(
-    `INSERT INTO avatars (user_id, image_data, updated_at) VALUES (?, ?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET image_data = excluded.image_data, updated_at = excluded.updated_at`
+    `INSERT INTO avatars (user_id, image_data, created_at) VALUES (?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET image_data = excluded.image_data, created_at = excluded.created_at`
   ).bind(user.id, image, Date.now()).run();
 
   const avatarUrl = '/api/avatar?userId=' + user.id;
