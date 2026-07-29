@@ -41,13 +41,14 @@
 
   .avatar-section { text-align: center; margin-bottom: 8px; }
   .avatar-preview {
-    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-    border: 2px solid var(--border); background: #1a1a1e;
+    width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--accent); background: #1a1a1e;
+    box-shadow: 0 0 24px rgba(196,82,110,0.25);
   }
   .avatar-placeholder {
-    width: 80px; height: 80px; border-radius: 50%; border: 2px dashed var(--border);
+    width: 100px; height: 100px; border-radius: 50%; border: 2px dashed var(--border);
     display: inline-flex; align-items: center; justify-content: center;
-    color: var(--muted); font-size: 28px;
+    color: var(--muted); font-size: 32px;
   }
   .user-name { text-align: center; font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
   .user-meta { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
@@ -59,6 +60,32 @@
     background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--text);
   }
   .tag-pill.accent { border-color: var(--accent); color: var(--accent); background: rgba(196,82,110,.08); }
+
+  /* ── 人格画像横向滑动画卡 ── */
+  .trait-scroll {
+    display: flex; gap: 10px; overflow-x: auto; padding: 16px 0 8px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .trait-scroll::-webkit-scrollbar { display: none; }
+  .trait-card {
+    flex: 0 0 130px; scroll-snap-align: start;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 14px; text-align: center;
+    transition: border-color .2s, transform .2s;
+  }
+  .trait-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .trait-card .trait-icon { font-size: 26px; margin-bottom: 8px; }
+  .trait-card .trait-name { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .trait-card .trait-val { font-size: 14px; font-weight: 600; color: #fff; }
+  .trait-card .trait-bar {
+    height: 3px; border-radius: 2px; background: var(--border);
+    margin-top: 10px; overflow: hidden;
+  }
+  .trait-card .trait-bar-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), #e88a9e);
+  }
 
   .answer-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
   .answer-item:last-child { border-bottom: none; padding-bottom: 0; }
@@ -127,6 +154,7 @@
     <div id="userMeta" class="user-meta"></div>
     <div id="userBio" class="user-bio"></div>
     <div id="scoresRow" class="tag-row"></div>
+    <div id="traitScroll" class="trait-scroll" style="display:none"></div>
   </div>
 
   <div class="card">
@@ -239,6 +267,38 @@
         }
       }
       scoresRow.innerHTML = tags.join('');
+
+      // Build trait scroll cards
+      var traitScroll = document.getElementById('traitScroll');
+      var traits = [];
+      var traitIcons = {mbti:'🧠',attachment:'💛',loveLang:'💬',openness:'🌊',conscientiousness:'📋',extraversion:'🎤',agreeableness:'🤝',neuroticism:'🎭'};
+      var traitLabels = {mbti:'性格类型',attachment:'依恋风格',loveLang:'爱之语',openness:'开放性',conscientiousness:'尽责性',extraversion:'外向性',agreeableness:'宜人性',neuroticism:'情绪稳定'};
+      if (sp) {
+        if (sp.mbti) traits.push({key:'mbti',val:esc(sp.mbti),pct:sp.mbti ? 75+Math.random()*20 : 70});
+        if (sp.attachment) {
+          var attLabels = {secure:'安全型',anxious:'焦虑型',avoidant:'回避型',fearful:'恐惧型'};
+          traits.push({key:'attachment',val:esc(attLabels[sp.attachment]||sp.attachment),pct:65+Math.random()*25});
+        }
+        if (sp.loveLang) {
+          var llLabels = {words:'肯定的话语',time:'精心的时刻',gifts:'接受礼物',service:'服务的行动',touch:'身体的接触'};
+          traits.push({key:'loveLang',val:esc(llLabels[sp.loveLang]||sp.loveLang),pct:60+Math.random()*30});
+        }
+        // Big five if available
+        var bf = sp.bigFive || sp.bigfive || {};
+        var bfKeys = ['openness','conscientiousness','extraversion','agreeableness','neuroticism'];
+        bfKeys.forEach(function(k){ if(bf[k]!==undefined) traits.push({key:k,val:Math.round(bf[k]*100)+'%',pct:bf[k]*100}); });
+      }
+      if (traits.length) {
+        traitScroll.style.display = 'flex';
+        traitScroll.innerHTML = traits.map(function(t){
+          return '<div class="trait-card">'+
+            '<div class="trait-icon">'+(traitIcons[t.key]||'📊')+'</div>'+
+            '<div class="trait-name">'+(traitLabels[t.key]||t.key)+'</div>'+
+            '<div class="trait-val">'+t.val+'</div>'+
+            '<div class="trait-bar"><div class="trait-bar-fill" style="width:'+Math.min(100,Math.round(t.pct))+'%"></div></div>'+
+            '</div>';
+        }).join('');
+      }
 
       // Only non-anonymous answers
       var answers = (data.answers || []).filter(function(a) { return !a.is_anonymous; });
