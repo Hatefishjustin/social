@@ -44,10 +44,31 @@ export const onRequestGet = async ({ request, env }) => {
     return new Response(null, { status: 404 });
   }
 
-  return new Response(row.image_data, {
+  const raw = row.image_data;
+  if (!raw) return new Response(null, { status: 404 });
+
+  // Handle data URI format: "data:image/webp;base64,XXXX"
+  let binary;
+  let contentType = 'image/webp';
+  if (raw.startsWith('data:')) {
+    const headerEnd = raw.indexOf(',');
+    if (headerEnd > 0) {
+      const header = raw.substring(0, headerEnd);
+      const mimeMatch = header.match(/data:(.+);base64/);
+      if (mimeMatch) contentType = mimeMatch[1];
+      const base64Part = raw.substring(headerEnd + 1);
+      binary = Uint8Array.from(atob(base64Part), c => c.charCodeAt(0));
+    }
+  }
+  if (!binary) {
+    try { binary = Uint8Array.from(atob(raw), c => c.charCodeAt(0)); }
+    catch(e) { return new Response(null, { status: 404 }); }
+  }
+
+  return new Response(binary, {
     status: 200,
     headers: {
-      'Content-Type': 'image/webp',
+      'Content-Type': contentType,
       'Cache-Control': 'public, max-age=86400',
     },
   });
