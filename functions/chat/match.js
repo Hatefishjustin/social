@@ -153,9 +153,17 @@ export const onRequestPost = async ({ request, env }) => {
   const matchId = result.meta.last_row_id;
 
   await env.DB.prepare(
-    `INSERT INTO messages (match_id, sender_id, content, created_at)
-     VALUES (?, 0, ?, ?)`
+    `INSERT INTO messages (match_id, sender_id, content, is_system, created_at)
+     VALUES (?, NULL, ?, 1, ?)`
   ).bind(matchId, '你们已匹配成功！可以开始聊天了。平台提示：请保持友善交流，如遇不适请随时举报。', Date.now()).run();
+
+  // 获取 staff 的真实个人资料（不在生成伪用户信息）
+  let staffProfile = null;
+  if (!fakeTarget) {
+    staffProfile = await env.DB.prepare(
+      'SELECT * FROM profiles WHERE user_id = ?'
+    ).bind(staff.user_id).first();
+  }
 
   const responseProfile = fakeTarget ? {
     userId: fakeTarget.user_id,
@@ -168,11 +176,11 @@ export const onRequestPost = async ({ request, env }) => {
     matchReason
   } : {
     userId: staff.user_id,
-    nickname: '用户' + (Math.floor(Math.random() * 9000) + 1000),
-    gender: '保密',
-    ageGroup: myProfile.age_group,
-    bio: '一个喜欢探索内心世界的人',
-    avatarSeed: 'default',
+    nickname: staffProfile?.nickname || '平台客服',
+    gender: staffProfile?.gender || '保密',
+    ageGroup: staffProfile?.age_group || myProfile.age_group,
+    bio: staffProfile?.bio || '平台官方客服，欢迎随时交流',
+    avatarSeed: staffProfile?.avatar_seed || 'default',
     matchScore,
     matchReason
   };
