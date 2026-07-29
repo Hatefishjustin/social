@@ -62,7 +62,7 @@ export const onRequestGet = async ({ request, env }) => {
 
   // Check if viewer already has an unanswered question to this user
   let canAsk = true;
-  if (viewer && viewer.id !== userId) {
+  if (viewer && String(viewer.id) !== userId) {
     const existing = await env.DB.prepare(
       `SELECT COUNT(*) as cnt FROM askbox_questions
        WHERE target_id = ? AND asker_id = ? AND answer_content IS NULL AND created_at > ?`
@@ -104,7 +104,7 @@ export const onRequestPost = async ({ request, env }) => {
     return json({ error: 'too_long', message: '问题最多500字' }, 400);
   }
 
-  if (userId === viewer.id) {
+  if (userId === String(viewer.id)) {
     return json({ error: 'self_ask', message: '不能向自己提问' }, 400);
   }
 
