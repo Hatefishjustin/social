@@ -5,11 +5,7 @@
  * PUT: 添加管理员 {email:"xxx@xxx.com"} 或移除 {email:"xxx@xxx.com", action:"remove"}
  */
 
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,17 +15,9 @@ function jsonResponse(body, status = 200) {
 }
 
 async function getCurrentAdmin(request, env) {
-  if (!env.DB) return null;
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id, users.email, users.is_admin
-     FROM sessions JOIN users ON sessions.user_id = users.id
-     WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  if (!row.is_admin) return null;
-  return row;
+  const user = await getCurrentUser(request, env);
+  if (!user || !user.isAdmin) return null;
+  return user;
 }
 
 export const onRequestGet = async ({ request, env }) => {
