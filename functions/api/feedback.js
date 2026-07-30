@@ -6,11 +6,7 @@
  * PUT: 管理员更新反馈状态 {id:1, status:"closed", admin_note:"..."}
  */
 
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,24 +15,11 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id, users.email, users.is_admin
-     FROM sessions JOIN users ON sessions.user_id = users.id
-     WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return row;
-}
-
 export const onRequestGet = async ({ request, env }) => {
   if (!env.DB) return jsonResponse({ error: 'missing_db' }, 500);
 
   const user = await getCurrentUser(request, env);
-  if (!user || !user.is_admin) {
+  if (!user || !user.isAdmin) {
     return jsonResponse({ error: 'forbidden', message: '需要管理员权限' }, 403);
   }
 
@@ -100,7 +83,7 @@ export const onRequestPut = async ({ request, env }) => {
   if (!env.DB) return jsonResponse({ error: 'missing_db' }, 500);
 
   const user = await getCurrentUser(request, env);
-  if (!user || !user.is_admin) {
+  if (!user || !user.isAdmin) {
     return jsonResponse({ error: 'forbidden', message: '需要管理员权限' }, 403);
   }
 
