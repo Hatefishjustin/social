@@ -6,21 +6,7 @@
  * PUT  - 标记已读
  */
 
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
-
-async function getCurrentUser(request, env) {
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id FROM sessions JOIN users ON sessions.user_id = users.id WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.id };
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), {
