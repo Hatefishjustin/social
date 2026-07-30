@@ -6,13 +6,13 @@
 <title>个人设置 - 心镜·社交</title>
 <style>
   :root {
-    --bg: #0a0a0a;
-    --card: #111;
-    --border: #222;
-    --text: #ddd;
-    --muted: #888;
-    --accent: #C4526E;
-    --radius: 12px;
+    --bg: #0d0710;
+    --card: #1a1122;
+    --border: #2c2033;
+    --text: #f7ede8;
+    --muted: #7c6c78;
+    --accent: #dfb6b2;
+    --radius: 18px;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -64,11 +64,11 @@
     color: #fff; font-size: 14px; outline: none; font-family: inherit;
     transition: border-color .2s;
   }
-  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(196,82,110,.1); }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(223,182,178,.12); }
   .field input::placeholder { color: rgba(255,255,255,.2); }
   .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
   .upload-hint { font-size: 12px; color: var(--accent); margin-top: 6px; cursor: pointer; text-align: center; transition: color .2s; }
-  .upload-hint:hover { color: #A33E55; }
+  .upload-hint:hover { color: #c9908c; }
 
   .btn {
     display: block; width: 100%; padding: 13px; border-radius: 100px;
@@ -76,7 +76,7 @@
     font-family: inherit; transition: all .2s; margin-top: 8px;
   }
   .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #A33E55; box-shadow: 0 6px 20px rgba(196,82,110,.25); }
+  .btn-primary:hover { background: #c9908c; box-shadow: 0 6px 20px rgba(82,43,91,.32); }
   .btn-primary:active { transform: scale(.97); }
   .btn-primary:disabled { opacity: .4; pointer-events: none; }
 
@@ -118,7 +118,7 @@
 .timeline-item::before{content:'';position:absolute;left:-17px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--card)}
 .timeline-date{font-size:11px;color:var(--muted);margin-bottom:3px}
 .timeline-summary{font-size:13px;color:var(--text);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
-.timeline-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(196,82,110,.15);color:var(--accent)}
+.timeline-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(223,182,178,.14);color:var(--accent)}
 .timeline-canvas-wrap{margin-top:14px;text-align:center}
 .timeline-canvas-wrap canvas{max-width:100%;height:auto}
 .history-empty{color:var(--muted);font-size:12px;text-align:center;padding:16px 0}
