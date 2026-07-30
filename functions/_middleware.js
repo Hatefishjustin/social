@@ -5,7 +5,7 @@
  */
 export const onRequest = async ({ request, next }) => {
   const url = new URL(request.url);
-  if (url.hostname === 'soulmirror-255.pages.dev') {
+  if (url.hostname === 'soulmirror.disabled.pages.dev') {
     return Response.redirect(`https://soulmirror.cc.cd${url.pathname}${url.search}`, 301);
   }
   return next();
