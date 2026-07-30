@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>心镜</title>
+<script src="/auth.js"></script>
 <style>
 /* 使用系统自带字体栈，不依赖外部字体服务（国内网络环境无法访问 Google Fonts，
    会导致页面因等待字体资源而卡死在加载状态），跨平台效果依然良好。
@@ -2061,6 +2062,7 @@ function renderResult(scores, options){
   `;
   html += `</div>`; // end tabReport
 
+  html += `
     <!-- 共鸣图谱 Tab -->
     <div class="tab-panel" id="tabRadar">
       <div class="radar-canvas-wrap">
@@ -2075,6 +2077,7 @@ function renderResult(scores, options){
       </div>
       <p style="text-align:center;color:var(--text-tertiary);font-size:12px;margin-top:8px;">五个维度构成你的心理画像光谱</p>
     </div>
+  `;
 
   // ---- Tab 2: AI 深度解读 ----
   html += `
@@ -2395,15 +2398,20 @@ function restartQuiz(){
 let currentUser = null; // null 表示未登录，否则为 {email}
 
 async function checkSession(){
-  try{
-    const resp = await fetch('/session');
-    const data = await resp.json();
-    currentUser = data.loggedIn ? { email: data.email } : null;
-  }catch(e){
-    currentUser = null;
-  }
+  // 复用共享的 /auth.js：它已经处理了 /session 请求、缓存与跨组件广播，
+  // 这里不再自己重复 fetch，避免和其他页面（index/campus/qa）的登录状态产生不一致。
+  await Auth.refresh();
+  syncFromAuth();
+}
+
+function syncFromAuth(){
+  currentUser = Auth.isLoggedIn() ? { email: Auth.getEmail() } : null;
   updateAccountBar();
 }
+
+// 任何时候 auth.js 感知到登录状态变化（包括本页登录、或 auth.js 自身轮询/操作触发），
+// 都会同步回这个页面自己的 currentUser + 账户栏 UI。
+Auth.onAuthChange(function(){ syncFromAuth(); });
 
 function updateAccountBar(){
   const inner = document.getElementById('accountBarInner');
@@ -2569,6 +2577,7 @@ async function requestLoginLink(){
 
 async function doLogout(){
   try{ await fetch('/logout', { method:'POST' }); }catch(e){}
+  await Auth.refresh(); // 让共享的 auth.js 状态也同步为已登出，避免跨组件状态不一致
   currentUser = null;
   updateAccountBar();
   // 若正停留在历史记录页，退出后回到首页更合理
