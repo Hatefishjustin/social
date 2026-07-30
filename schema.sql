@@ -1,7 +1,7 @@
 -- ============================================================
 -- 心镜社交独立站数据库 Schema（完整版）
--- 项目: Hatefishjustin/social  (social-6za.pages.dev)
--- 更新: 2026-07-29 - 补全所有运行时实际使用的表
+-- 项目: Hatefishjustin/social
+-- 更新: 2026-07-30 - D1线上全量对齐 + 补缺失表
 -- ============================================================
 
 -- ── 用户体系 ──
@@ -59,6 +59,15 @@ CREATE TABLE IF NOT EXISTS avatars (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- ── 个人主页访问记录 ──
+
+CREATE TABLE IF NOT EXISTS profile_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visitor_id INTEGER,
+    target_user_id INTEGER NOT NULL,
+    visited_at INTEGER
+);
+
 -- ── 测评 + 匹配 + 聊天 ──
 
 CREATE TABLE IF NOT EXISTS quiz_results (
@@ -88,7 +97,7 @@ CREATE TABLE IF NOT EXISTS matches (
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     match_id INTEGER NOT NULL,
-    sender_id INTEGER,
+    sender_id INTEGER NOT NULL,
     content TEXT NOT NULL,
     is_read INTEGER DEFAULT 0,
     is_system INTEGER DEFAULT 0,
@@ -108,6 +117,7 @@ CREATE TABLE IF NOT EXISTS wall_posts (
     school TEXT,
     likes_count INTEGER DEFAULT 0,
     comments_count INTEGER DEFAULT 0,
+    is_featured INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -123,11 +133,15 @@ CREATE TABLE IF NOT EXISTS wall_comments (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS wall_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    UNIQUE(post_id, user_id)
+);
+
 -- ── 提问箱 (askbox) ──
--- ⚠️  命名不一致说明：
--- functions/askbox.js 使用表名 askbox_questions，字段 target_id / answer_content
--- functions/api/user-public.js 使用表名 askbox，字段 owner_id / answer / is_published
--- 线上实际以 askbox_questions 为准，user-public.js 需对齐
 
 CREATE TABLE IF NOT EXISTS askbox_questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,8 +162,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     type TEXT NOT NULL,
-    target_type TEXT,
-    target_id TEXT,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
     actor_id INTEGER,
     actor_email TEXT,
     content_preview TEXT,
@@ -165,17 +179,15 @@ CREATE TABLE IF NOT EXISTS feedback (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     user_email TEXT,
-    type TEXT NOT NULL CHECK(type IN ('suggestion','bug')),
+    type TEXT NOT NULL,
     content TEXT NOT NULL,
-    status TEXT DEFAULT 'open' CHECK(status IN ('open','closed')),
+    status TEXT NOT NULL DEFAULT 'open',
     admin_note TEXT,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- ── 举报 / 违规 ──
--- ⚠️  字段不一致说明：
--- 旧 schema 用 sender_id + match_id；线上 reports-admin.js INSERT 用 user_id + report_id + action + admin_id
 
 CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -227,6 +239,30 @@ CREATE TABLE IF NOT EXISTS staff_accounts (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- ── 今日之问 ──
+
+CREATE TABLE IF NOT EXISTS daily_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    question TEXT NOT NULL,
+    option_a TEXT NOT NULL,
+    option_b TEXT NOT NULL,
+    option_c TEXT NOT NULL,
+    option_d TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS daily_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    option_key TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    UNIQUE(question_id, user_id),
+    FOREIGN KEY (question_id) REFERENCES daily_questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- ── 活动日志（写入/只追不删） ──
 
 CREATE TABLE IF NOT EXISTS activity_log (
@@ -251,8 +287,8 @@ CREATE TABLE IF NOT EXISTS page_views (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     page TEXT NOT NULL,
     user_id INTEGER,
-    ip TEXT,
-    visited_at INTEGER NOT NULL,
+    is_logged_in INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -262,6 +298,7 @@ CREATE TABLE IF NOT EXISTS device_codes (
     code TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
+    used INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -280,6 +317,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_match ON messages(match_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_profiles_active ON profiles(is_active, age_group);
 CREATE INDEX IF NOT EXISTS idx_wall_posts_created ON wall_posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_wall_posts_user ON wall_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_wall_likes_post ON wall_likes(post_id, user_id);
 CREATE INDEX IF NOT EXISTS idx_wall_comments_post ON wall_comments(post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_askbox_target ON askbox_questions(target_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC);
@@ -289,5 +327,5 @@ CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC
 CREATE INDEX IF NOT EXISTS idx_content_violations_user ON content_violations(user_id);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_post ON contact_requests(post_id);
 CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page, visited_at DESC);
+CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_device_codes_expires ON device_codes(expires_at);
