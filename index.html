@@ -415,7 +415,6 @@ html, body {
 
 <div class="feedback-toast" id="feedbackToast"></div>
 
-<script src="/auth.js"></script>
 <script>
 (function(){
 'use strict';
@@ -431,6 +430,7 @@ function toast(msg) {
 var notificationState = { unseen: 0 };
 
 function toggleNotifications() {
+  if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
   var panel = document.getElementById('notifPanel');
   if (panel.style.display === 'none' || !panel.style.display) {
     panel.style.display = 'flex';
@@ -517,10 +517,8 @@ function startNotifPoll() {
   }
   notifPollTimer = setTimeout(startNotifPoll, 30000);
 }
-startNotifPoll();
-
 Auth.onAuthChange(function(user) {
-  if (user) loadNotifications();
+  if (user) { loadNotifications(); startNotifPoll(); }
 });
 
 // ====== 反馈系统 ======
