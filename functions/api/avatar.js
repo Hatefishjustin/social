@@ -5,30 +5,13 @@
  * GET  - 获取头像图片
  */
 
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
   });
-}
-
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at, users.id, users.email
-     FROM sessions JOIN users ON sessions.user_id = users.id
-     WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return row;
 }
 
 export const onRequestGet = async ({ request, env }) => {
