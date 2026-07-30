@@ -616,7 +616,7 @@ window.toggleNotifications = toggleNotifications;
   var dqOptionsCache = {};
   // ── Daily Question ──
   (function(){
-    fetch('/api/daily-question').then(function(r){return r.json()}).then(function(d){
+    fetch('/api/daily-question',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
       if(!d.question) return;
       var el=document.getElementById('dq');el.style.display='block';
       var q={A:d.question.option_a,B:d.question.option_b,C:d.question.option_c,D:d.question.option_d};
@@ -630,7 +630,16 @@ window.toggleNotifications = toggleNotifications;
     }).catch(function(){});
   })();
   function he(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  async function ansDQ(b,k){b.classList.add('sel');try{var r=await fetch('/api/daily-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option:k})});var d=await r.json();if(d.ok)showDQR(d,dqOptionsCache);}catch(e){b.classList.remove('sel');}}
+  async function ansDQ(b,k){
+    if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+    b.classList.add('sel');
+    try{
+      var r=await fetch('/api/daily-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option:k}),credentials:'same-origin'});
+      var d=await r.json();
+      if(d.ok){ showDQR(d,dqOptionsCache); }
+      else { b.classList.remove('sel'); toast(d.error||'提交失败，请重试'); }
+    }catch(e){ b.classList.remove('sel'); toast('网络错误，请重试'); }
+  }
   function showDQR(d,o){
     document.getElementById('dqOpts').style.display='none';
     var rs=document.getElementById('dqRes');rs.style.display='block';
