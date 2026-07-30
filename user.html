@@ -6,13 +6,13 @@
   <title>用户主页</title>
 <style>
   :root {
-    --bg: #0a0a0a;
-    --card: #111;
-    --border: #222;
-    --text: #ddd;
-    --muted: #888;
-    --accent: #C4526E;
-    --radius: 12px;
+    --bg: #0d0710;
+    --card: #1a1122;
+    --border: #2c2033;
+    --text: #f7ede8;
+    --muted: #7c6c78;
+    --accent: #dfb6b2;
+    --radius: 18px;
     --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -43,7 +43,7 @@
   .avatar-preview {
     width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
     border: 3px solid var(--accent); background: #1a1a1e;
-    box-shadow: 0 0 24px rgba(196,82,110,0.25);
+    box-shadow: 0 0 24px rgba(82,43,91,0.35);
   }
   .avatar-placeholder {
     width: 100px; height: 100px; border-radius: 50%; border: 2px dashed var(--border);
@@ -59,7 +59,7 @@
     padding: 4px 12px; border-radius: 100px; font-size: 12px;
     background: rgba(255,255,255,.06); border: 1px solid var(--border); color: var(--text);
   }
-  .tag-pill.accent { border-color: var(--accent); color: var(--accent); background: rgba(196,82,110,.08); }
+  .tag-pill.accent { border-color: var(--accent); color: var(--accent); background: rgba(223,182,178,.09); }
 
   /* ── 人格画像横向滑动画卡 ── */
   .trait-scroll {
@@ -120,7 +120,7 @@
     font-family: inherit; transition: all .2s;
   }
   .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #A33E55; }
+  .btn-primary:hover { background: #c9908c; }
   .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
   .btn-secondary { background: rgba(255,255,255,.06); color: var(--text); border: 1px solid var(--border); }
   .btn-secondary:hover { background: rgba(255,255,255,.1); }
