@@ -47,10 +47,14 @@ export const onRequestPost = async ({ request, env }) => {
   }
 
   const match = await env.DB.prepare(
-    `SELECT * FROM matches WHERE id = ? AND (user_a = ? OR user_b = ?)`
-  ).bind(matchId, user.id, user.id).first();
+    `SELECT * FROM matches WHERE id = ?`
+  ).bind(matchId).first();
 
   if (!match) return jsonResponse({ error: 'not_found' }, 404);
+
+  if (match.user_a !== user.id && match.user_b !== user.id) {
+    return jsonResponse({ error: 'forbidden', message: '你不是该对话的参与者' }, 403);
+  }
 
   const reportedId = match.user_a === user.id ? match.user_b : match.user_a;
 
