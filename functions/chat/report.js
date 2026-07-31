@@ -52,10 +52,12 @@ export const onRequestPost = async ({ request, env }) => {
 
   if (!match) return jsonResponse({ error: 'not_found' }, 404);
 
+  const reportedId = match.user_a === user.id ? match.user_b : match.user_a;
+
   await env.DB.prepare(
-    `INSERT INTO reports (reporter_id, match_id, reason, created_at)
-     VALUES (?, ?, ?, ?)`
-  ).bind(user.id, matchId, reason, Date.now()).run();
+    `INSERT INTO reports (reporter_id, reported_id, match_id, reason, created_at)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(user.id, reportedId, matchId, reason, Date.now()).run();
 
   await env.DB.prepare(
     `UPDATE matches SET status = 'closed', closed_at = ? WHERE id = ?`
