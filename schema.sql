@@ -192,6 +192,7 @@ CREATE TABLE IF NOT EXISTS feedback (
 CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     reporter_id INTEGER NOT NULL,
+    reported_id INTEGER,
     match_id INTEGER NOT NULL,
     reason TEXT NOT NULL,
     status TEXT DEFAULT 'open' CHECK(status IN ('open','reviewing','resolved','dismissed')),
@@ -201,6 +202,11 @@ CREATE TABLE IF NOT EXISTS reports (
     FOREIGN KEY (reporter_id) REFERENCES users(id),
     FOREIGN KEY (match_id) REFERENCES matches(id)
 );
+
+-- 迁移: 为已有 reports 表添加 reported_id 字段
+-- ALTER TABLE reports ADD COLUMN reported_id INTEGER;
+-- 线上 D1 执行: wrangler d1 execute soulmirror-db --command "ALTER TABLE reports ADD COLUMN reported_id INTEGER;"
+-- 或通过 Cloudflare Dashboard / API 执行
 
 CREATE TABLE IF NOT EXISTS content_violations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
