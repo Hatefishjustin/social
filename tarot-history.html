@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>塔罗历史 · 心镜</title>
+<script src="/auth.js"></script>
+<style>
+:root {
+  --bg: #0d0710; --surface: #1a1122; --surface-raised: #22162c;
+  --border: rgba(255,255,255,0.08); --text-primary: #f7ede8; --text-secondary: #b3a3ae;
+  --text-tertiary: #7c6c78; --text-quaternary: #4a3f47;
+  --accent: #dfb6b2; --accent-soft: rgba(223,182,178,0.09);
+  --radius-lg: 22px; --ease: cubic-bezier(0.16,1,0.3,1);
+  --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body {
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background:var(--bg); color:var(--text-primary); min-height:100vh; -webkit-font-smoothing:antialiased;
+}
+.header {
+  position:sticky; top:0; z-index:50; padding-top:var(--safe-top);
+  background:rgba(13,7,16,0.72); backdrop-filter:blur(24px) saturate(1.3);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.header-inner { max-width:640px; margin:0 auto; padding:14px 18px; display:flex; align-items:center; gap:12px; }
+.back-btn { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.05); border:none; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; }
+.back-btn:active { transform:scale(0.88); }
+.header-title { font-size:16px; font-weight:700; }
+.main { max-width:640px; margin:0 auto; padding:24px 18px calc(60px + var(--safe-bottom)); }
+.empty { text-align:center; padding:80px 20px; color:var(--text-tertiary); font-size:13.5px; }
+.reading-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+  padding:18px; margin-bottom:12px; cursor:pointer; transition:transform .15s var(--ease);
+}
+.reading-card:active { transform:scale(0.98); }
+.reading-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.reading-type { font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em; }
+.reading-time { font-size:11px; color:var(--text-quaternary); }
+.reading-cards { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+.reading-card-tag { font-size:11.5px; padding:4px 10px; border-radius:100px; background:var(--accent-soft); color:var(--accent); }
+.reading-headline { font-size:14px; font-weight:600; line-height:1.5; color:var(--text-primary); }
+.reading-question { font-size:12px; color:var(--text-tertiary); margin-top:6px; line-height:1.5; }
+.loading { text-align:center; padding:60px 20px; }
+.spinner { width:28px; height:28px; border-radius:50%; border:2px solid var(--border); border-top-color:var(--accent); margin:0 auto; animation:spin .9s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <button class="back-btn" onclick="location.href='/tarot.html'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="header-title">塔罗历史记录</div>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <div class="loading"><div class="spinner"></div></div>
+</div>
+
+<script>
+'use strict';
+function esc(s){ if(!s) return ''; var d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function fmtTime(ts){
+  var d = new Date(ts);
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+
+async function loadHistory(){
+  var main = document.getElementById('main');
+  if (!Auth.isLoggedIn()) {
+    main.innerHTML = '<div class="empty">登录后查看你的塔罗历史记录</div>';
+    return;
+  }
+  try {
+    var r = await fetch('/tarot/history', { credentials:'same-origin' });
+    var d = await r.json();
+    var readings = d.readings || [];
+    if (readings.length === 0) {
+      main.innerHTML = '<div class="empty">还没有抽过牌<br><br><a href="/tarot.html" style="color:var(--accent)">去抽第一张牌 →</a></div>';
+      return;
+    }
+    main.innerHTML = readings.map(function(rd){
+      var typeLabel = rd.spreadType === 'three' ? '过去 · 现在 · 未来' : '单张牌';
+      var cardTags = (rd.cards||[]).map(function(c){
+        return '<span class="reading-card-tag">'+esc(c.name)+(c.reversed?' (逆)':'')+'</span>';
+      }).join('');
+      return '<div class="reading-card">' +
+        '<div class="reading-top"><span class="reading-type">'+typeLabel+'</span><span class="reading-time">'+fmtTime(rd.createdAt)+'</span></div>' +
+        '<div class="reading-cards">'+cardTags+'</div>' +
+        (rd.headline ? '<div class="reading-headline">'+esc(rd.headline)+'</div>' : '') +
+        (rd.question ? '<div class="reading-question">你的问题：'+esc(rd.question)+'</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    main.innerHTML = '<div class="empty">加载失败，请刷新重试</div>';
+  }
+}
+
+if (Auth.isLoggedIn()) { loadHistory(); } else { Auth.onAuthChange(function(){ loadHistory(); }); }
+</script>
+</body>
+</html>
