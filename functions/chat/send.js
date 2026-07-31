@@ -114,42 +114,47 @@ export const onRequestPost = async ({ request, env }) => {
 
   if (allViolations.length > 0) {
     // 记录违规（带严重度，方便后续统计）
-    await env.DB.prepare(
-      `INSERT INTO content_violations (match_id, sender_id, content, violation_type, created_at)
-       VALUES (?, ?, ?, ?, ?)`
-    ).bind(
-      matchId, user.id, content,
-      `severity=${severity} high=[${highViolations.join(',')}] low=[${lowViolations.join(',')}]`,
-      Date.now()
-    ).run();
-
-    // 查询该对话的历史累计严重度
-    const severityRows = await env.DB.prepare(
-      `SELECT violation_type FROM content_violations WHERE match_id = ?`
-    ).bind(matchId).all();
-
-    let cumulativeSeverity = 0;
-    (severityRows.results || []).forEach(row => {
-      const m = (row.violation_type || '').match(/severity=(\d+)/);
-      if (m) cumulativeSeverity += parseInt(m[1]) || 0;
-    });
-
-    // 单次严重触发 或 累计严重触发 → 自动关闭
-    if (severity >= SEVERITY_THRESHOLD_SINGLE || cumulativeSeverity >= SEVERITY_THRESHOLD_CUMULATIVE) {
+    try {
       await env.DB.prepare(
-        `UPDATE matches SET status = 'closed', closed_at = ? WHERE id = ?`
-      ).bind(Date.now(), matchId).run();
+        `INSERT INTO content_violations (user_id, action, match_id, sender_id, content, violation_type, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        user.id, 'auto_filter', matchId, user.id, content,
+        `severity=${severity} high=[${highViolations.join(',')}] low=[${lowViolations.join(',')}]`,
+        Date.now()
+      ).run();
 
-      await env.DB.prepare(
-        `INSERT INTO messages (match_id, sender_id, content, is_system, created_at)
-         VALUES (?, NULL, ?, 1, ?)`
-      ).bind(matchId, '【系统提示】该对话因多次触发安全规则已被自动关闭。如有疑问请联系平台客服。', Date.now()).run();
+      // 查询该对话的历史累计严重度
+      const severityRows = await env.DB.prepare(
+        `SELECT violation_type FROM content_violations WHERE match_id = ?`
+      ).bind(matchId).all();
 
-      return jsonResponse({
-        error: 'auto_closed',
-        message: '该对话因多次触发安全规则已被自动关闭',
-        filtered
-      }, 403);
+      let cumulativeSeverity = 0;
+      (severityRows.results || []).forEach(row => {
+        const m = (row.violation_type || '').match(/severity=(\d+)/);
+        if (m) cumulativeSeverity += parseInt(m[1]) || 0;
+      });
+
+      // 单次严重触发 或 累计严重触发 → 自动关闭
+      if (severity >= SEVERITY_THRESHOLD_SINGLE || cumulativeSeverity >= SEVERITY_THRESHOLD_CUMULATIVE) {
+        await env.DB.prepare(
+          `UPDATE matches SET status = 'closed', closed_at = ? WHERE id = ?`
+        ).bind(Date.now(), matchId).run();
+
+        await env.DB.prepare(
+          `INSERT INTO messages (match_id, sender_id, content, is_system, created_at)
+           VALUES (?, NULL, ?, 1, ?)`
+        ).bind(matchId, '【系统提示】该对话因多次触发安全规则已被自动关闭。如有疑问请联系平台客服。', Date.now()).run();
+
+        return jsonResponse({
+          error: 'auto_closed',
+          message: '该对话因多次触发安全规则已被自动关闭',
+          filtered
+        }, 403);
+      }
+    } catch (e) {
+      // 违规记录/自动关闭失败不阻断消息发送，仅记录日志，避免 Worker 1101
+      console.error('content_violations write failed:', e);
     }
   }
 
