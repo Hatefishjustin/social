@@ -1,22 +1,16 @@
 /**
- * Cloudflare Pages Function - DEBUG VERSION
- * 路径: /analyze  
- * 方法: POST
+ * DEBUG v2
  */
-import { callDashScope } from './_lib/ai.js';
-
 export const onRequestPost = async ({ request, env }) => {
-  // Debug: return what env looks like
-  const envKeys = Object.keys(env || {});
-  
-  let body;
-  try { body = await request.json(); } catch { body = {}; }
-  
+  const key = env.DASHSCOPE_API_KEY;
   return new Response(JSON.stringify({
-    env_keys: envKeys,
-    has_dashscope: !!env?.DASHSCOPE_API_KEY,
-    has_db: !!env?.DB,
-    body_received: !!body.rawText,
+    typeof: typeof key,
+    is_undefined: key === undefined,
+    is_null: key === null,
+    is_empty_string: key === '',
+    is_truthy: !!key,
+    length: typeof key === 'string' ? key.length : 'N/A',
+    first_char: typeof key === 'string' && key.length > 0 ? key[0] : 'N/A',
   }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
