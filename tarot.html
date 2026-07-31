@@ -105,45 +105,81 @@ button { font-family:inherit; }
 .draw-btn:active { transform:scale(0.97); }
 .draw-btn:disabled { opacity:0.5; }
 
-/* ── Card table (drawing area) ── */
-.card-table { display:none; margin-top:32px; }
+/* ── Card table (drawing area): horizontal scroll deck, selected card pops forward ── */
+.card-table { display:none; margin-top:8px; }
 .card-table.show { display:block; }
-.card-row { display:flex; gap:12px; justify-content:center; margin-bottom:10px; }
-.card-row.single { max-width:200px; margin-left:auto; margin-right:auto; }
+
+.deck-scroller {
+  display:flex; gap:0; padding:40px 0 20px;
+  overflow-x:auto; overflow-y:visible;
+  scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;
+  margin:0 -18px; padding-left:calc(50vw - 105px); padding-right:calc(50vw - 105px);
+}
+.deck-scroller::-webkit-scrollbar { display:none; }
+.deck-scroller { scrollbar-width:none; }
+
 .tarot-card {
-  flex:1; aspect-ratio:2/3.3; border-radius:var(--radius-md); position:relative; cursor:pointer;
-  perspective:1000px; max-width:180px;
+  flex:0 0 auto; width:210px; scroll-snap-align:center;
+  perspective:1200px; cursor:pointer; margin:0 -28px;
+  transition:transform .5s var(--ease), opacity .5s var(--ease), z-index 0s;
+  transform:scale(0.82) rotate(var(--tilt, 0deg)) translateY(10px);
+  opacity:0.5; z-index:1;
 }
+.tarot-card.is-center {
+  transform:scale(1) rotate(0deg) translateY(0);
+  opacity:1; z-index:5;
+}
+.tarot-card.is-adjacent { opacity:0.7; }
+
 .tarot-card-inner {
-  width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .7s var(--ease);
+  width:100%; aspect-ratio:2/3.15; position:relative;
+  transform-style:preserve-3d; transition:transform .8s var(--ease);
+  border-radius:var(--radius-lg);
+  box-shadow:0 20px 50px -12px rgba(0,0,0,0.6);
 }
+.tarot-card.is-center .tarot-card-inner { box-shadow:0 30px 70px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(223,182,178,0.08); }
 .tarot-card.flipped .tarot-card-inner { transform:rotateY(180deg); }
+
 .tarot-card-face {
-  position:absolute; inset:0; backface-visibility:hidden; border-radius:var(--radius-md);
+  position:absolute; inset:0; backface-visibility:hidden; border-radius:var(--radius-lg);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   border:1px solid var(--border-strong); overflow:hidden;
 }
 .tarot-card-back {
   background:
-    repeating-linear-gradient(45deg, rgba(223,182,178,0.06) 0px, rgba(223,182,178,0.06) 2px, transparent 2px, transparent 12px),
-    linear-gradient(155deg, #22162c, #150c1c);
+    repeating-linear-gradient(45deg, rgba(223,182,178,0.05) 0px, rgba(223,182,178,0.05) 2px, transparent 2px, transparent 14px),
+    linear-gradient(155deg, #26192f, #150c1c);
 }
 .tarot-card-back::before {
-  content:'✦'; font-size:28px; color:var(--accent); opacity:0.5;
+  content:''; position:absolute; inset:14px; border:1px solid rgba(223,182,178,0.14); border-radius:14px;
+}
+.tarot-card-back::after {
+  content:'✦'; font-size:44px; color:var(--accent); opacity:0.4;
 }
 .tarot-card-front {
   transform:rotateY(180deg);
   background:linear-gradient(155deg, var(--surface-raised), var(--surface));
-  padding:14px 10px; text-align:center;
+  padding:28px 18px; text-align:center;
 }
-.tarot-card-front.reversed .tcf-name { transform:rotate(180deg); }
-.tcf-badge { font-size:9px; font-weight:700; letter-spacing:0.08em; color:var(--text-quaternary); text-transform:uppercase; margin-bottom:auto; padding-top:6px; }
-.tcf-symbol { font-size:22px; margin:6px 0; color:var(--accent); }
-.tcf-name { font-size:14px; font-weight:800; letter-spacing:-0.01em; margin-top:auto; padding-bottom:6px; }
-.tcf-dir { font-size:10px; color:var(--text-tertiary); margin-top:2px; padding-bottom:10px; }
-.card-position-label { text-align:center; font-size:11px; color:var(--text-tertiary); margin-top:8px; font-weight:600; letter-spacing:0.03em; }
+.tarot-card-front.reversed .tcf-name,
+.tarot-card-front.reversed .tcf-symbol { transform:rotate(180deg); }
+.tcf-badge { font-size:10px; font-weight:700; letter-spacing:0.1em; color:var(--text-quaternary); text-transform:uppercase; }
+.tcf-symbol { font-size:38px; margin:auto 0; color:var(--accent); }
+.tcf-name { font-size:19px; font-weight:800; letter-spacing:-0.01em; }
+.tcf-dir { font-size:11px; color:var(--text-tertiary); margin-top:4px; }
 
-.reveal-hint { text-align:center; font-size:12.5px; color:var(--text-tertiary); margin-top:18px; }
+.card-position-label {
+  text-align:center; font-size:11px; color:var(--text-tertiary); margin-top:14px;
+  font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+  opacity:0; transition:opacity .4s var(--ease);
+}
+.card-position-label.show { opacity:1; }
+
+.deck-dots { display:flex; justify-content:center; gap:6px; margin-top:4px; }
+.deck-dot { width:5px; height:5px; border-radius:50%; background:var(--border-strong); transition:all .3s var(--ease); }
+.deck-dot.active { background:var(--accent); width:16px; border-radius:3px; }
+
+.reveal-hint { text-align:center; font-size:12.5px; color:var(--text-tertiary); margin-top:20px; }
 
 /* ── AI analysis rendering (shares visual language with quiz's AI section) ── */
 .ai-block { display:none; margin-top:28px; }
@@ -241,8 +277,10 @@ button { font-family:inherit; }
   </div>
 
   <div class="card-table" id="cardTable">
-    <div class="card-row" id="cardRow"></div>
-    <div class="reveal-hint" id="revealHint">点击卡牌，翻开你的牌</div>
+    <div class="deck-scroller" id="deckScroller"></div>
+    <div class="deck-dots" id="deckDots"></div>
+    <div class="card-position-label" id="positionLabel"></div>
+    <div class="reveal-hint" id="revealHint">左右滑动选牌，点击翻开</div>
   </div>
 
   <div class="ai-loading" id="aiLoading">
@@ -283,7 +321,8 @@ var AI_ICONS = {
 var state = {
   spreadType: 'single',
   drawnCards: [],
-  flippedCount: 0
+  flippedCount: 0,
+  centerIdx: 0
 };
 
 function selectSpread(type){
@@ -317,34 +356,104 @@ function startDraw(){
 
   document.getElementById('setupScreen').style.display = 'none';
   renderCardTable();
+  document.getElementById('revealHint').textContent = state.drawnCards.length > 1 ? '左右滑动选牌，点击翻开' : '点击卡牌，翻开你的牌';
   document.getElementById('cardTable').classList.add('show');
 }
 
 var POSITION_LABELS = ['过去', '现在', '未来'];
+var POSITION_EN = ['PAST', 'PRESENT', 'FUTURE'];
 
 function renderCardTable(){
-  var row = document.getElementById('cardRow');
-  row.className = 'card-row' + (state.drawnCards.length === 1 ? ' single' : '');
+  var scroller = document.getElementById('deckScroller');
+  var dotsEl = document.getElementById('deckDots');
+  var isThree = state.drawnCards.length === 3;
 
   var html = state.drawnCards.map(function(c, i){
-    var posLabel = state.drawnCards.length === 3 ? POSITION_LABELS[i] : '';
-    return '<div>' +
-      '<div class="tarot-card" data-idx="'+i+'" onclick="flipCard('+i+')">' +
+    var tilt = isThree ? (i === 0 ? -3 : i === 2 ? 3 : 0) : 0;
+    return '<div class="tarot-card" data-idx="'+i+'" style="--tilt:'+tilt+'deg" onclick="onCardTap('+i+')">' +
         '<div class="tarot-card-inner">' +
           '<div class="tarot-card-face tarot-card-back"></div>' +
           '<div class="tarot-card-face tarot-card-front' + (c.reversed?' reversed':'') + '">' +
-            '<div class="tcf-badge">'+(state.drawnCards.length===3 ? (i===0?'PAST':i===1?'PRESENT':'FUTURE') : 'CARD')+'</div>' +
+            '<div class="tcf-badge">'+(isThree ? POSITION_EN[i] : 'CARD')+'</div>' +
             '<div class="tcf-symbol">✦</div>' +
             '<div class="tcf-name">'+esc(c.name)+'</div>' +
             '<div class="tcf-dir">'+(c.reversed?'逆位':'正位')+'</div>' +
           '</div>' +
         '</div>' +
-      '</div>' +
-      (posLabel ? '<div class="card-position-label">'+posLabel+'</div>' : '') +
-    '</div>';
+      '</div>';
   }).join('');
+  scroller.innerHTML = html;
 
-  row.innerHTML = html;
+  dotsEl.innerHTML = state.drawnCards.length > 1
+    ? state.drawnCards.map(function(_, i){ return '<div class="deck-dot" data-dot="'+i+'"></div>'; }).join('')
+    : '';
+  dotsEl.style.display = state.drawnCards.length > 1 ? 'flex' : 'none';
+
+  state.centerIdx = 0;
+  updateCenterCard(0);
+
+  if (state.drawnCards.length > 1) {
+    scroller.removeEventListener('scroll', onDeckScroll);
+    scroller.addEventListener('scroll', onDeckScroll);
+  }
+
+  // 首次渲染后，把滚动位置对齐到第一张（浏览器有时会因为负margin布局产生初始偏移）
+  requestAnimationFrame(function(){
+    scrollToCard(0, false);
+  });
+}
+
+var scrollRaf = null;
+function onDeckScroll(){
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(function(){
+    scrollRaf = null;
+    var scroller = document.getElementById('deckScroller');
+    var cards = scroller.querySelectorAll('.tarot-card');
+    var scrollerCenter = scroller.scrollLeft + scroller.clientWidth / 2;
+    var closestIdx = 0, closestDist = Infinity;
+    cards.forEach(function(card, i){
+      var cardCenter = card.offsetLeft + card.offsetWidth / 2;
+      var dist = Math.abs(cardCenter - scrollerCenter);
+      if (dist < closestDist) { closestDist = dist; closestIdx = i; }
+    });
+    if (closestIdx !== state.centerIdx) updateCenterCard(closestIdx);
+  });
+}
+
+function updateCenterCard(idx){
+  state.centerIdx = idx;
+  var cards = document.querySelectorAll('.tarot-card');
+  cards.forEach(function(card, i){
+    card.classList.toggle('is-center', i === idx);
+    card.classList.toggle('is-adjacent', Math.abs(i - idx) === 1);
+  });
+  var dots = document.querySelectorAll('.deck-dot');
+  dots.forEach(function(dot, i){ dot.classList.toggle('active', i === idx); });
+
+  var posLabel = document.getElementById('positionLabel');
+  if (state.drawnCards.length === 3) {
+    posLabel.textContent = POSITION_LABELS[idx];
+    posLabel.classList.add('show');
+  } else {
+    posLabel.classList.remove('show');
+  }
+}
+
+function scrollToCard(idx, smooth){
+  var scroller = document.getElementById('deckScroller');
+  var card = scroller.querySelectorAll('.tarot-card')[idx];
+  if (!card) return;
+  var target = card.offsetLeft + card.offsetWidth/2 - scroller.clientWidth/2;
+  scroller.scrollTo({ left: target, behavior: smooth === false ? 'auto' : 'smooth' });
+}
+
+function onCardTap(idx){
+  if (idx !== state.centerIdx) {
+    scrollToCard(idx, true);
+    return;
+  }
+  flipCard(idx);
 }
 
 function flipCard(idx){
@@ -353,7 +462,9 @@ function flipCard(idx){
   cardEl.classList.add('flipped');
   state.flippedCount++;
 
-  if (state.flippedCount === state.drawnCards.length) {
+  if (state.flippedCount < state.drawnCards.length) {
+    document.getElementById('revealHint').textContent = '继续滑动，翻开下一张';
+  } else {
     document.getElementById('revealHint').textContent = '牌已翻开，正在为你解读…';
     setTimeout(function(){ requestAnalysis(); }, 900);
   }
@@ -446,10 +557,12 @@ function renderAiPlainFallback(text){
 function resetDraw(){
   state.drawnCards = [];
   state.flippedCount = 0;
+  state.centerIdx = 0;
   document.getElementById('cardTable').classList.remove('show');
   document.getElementById('aiBlock').classList.remove('show');
   document.getElementById('aiError').classList.remove('show');
-  document.getElementById('revealHint').textContent = '点击卡牌，翻开你的牌';
+  document.getElementById('revealHint').textContent = '左右滑动选牌，点击翻开';
+  document.getElementById('positionLabel').classList.remove('show');
   document.getElementById('questionInput').value = '';
   document.getElementById('setupScreen').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
