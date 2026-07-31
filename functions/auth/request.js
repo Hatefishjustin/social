@@ -118,8 +118,10 @@ export const onRequestPost = async ({ request, env }) => {
     if (!mailResp.ok) {
       const errBody = await mailResp.text().catch(() => '');
       let message = '邮件发送失败';
-      if (mailResp.status === 401 || mailResp.status === 403) {
+      if (mailResp.status === 401) {
         message = 'Resend API Key 无效';
+      } else if (mailResp.status === 403) {
+        message = '发件域名未验证或无权限';
       } else if (mailResp.status === 422) {
         message = '发件人域名未验证或收件人邮箱被拒绝';
       } else if (mailResp.status === 429) {
