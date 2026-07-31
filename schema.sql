@@ -335,3 +335,19 @@ CREATE INDEX IF NOT EXISTS idx_contact_requests_post ON contact_requests(post_id
 CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_device_codes_expires ON device_codes(expires_at);
+
+-- 塔罗牌抽卡记录：保存每次抽牌的牌阵、AI解读结果，供历史记录查看
+CREATE TABLE IF NOT EXISTS tarot_readings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    spread_type TEXT NOT NULL,        -- 'single' 或 'three'（过去-现在-未来）
+    question TEXT,                    -- 用户抽牌前填写的问题/困惑，可为空
+    cards_json TEXT NOT NULL,         -- 抽到的牌：[{id,name,reversed,position}]
+    headline TEXT,                    -- AI解读一句话总结
+    analysis_json TEXT,               -- AI解读完整结构化结果
+    linked_quiz_id INTEGER,           -- 若解读时结合了心理测评结果，关联 quiz_results.id
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (linked_quiz_id) REFERENCES quiz_results(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tarot_user ON tarot_readings(user_id, created_at DESC);
