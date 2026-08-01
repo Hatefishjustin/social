@@ -193,7 +193,40 @@
     display: flex; align-items: center; justify-content: center; cursor: zoom-out;
   }
   .img-viewer img { max-width: 95%; max-height: 95%; border-radius: 8px; }
+
+  /* ── 动态发布（仅本人可见） ── */
+  .moment-composer { margin-bottom: 16px; }
+  .moment-composer textarea {
+    width: 100%; padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); background: rgba(255,255,255,.04);
+    color: #fff; font-size: 14px; outline: none; font-family: inherit;
+    resize: vertical; min-height: 80px; line-height: 1.5; box-sizing: border-box;
+  }
+  .moment-composer textarea:focus { border-color: var(--accent); }
+  .moment-composer-chars { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
+  .moment-composer-tools { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .moment-add-img {
+    padding: 8px 14px; border-radius: 8px; border: 1px dashed var(--border);
+    background: transparent; color: var(--muted); font-size: 13px; cursor: pointer;
+    font-family: inherit; transition: all .2s;
+  }
+  .moment-add-img:hover { border-color: var(--accent); color: var(--accent); }
+  .moment-preview-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .moment-preview-item { position: relative; width: 72px; height: 72px; }
+  .moment-preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .moment-preview-item .remove {
+    position: absolute; top: -6px; right: -6px; width: 20px; height: 20px;
+    border-radius: 50%; background: #e74c3c; color: #fff; border: none;
+    font-size: 12px; line-height: 20px; text-align: center; cursor: pointer;
+  }
+  .moment-publish-btn {
+    margin-left: auto; padding: 9px 20px; border-radius: 100px; border: none;
+    background: var(--accent); color: #fff; font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit; transition: all .2s;
+  }
+  .moment-publish-btn:disabled { opacity: .4; cursor: not-allowed; }
 </style>
+
 
 </head>
 <body>
@@ -217,10 +250,21 @@
 
   <div class="card">
     <div class="card-title">动态</div>
+    <div class="moment-composer" id="momentComposer" style="display:none">
+      <textarea id="momentContent" placeholder="分享此刻的心情、照片..." maxlength="1000" oninput="updateMomentChars()"></textarea>
+      <div class="moment-composer-chars"><span id="momentChars">0</span>/1000</div>
+      <div class="moment-composer-tools">
+        <button class="moment-add-img" onclick="document.getElementById('momentImgInput').click()">📷 添加图片</button>
+        <button class="moment-publish-btn" id="momentPublishBtn" onclick="publishMoment()" disabled>发布</button>
+      </div>
+      <input type="file" id="momentImgInput" accept="image/*" multiple style="display:none">
+      <div class="moment-preview-grid" id="momentPreviewGrid"></div>
+    </div>
     <div id="momentsList">
       <div class="empty-state"><div class="empty-icon">📸</div>加载中...</div>
     </div>
   </div>
+
 
   <div class="card">
     <div class="card-title">公开回答</div>
@@ -284,6 +328,10 @@
     var dt = new Date(t);
     return dt.getFullYear() + '-' + (dt.getMonth()+1) + '-' + dt.getDate();
   }
+  // 暴露给动态模块复用
+  window.esc = esc;
+  window.fmtTime = fmtTime;
+
 
   fetch('/api/user-public?userId=' + encodeURIComponent(userId))
     .then(function(r) { return r.json(); })
@@ -472,8 +520,15 @@ function submitAsk() {
   }
   window.openViewer = openViewer;
 
+  // 判断是否查看的是自己：是则显示发布入口
+  function isSelf() {
+    var u = Auth.getUser();
+    return !!u && String(u.userId) === String(targetId);
+  }
+
 
   function renderMoment(m) {
+
     var imagesHtml = '';
     if (m.images && m.images.length) {
       imagesHtml = '<div class="moment-images ' + gridClass(m.images.length) + '">' +
@@ -515,6 +570,8 @@ function submitAsk() {
     '</div>';
   }
 
+  window.renderMoment = renderMoment;
+
   function loadMoments() {
     fetch('/api/moments?userId=' + encodeURIComponent(targetId) + '&pageSize=20')
       .then(function(r) { return r.json(); })
@@ -534,9 +591,116 @@ function submitAsk() {
         momentsList.innerHTML = '<div class="empty-state"><div class="empty-icon">📸</div>加载失败</div>';
       });
   }
+  window.loadMoments = loadMoments;
+
+
+  // ── 发布动态（仅本人可见） ──
+  var momentImages = [];
+  var composer = document.getElementById('momentComposer');
+  var imgInput = document.getElementById('momentImgInput');
+  var previewGrid = document.getElementById('momentPreviewGrid');
+
+  function updateMomentChars() {
+    var len = document.getElementById('momentContent').value.length;
+    document.getElementById('momentChars').textContent = len;
+    document.getElementById('momentPublishBtn').disabled = len === 0 && momentImages.length === 0;
+  }
+  window.updateMomentChars = updateMomentChars;
+
+  function renderPreview() {
+    previewGrid.innerHTML = momentImages.map(function(src, i) {
+      return '<div class="moment-preview-item"><img src="' + src + '"><button class="remove" onclick="removeMomentImage(' + i + ')">×</button></div>';
+    }).join('');
+  }
+
+  function removeMomentImage(i) {
+    momentImages.splice(i, 1);
+    renderPreview();
+    updateMomentChars();
+  }
+  window.removeMomentImage = removeMomentImage;
+
+  function publishMoment() {
+    if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+    var content = document.getElementById('momentContent').value.trim();
+    if (!content && momentImages.length === 0) return;
+    var btn = document.getElementById('momentPublishBtn');
+    btn.disabled = true; btn.textContent = '发布中...';
+
+    fetch('/api/moments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: content, images: momentImages })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.ok) {
+          document.getElementById('momentContent').value = '';
+          momentImages = [];
+          renderPreview();
+          updateMomentChars();
+          toast('发布成功');
+          loadMoments();
+        } else {
+          toast(data.message || '发布失败');
+        }
+      })
+      .catch(function() { toast('网络错误'); })
+      .finally(function() { btn.disabled = false; btn.textContent = '发布'; });
+  }
+  window.publishMoment = publishMoment;
+
+  // 初始化：仅本人显示发布入口（auth 异步加载，需监听 authchange）
+  var composerInited = false;
+  function initComposer() {
+    if (!isSelf()) return;
+    composer.style.display = 'block';
+    if (composerInited) return;
+    composerInited = true;
+    imgInput.addEventListener('change', function() {
+      var files = Array.prototype.slice.call(this.files);
+      var remaining = 9 - momentImages.length;
+      if (files.length > remaining) {
+        toast('最多上传9张图片');
+        files = files.slice(0, remaining);
+      }
+      files.forEach(function(file) {
+        if (!file.type.startsWith('image/')) return;
+        if (file.size > 10 * 1024 * 1024) { toast('单张图片不能超过10MB'); return; }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var maxW = 1200, maxH = 1200;
+            var w = img.width, h = img.height;
+            if (w > maxW || h > maxH) {
+              var ratio = Math.min(maxW / w, maxH / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            var dataUrl = canvas.toDataURL('image/webp', 0.7);
+            momentImages.push(dataUrl);
+            renderPreview();
+            updateMomentChars();
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+      this.value = '';
+    });
+  }
+  initComposer();
+  Auth.onAuthChange(initComposer);
 
   loadMoments();
 })();
+
+
 
 function openMomentViewer(src) { openViewer(src); }
 
