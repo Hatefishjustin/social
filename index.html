@@ -3,239 +3,478 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>心镜 · 社交</title>
+<title>心镜 · SoulMirror — 发现真实的自己</title>
+<meta name="description" content="SoulMirror 心镜 · 一个探索自我人格、情感关系与潜意识倾向的 AI 心理探索空间。">
 <script src="/auth.js"></script>
 <style>
+/* ============================================================
+   SoulMirror 心镜 · 品牌视觉系统
+   风格：Luxury Editorial + AI Psychology + Emotional Wellness
+   色彩：95% 黑白灰 + 5% 金色
+   ============================================================ */
 :root {
-  --bg: #0d0710;
-  --surface: #1a1122;
-  --surface-raised: #22162c;
-  --surface-muted: #17101e;
-  --border: #2c2033;
-  --border-hover: #3d2d47;
-  --text-primary: #f7ede8;
-  --text-secondary: #b3a3ae;
-  --text-tertiary: #7c6c78;
-  --text-quaternary: #4a3f47;
-  --accent: #dfb6b2;
-  --accent-soft: rgba(223,182,178,0.1);
-  --accent-glow: rgba(82,43,91,0.35);
-  --blue: #854f6c;
-  --purple: #522b5b;
+  /* 色彩系统 */
+  --bg: #F9F8F6;            /* Warm Alabaster 米白背景 */
+  --surface: #FFFFFF;        /* 卡片表面 */
+  --surface-muted: #EBE5DE;  /* 辅助背景 */
+  --surface-soft: #F3F0EB;   /* 更浅的辅助背景 */
+  --border: #E4DED6;         /* 细边框 */
+  --border-strong: #D6CEC3;
+  --text-primary: #1A1A1A;   /* Rich Charcoal 主文字 */
+  --text-secondary: #6C6863; /* 辅助文字 */
+  --text-tertiary: #9A948C;  /* 弱化文字 */
+  --text-quaternary: #B8B2A9;
+  --accent: #B89B5E;         /* 香槟金 Champagne Gold（克制、高级，仅装饰/强调） */
+  --accent-soft: rgba(184,155,94,0.10);
+  --accent-line: rgba(184,155,94,0.32);
+
+  /* 字体系统 */
+  --font-serif: 'Playfair Display', 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Noto Sans SC', 'PingFang SC',
+               'Helvetica Neue', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+
+
+  /* 圆角与阴影 */
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.05);
+  --shadow-hover: 0 2px 4px rgba(0,0,0,0.05), 0 16px 40px rgba(0,0,0,0.08);
+
+  /* 间距 */
+  --space-section: clamp(72px, 10vw, 128px);
+  --space-section-mobile: clamp(56px, 8vw, 80px);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
 html, body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.6;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--accent); color: #fff; }
+
+/* 柔和镜面光影背景 */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 900px 500px at 85% -10%, rgba(184,155,94,0.06), transparent 60%),
+    radial-gradient(ellipse 700px 500px at -10% 30%, rgba(26,26,26,0.03), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 100% 100%, rgba(184,155,94,0.04), transparent 60%);
 }
 
+/* ============================================================
+   顶部导航
+   ============================================================ */
 .header {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(10,10,10,0.75);
+  background: rgba(249,248,246,0.82);
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border-bottom: 1px solid var(--border);
 }
 .header-inner {
-  max-width: 640px; margin: 0 auto; padding: 16px 20px;
+  max-width: 1200px; margin: 0 auto; padding: 18px 24px;
   display: flex; align-items: center; justify-content: space-between;
 }
-.brand {
-  display: flex; align-items: center; gap: 10px;
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 50%;
+  position: relative; flex-shrink: 0;
+  background: linear-gradient(135deg, #1A1A1A 0%, #3a3a3a 100%);
+  display: flex; align-items: center; justify-content: center;
 }
-.brand-dot {
-  width: 8px; height: 8px; border-radius: 50%;
+.brand-mark::after {
+  content: ''; position: absolute; inset: 4px;
+  border-radius: 50%;
+  border: 1px solid rgba(184,155,94,0.6);
+  background: linear-gradient(135deg, rgba(184,155,94,0.25), transparent 60%);
+}
+.brand-mark .mirror-dot {
+  width: 6px; height: 6px; border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-@keyframes heroReveal {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.hero-title { animation: heroReveal 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.hero-title span { animation: heroReveal 0.8s 0.15s cubic-bezier(0.22, 0.61, 0.36, 1) both; display:inline-block; }
-.hero-sub { animation: heroReveal 0.8s 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.hero-tag { animation: heroReveal 0.6s 0.05s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  50% { opacity: 0.6; transform: scale(0.85); }
+  box-shadow: 0 0 8px rgba(184,155,94,0.7);
 }
 .brand-name {
-  font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
-  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-family: var(--font-serif);
+  font-size: 20px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+.brand-name .en { font-size: 11px; letter-spacing: 0.35em; color: var(--text-tertiary); display: block; font-family: var(--font-sans); font-weight: 500; margin-top: 1px; }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.bell-btn {
+  background: transparent; border: 1px solid var(--border);
+  padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer;
+  color: var(--text-secondary); transition: all .3s; position: relative;
+  display: flex; align-items: center;
+}
+.bell-btn:hover { border-color: var(--accent-line); color: var(--text-primary); }
+.bell-badge {
+  position: absolute; top: -5px; right: -6px; min-width: 17px; height: 17px;
+  border-radius: 9px; background: var(--accent); color: #fff; font-size: 10px;
+  line-height: 17px; text-align: center; padding: 0 4px; font-weight: 600;
 }
 .login-btn {
-  font-size: 13px; color: var(--text-tertiary);
-  background: transparent; border: 1px solid var(--border);
-  padding: 6px 14px; border-radius: var(--radius-sm);
-  cursor: pointer; transition: all 0.2s ease;
+  font-size: 13px; color: var(--text-secondary);
+  background: transparent; border: 1px solid var(--border-strong);
+  padding: 8px 18px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.3s ease; font-family: inherit;
 }
-.login-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.login-btn:hover { border-color: var(--text-primary); color: var(--text-primary); }
 
+/* ============================================================
+   Hero 区域
+   ============================================================ */
 .hero {
-  max-width: 640px; margin: 0 auto; padding: 56px 20px 40px;
+  max-width: 1200px; margin: 0 auto;
+  padding: clamp(72px, 12vw, 140px) 24px clamp(48px, 8vw, 88px);
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 48px;
+  align-items: center;
 }
 .hero-tag {
-  display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-tertiary);
-  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px; color: var(--text-secondary);
+  letter-spacing: 0.35em; text-transform: uppercase; margin-bottom: 28px; font-weight: 600;
+  animation: fadeUp 0.7s 0.05s cubic-bezier(0.22,0.61,0.36,1) both;
 }
 .hero-tag::before {
-  content: ''; width: 20px; height: 1px; background: var(--accent); display: inline-block;
+  content: ''; width: 28px; height: 1px; background: var(--accent); display: inline-block;
 }
 .hero-title {
-  font-size: 52px; font-weight: 800; line-height: 0.98;
-  letter-spacing: -0.03em; margin-bottom: 20px;
-  text-transform: uppercase;
-}
-.hero-title span {
-  display: block;
-  background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-family: var(--font-serif);
+  font-size: clamp(44px, 7vw, 84px);
+  font-weight: 600; line-height: 1.08;
+  letter-spacing: -0.01em; margin-bottom: 28px;
+  color: var(--text-primary);
 }
 .hero-title .line2 {
-  background: none; -webkit-text-fill-color: var(--text-primary); color: var(--text-primary);
-  font-size: 0.7em; font-weight: 700; text-transform: none; letter-spacing: -0.01em;
-  margin-top: 8px;
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.72em; font-weight: 500;
+  margin-top: 12px;
+}
+.hero-title .gold {
+  color: var(--accent);
+  font-style: italic;
 }
 .hero-sub {
-  font-size: 15px; color: var(--text-secondary); line-height: 1.6;
-  max-width: 380px; padding-left: 2px; border-left: 2px solid var(--border);
-  padding-left: 14px;
+  font-size: clamp(15px, 1.6vw, 18px); color: var(--text-secondary); line-height: 1.8;
+  max-width: 460px; margin-bottom: 40px;
+  border-left: 2px solid var(--accent-line);
+  padding-left: 20px;
+  animation: fadeUp 0.8s 0.25s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.hero-cta {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  animation: fadeUp 0.8s 0.4s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+.btn-primary {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 56px; padding: 0 36px;
+  background: var(--text-primary); color: #F9F8F6;
+  border: none; border-radius: var(--radius-md);
+  font-size: 15px; font-weight: 500; font-family: inherit;
+  cursor: pointer; letter-spacing: 0.02em;
+  transition: color 0.5s ease;
+}
+.btn-primary::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--accent), #a98e4e);
+  transform: translateX(-101%);
+  transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1);
+  z-index: 0;
+}
+.btn-primary:hover::before { transform: translateX(0); }
+.btn-primary span { position: relative; z-index: 1; }
+.btn-primary:hover { color: #fff; }
+.btn-primary svg { position: relative; z-index: 1; transition: transform 0.5s ease; }
+.btn-primary:hover svg { transform: translateX(4px); }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 56px; padding: 0 24px;
+  background: transparent; color: var(--text-primary);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  font-size: 15px; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: all 0.4s ease;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Hero 视觉：杂志封面（Luxury Editorial） */
+.hero-visual {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 420px;
+  animation: fadeIn 1.2s 0.3s ease both;
+}
+.magazine-cover {
+  position: relative;
+  width: 360px;
+  margin: 0;
+  padding: 14px;
+  background: linear-gradient(160deg, #FFFFFF, #F3F0EB);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.05),
+    0 18px 40px rgba(0,0,0,0.10),
+    0 40px 80px rgba(0,0,0,0.08);
+  transition: transform 1.8s cubic-bezier(0.22,0.61,0.36,1),
+              box-shadow 1.8s cubic-bezier(0.22,0.61,0.36,1);
+  will-change: transform, box-shadow;
+}
+/* 纸张质感：细腻内阴影 + 顶部高光 */
+.magazine-cover::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    inset 0 -30px 60px rgba(26,26,26,0.04);
+}
+.magazine-cover-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 2px;
+  filter: grayscale(100%) contrast(1.02) brightness(0.98);
+  transition: filter 1.8s cubic-bezier(0.22,0.61,0.36,1),
+              transform 1.8s cubic-bezier(0.22,0.61,0.36,1);
+  will-change: filter, transform;
+}
+/* 桌面端：悬停缓慢恢复彩色 + 轻微放大 + 阴影加深 */
+@media (hover: hover) and (pointer: fine) {
+  .magazine-cover:hover {
+    transform: scale(1.04);
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.05),
+      0 24px 56px rgba(0,0,0,0.14),
+      0 56px 110px rgba(0,0,0,0.12);
+  }
+  .magazine-cover:hover .magazine-cover-img {
+    filter: grayscale(0%) contrast(1.02) brightness(1);
+    transform: scale(1.02);
+  }
+}
+/* 移动端：滑动进入视口后恢复彩色（由 JS 添加 .is-visible） */
+.magazine-cover.is-visible {
+  transform: scale(1.04);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.05),
+    0 24px 56px rgba(0,0,0,0.14),
+    0 56px 110px rgba(0,0,0,0.12);
+}
+.magazine-cover.is-visible .magazine-cover-img {
+  filter: grayscale(0%) contrast(1.02) brightness(1);
+  transform: scale(1.02);
+}
+.mirror-orb {
+  position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.5; pointer-events: none;
+}
+.mirror-orb-1 { width: 200px; height: 200px; background: rgba(184,155,94,0.18); top: -40px; right: -20px; }
+.mirror-orb-2 { width: 160px; height: 160px; background: rgba(26,26,26,0.08); bottom: -30px; left: -30px; }
+.mirror-caption {
+  position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; letter-spacing: 0.3em; color: var(--text-tertiary);
+  text-transform: uppercase; white-space: nowrap;
 }
 
+
+/* ============================================================
+   探索入口区（功能卡片）
+   ============================================================ */
+
+.explore {
+  max-width: 1200px; margin: 0 auto;
+  padding: var(--space-section) 24px;
+  border-top: 1px solid var(--border);
+}
+.explore-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; margin-bottom: 56px; flex-wrap: wrap;
+}
+.explore-label {
+  font-size: 11px; letter-spacing: 0.35em; color: var(--accent);
+  text-transform: uppercase; font-weight: 600; margin-bottom: 16px;
+}
+.explore-title {
+  font-family: var(--font-serif);
+  font-size: clamp(28px, 4vw, 44px); font-weight: 600; line-height: 1.2;
+  color: var(--text-primary);
+}
+.explore-sub { font-size: 15px; color: var(--text-secondary); max-width: 360px; line-height: 1.8; }
+
 .cards {
-  max-width: 640px; margin: 0 auto; padding: 0 20px 40px;
-  display: flex; flex-direction: column; gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
 }
 .card {
   position: relative;
+  grid-column: span 4;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 26px 24px 24px;
+  padding: 36px 32px 32px;
   cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+  transition: all 0.5s cubic-bezier(0.22,0.61,0.36,1);
+  box-shadow: var(--shadow-card);
 }
 .card::before {
-  content: ''; position: absolute; inset: 0;
-  border-radius: var(--radius-lg);
-  padding: 1.5px;
-  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.06) 60%, transparent 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude;
-  pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.5s cubic-bezier(0.22,0.61,0.36,1);
 }
 .card:hover {
-  border-color: var(--border-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--border-strong);
 }
-.card:hover::before { opacity: 1; }
+.card:hover::before { transform: scaleX(1); }
 .card-index {
-  position: absolute; top: 22px; right: 24px;
-  font-size: 12px; font-weight: 700; color: var(--text-quaternary);
-  letter-spacing: 0.05em; font-variant-numeric: tabular-nums;
+  position: absolute; top: 28px; right: 30px;
+  font-family: var(--font-serif); font-size: 13px; font-style: italic;
+  color: var(--text-quaternary); letter-spacing: 0.05em;
 }
-
 .card-icon-wrap {
-  width: 44px; height: 44px; border-radius: var(--radius-md);
+  width: 48px; height: 48px; border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  transition: all 0.5s ease;
 }
-.card-icon-wrap.match { background: var(--accent-soft); }
-.card-icon-wrap.chat { background: rgba(133,79,108,0.18); }
-.card-icon-wrap.wall { background: rgba(82,43,91,0.22); }
-.card-icon-wrap.ask { background: rgba(223,182,178,0.08); }
-.card-icon-wrap svg { width: 22px; height: 22px; }
-.card-icon-wrap.match svg { color: var(--accent); }
-.card-icon-wrap.chat svg { color: var(--blue); }
-.card-icon-wrap.wall svg { color: var(--text-primary); }
-.card-icon-wrap.ask svg { color: var(--accent); }
-
+.card:hover .card-icon-wrap { background: var(--accent-soft); border-color: var(--accent-line); }
+.card-icon-wrap svg { width: 22px; height: 22px; color: var(--text-primary); }
+.card:hover .card-icon-wrap svg { color: var(--accent); }
 .card-title {
-  font-size: 19px; font-weight: 700; margin-bottom: 6px;
-  display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em;
+  font-family: var(--font-serif);
+  font-size: 22px; font-weight: 600; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px; letter-spacing: 0.01em;
+  color: var(--text-primary);
 }
 .card-badge {
   font-size: 10px; font-weight: 600;
-  padding: 2px 8px; border-radius: 20px;
+  padding: 3px 10px; border-radius: 20px;
   text-transform: uppercase; letter-spacing: 0.5px;
+  font-family: var(--font-sans);
 }
-.card-badge.hot {
-  background: rgba(223,182,178,0.12); color: var(--accent);
-}
-.card-badge.new {
-  background: rgba(59,130,246,0.15); color: var(--blue);
-}
+.card-badge.hot { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-line); }
+.card-badge.new { background: var(--surface-muted); color: var(--text-secondary); border: 1px solid var(--border); }
 .card-desc {
-  font-size: 14px; color: var(--text-secondary); line-height: 1.6;
-  margin-bottom: 16px;
+  font-size: 14px; color: var(--text-secondary); line-height: 1.8;
+  margin-bottom: 24px;
 }
 .card-action {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 8px;
   font-size: 14px; font-weight: 500;
   color: var(--text-primary);
-  transition: gap 0.2s ease;
+  transition: gap 0.4s ease, color 0.4s ease;
 }
-.card:hover .card-action { gap: 10px; }
-.card-action-arrow {
-  transition: transform 0.2s ease;
-}
-.card:hover .card-action-arrow {
-  transform: translateX(4px);
-}
+.card:hover .card-action { gap: 12px; color: var(--accent); }
+.card-action-arrow { transition: transform 0.4s ease; }
+.card:hover .card-action-arrow { transform: translateX(4px); }
 
-.glow-orb {
-  position: fixed; width: 300px; height: 300px; border-radius: 50%;
-  filter: blur(120px); opacity: 0.08; pointer-events: none; z-index: 0;
-}
-.glow-orb-1 { top: -100px; left: -100px; background: var(--accent); }
-.glow-orb-2 { bottom: -100px; right: -100px; background: var(--purple); }
+/* 大卡片（心理测评）占据更多空间，颜色与其他卡片统一 */
+.card.featured { grid-column: span 8; background: var(--surface); border-color: var(--border); }
+.card.featured .card-index { color: var(--text-quaternary); }
+.card.featured .card-icon-wrap { background: var(--surface-soft); border-color: var(--border); }
+.card.featured .card-icon-wrap svg { color: var(--text-primary); }
+.card.featured .card-title { color: var(--text-primary); }
+.card.featured .card-desc { color: var(--text-secondary); }
+.card.featured .card-action { color: var(--text-primary); }
+.card.featured:hover { border-color: var(--border-strong); }
+.card.featured::before { background: linear-gradient(90deg, var(--accent), transparent); }
 
-.footer {
-  max-width: 640px; margin: 0 auto; padding: 24px 20px 40px;
-  text-align: center; font-size: 12px; color: var(--text-quaternary);
+/* ============================================================
+   每日之问
+   ============================================================ */
+.daily-section {
+  max-width: 1200px; margin: 0 auto;
+  padding: var(--space-section) 24px;
   border-top: 1px solid var(--border);
 }
+.daily-question {
+  max-width: 720px; margin: 0 auto;
+  padding: 48px 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.daily-question::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent 70%);
+}
+.dq-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.dq-icon { font-size: 18px; }
+.dq-label { font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; }
+.dq-q { font-family: var(--font-serif); font-size: 22px; color: var(--text-primary); font-weight: 500; line-height: 1.6; margin-bottom: 24px; }
+.dq-opts { display: flex; flex-direction: column; gap: 10px; }
+.dq-opt {
+  padding: 14px 20px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-secondary); font-size: 15px; cursor: pointer;
+  transition: all 0.3s; text-align: left; font-family: inherit;
+}
+.dq-opt:hover { border-color: var(--accent); color: var(--text-primary); background: var(--accent-soft); }
+.dq-opt.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--text-primary); font-weight: 500; }
+.dq-bar-wrap { height: 6px; border-radius: 3px; background: var(--surface-muted); margin-top: 4px; overflow: hidden; }
+.dq-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), #a98e4e); transition: width 0.5s ease; }
+
+.dq-res { margin-top: 20px; }
+.dq-res-t { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.05em; }
+.dq-res-i { margin-bottom: 12px; }
+.dq-res-l { font-size: 14px; color: var(--text-primary); margin-bottom: 4px; display: flex; justify-content: space-between; }
+.dq-total { font-size: 12px; color: var(--text-quaternary); text-align: center; margin-top: 16px; }
+
+/* ============================================================
+   页脚
+   ============================================================ */
+.footer {
+  max-width: 1200px; margin: 0 auto;
+  padding: 48px 24px 64px;
+  text-align: center; font-size: 13px; color: var(--text-tertiary);
+  border-top: 1px solid var(--border);
+}
+.footer .footer-brand {
+  font-family: var(--font-serif); font-size: 18px; color: var(--text-primary);
+  margin-bottom: 8px; letter-spacing: 0.05em;
+}
 .footer a.feedback-link {
-  color: var(--text-tertiary); text-decoration: none; font-size: 12px;
-  transition: color .2s; cursor: pointer;
+  color: var(--text-secondary); text-decoration: none; font-size: 13px;
+  transition: color .3s; cursor: pointer;
 }
 .footer a.feedback-link:hover { color: var(--accent); }
 
-.bell-btn {
-  background: transparent; border: 1px solid var(--border);
-  padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer;
-  color: var(--text-tertiary); transition: all .2s; position: relative;
-  display: flex; align-items: center;
-}
-.bell-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
-.bell-badge {
-  position: absolute; top: -4px; right: -6px; min-width: 16px; height: 16px;
-  border-radius: 8px; background: var(--accent); color: #fff; font-size: 10px;
-  line-height: 16px; text-align: center; padding: 0 4px; font-weight: 600;
-}
+/* ============================================================
+   通知面板
+   ============================================================ */
 .notif-panel {
-  position: fixed; top: 60px; right: max(16px, calc((100vw - 640px) / 2 + 16px));
-  width: 340px; max-width: calc(100vw - 32px); max-height: 70vh;
-  background: var(--surface-raised); border: 1px solid var(--border);
+  position: fixed; top: 64px; right: max(16px, calc((100vw - 1200px) / 2 + 16px));
+  width: 360px; max-width: calc(100vw - 32px); max-height: 70vh;
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); z-index: 200;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
   overflow: hidden; display: flex; flex-direction: column;
 }
 .notif-header {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
 }
 .notif-title { font-size: 15px; font-weight: 600; }
 .notif-close {
@@ -244,93 +483,117 @@ html, body {
 }
 .notif-list { overflow-y: auto; flex: 1; padding: 8px 0; }
 .notif-item {
-  padding: 12px 18px; border-bottom: 1px solid var(--border);
-  cursor: pointer; transition: background .15s; display: flex; gap: 10px; align-items: flex-start;
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .2s; display: flex; gap: 10px; align-items: flex-start;
 }
-.notif-item:hover { background: var(--surface); }
-.notif-item.unread { border-left: 2px solid var(--accent); padding-left: 16px; }
+.notif-item:hover { background: var(--surface-soft); }
+.notif-item.unread { border-left: 2px solid var(--accent); padding-left: 18px; }
 .notif-item .notif-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 6px; }
 .notif-item .notif-body { flex: 1; font-size: 13px; line-height: 1.5; }
 .notif-item .notif-body .notif-text { color: var(--text-primary); }
 .notif-item .notif-body .notif-time { color: var(--text-quaternary); font-size: 11px; margin-top: 2px; }
 .notif-empty { text-align: center; padding: 32px 16px; color: var(--text-quaternary); font-size: 13px; }
 
+/* ============================================================
+   反馈弹窗
+   ============================================================ */
 .feedback-modal {
-  position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.78);
+  position: fixed; inset: 0; z-index: 300; background: rgba(26,26,26,0.5);
   display: flex; align-items: center; justify-content: center;
   backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
 }
 .feedback-modal:not(.active) { display: none; }
 .feedback-card {
-  width: 380px; max-width: calc(100vw - 40px); background: var(--surface-raised);
-  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px;
+  width: 400px; max-width: calc(100vw - 40px); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px;
+  box-shadow: var(--shadow-hover);
 }
-.feedback-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.feedback-card h3 { font-family: var(--font-serif); font-size: 18px; font-weight: 600; margin-bottom: 20px; }
 .feedback-card select,
 .feedback-card textarea {
-  width: 100%; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 12px; color: var(--text-primary);
-  font-size: 14px; font-family: inherit; margin-bottom: 12px; outline: none;
+  width: 100%; background: var(--surface-soft); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; color: var(--text-primary);
+  font-size: 14px; font-family: inherit; margin-bottom: 14px; outline: none;
+  transition: border-color .3s;
 }
 .feedback-card select:focus,
 .feedback-card textarea:focus { border-color: var(--accent); }
-.feedback-card textarea { min-height: 100px; resize: vertical; }
+.feedback-card textarea { min-height: 110px; resize: vertical; }
 .feedback-card .feedback-btns { display: flex; gap: 10px; justify-content: flex-end; }
 .feedback-card button {
-  padding: 8px 20px; border-radius: var(--radius-sm); font-size: 14px;
-  border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
-  cursor: pointer; font-family: inherit;
+  padding: 10px 22px; border-radius: var(--radius-sm); font-size: 14px;
+  border: 1px solid var(--border-strong); background: transparent; color: var(--text-secondary);
+  cursor: pointer; font-family: inherit; transition: all .3s;
 }
-.feedback-card button.submit { background: var(--accent); border-color: var(--accent); color: #fff; }
+.feedback-card button:hover { border-color: var(--text-primary); color: var(--text-primary); }
+.feedback-card button.submit { background: var(--text-primary); border-color: var(--text-primary); color: #F9F8F6; }
+.feedback-card button.submit:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .feedback-card button.submit:disabled { opacity: .5; cursor: not-allowed; }
 .feedback-toast {
   position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  z-index: 400; padding: 10px 24px; border-radius: 20px; font-size: 13px;
-  background: var(--surface-raised); color: var(--text-primary); border: 1px solid var(--border);
+  z-index: 400; padding: 12px 28px; border-radius: 20px; font-size: 13px;
+  background: var(--text-primary); color: #F9F8F6; border: 1px solid var(--border);
   opacity: 0; transition: opacity .3s; pointer-events: none;
 }
 .feedback-toast.show { opacity: 1; }
 
-/* ── Daily Question ── */
-.daily-question {
-  margin: 0 auto 24px; max-width: 640px; padding: 20px 24px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); position: relative; overflow: hidden;
+/* ============================================================
+   动画
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.daily-question::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--purple));
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-.dq-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-.dq-icon { font-size: 18px; }
-.dq-label { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .5px; }
-.dq-q { font-size: 16px; color: var(--text-primary); font-weight: 500; line-height: 1.6; margin-bottom: 16px; }
-.dq-opts { display: flex; flex-direction: column; gap: 8px; }
-.dq-opt { padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all .2s; text-align: left; font-family: inherit; }
-.dq-opt:hover { border-color: var(--accent); color: var(--text-primary); background: rgba(223,182,178,.08); }
-.dq-opt.sel { border-color: var(--accent); background: rgba(223,182,178,.15); color: var(--accent); font-weight: 500; }
-.dq-bar-wrap { height: 6px; border-radius: 3px; background: var(--border); margin-top: 4px; overflow: hidden; }
-.dq-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--purple)); transition: width .5s ease; }
-.dq-res { margin-top: 16px; }
-.dq-res-t { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
-.dq-res-i { margin-bottom: 10px; }
-.dq-res-l { font-size: 13px; color: var(--text-primary); margin-bottom: 4px; display: flex; justify-content: space-between; }
-.dq-total { font-size: 12px; color: var(--text-quaternary); text-align: center; margin-top: 12px; }
+@keyframes mirrorSweep {
+  0%, 100% { transform: translateX(-60%); }
+  50% { transform: translateX(60%); }
+}
 
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 64px; }
+  .hero-visual { min-height: 320px; order: -1; }
+  .magazine-cover { width: 240px; }
+  .card { grid-column: span 6; }
+  .card.featured { grid-column: span 12; }
+}
+@media (max-width: 640px) {
+  .magazine-cover { width: 220px; }
+}
+@media (max-width: 640px) {
+  .header-inner { padding: 14px 18px; }
+  .brand-name { font-size: 18px; }
+  .hero { padding: 56px 20px 40px; }
+  .hero-title { font-size: 40px; }
+  .hero-sub { padding-left: 16px; }
+  .btn-primary, .btn-ghost { height: 52px; width: 100%; justify-content: center; }
+  .hero-cta { flex-direction: column; align-items: stretch; gap: 12px; }
+  .explore, .daily-section { padding: var(--space-section-mobile) 20px; }
+  .explore-head { margin-bottom: 40px; }
+  .cards { grid-template-columns: 1fr; gap: 16px; }
+  .card, .card.featured { grid-column: span 1; padding: 28px 24px 24px; }
+  .card-title { font-size: 20px; }
+  .daily-question { padding: 32px 24px; }
+  .daily-question .dq-q { font-size: 19px; }
+  .footer { padding: 40px 20px 48px; }
+}
 </style>
 </head>
 <body>
 
-<div class="glow-orb glow-orb-1"></div>
-<div class="glow-orb glow-orb-2"></div>
-
 <div class="header">
   <div class="header-inner">
-    <div class="brand">
-      <div class="brand-dot"></div>
-      <div class="brand-name">心镜 · 社交</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <a class="brand" href="/">
+      <div class="brand-mark"><div class="mirror-dot"></div></div>
+      <div class="brand-name">心镜<span class="en">SOULMIRROR</span></div>
+    </a>
+    <div class="header-actions">
       <button id="bellBtn" class="bell-btn" onclick="toggleNotifications()" title="通知">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         <span id="bellBadge" class="bell-badge" style="display:none">0</span>
@@ -348,104 +611,110 @@ html, body {
   <div id="notifList" class="notif-list"></div>
 </div>
 
-<div class="hero">
-  <div class="hero-tag">一次测评，看清你爱人的方式</div>
+<!-- ===== Hero 区域 ===== -->
+<section class="hero">
+  <div class="hero-copy">
+    <div class="hero-tag">SOULMIRROR · 心镜</div>
+    <h1 class="hero-title">发现真实的<span class="gold">自己</span><span class="line2">看见内心深处的你</span></h1>
+    <p class="hero-sub">AI 帮助你探索人格、关系与潜意识。在这里，每一次回答，都是一次与自己的深度对话。</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="location.href='/match.html'">
+        <span>开始探索</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </button>
+      <button class="btn-ghost" onclick="location.href='/tarot.html'">塔罗 · 今日指引</button>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="mirror-orb mirror-orb-1"></div>
+    <div class="mirror-orb mirror-orb-2"></div>
+    <figure class="magazine-cover" id="magazineCover">
+      <img class="magazine-cover-img" src="/Liminal.jpg" alt="心镜 · SoulMirror 杂志封面" loading="lazy">
+      <figcaption class="mirror-caption">YOUR INNER MIRROR</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ===== 探索入口区 ===== -->
+
+<section class="explore">
+  <div class="explore-head">
+    <div>
+      <div class="explore-label">Explore</div>
+      <h2 class="explore-title">开始你的探索</h2>
+    </div>
+    <p class="explore-sub">从认识自己开始，走向更深的连接。</p>
+  </div>
+
+  <div class="cards">
+    <div class="card featured" onclick="location.href='/match.html'">
+      <div class="card-index">01</div>
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+      </div>
+      <div class="card-title">心理测评匹配 <span class="card-badge hot">核心</span></div>
+      <div class="card-desc">融合依恋理论、大五人格、五种爱之语与价值观匹配的 41 道系统化问卷，答题过程不透露测量维度，以保证结果真实性。</div>
+      <div class="card-action">开始测评 <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+    </div>
+
+    <div class="card" onclick="location.href='/tarot.html'">
+      <div class="card-index">02</div>
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+      </div>
+      <div class="card-title">塔罗牌 <span class="card-badge new">新功能</span></div>
+      <div class="card-desc">抽一张牌，AI 结合塔罗象征与你的心理测评结果，给出一份深度解读。</div>
+      <div class="card-action">开始抽牌 <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+    </div>
+
+    <div class="card" onclick="location.href='/chat.html'">
+      <div class="card-index">03</div>
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+      </div>
+      <div class="card-title">私信 & 匹配对话</div>
+      <div class="card-desc">和心动的人一对一聊天，或开启随机匹配，遇见有缘人。</div>
+      <div class="card-action">查看消息 <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+    </div>
+
+    <div class="card" onclick="location.href='/campus.html'">
+      <div class="card-index">04</div>
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </div>
+      <div class="card-title">校园表白墙 <span class="card-badge new">新功能</span></div>
+      <div class="card-desc">匿名表白、树洞倾诉、校园捞人。每一个心动瞬间都值得被记录。</div>
+      <div class="card-action">进入表白墙 <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+    </div>
+
+    <div class="card" onclick="location.href='/qa.html'">
+      <div class="card-index">05</div>
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </div>
+      <div class="card-title">匿名提问箱 <span class="card-badge new">新功能</span></div>
+      <div class="card-desc">向感兴趣的人匿名提问，也可以回答来自陌生人的好奇。一种更温柔的相识方式。</div>
+      <div class="card-action">进入提问箱 <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 每日之问 ===== -->
+<section class="daily-section">
   <div class="daily-question" id="dq" style="display:none">
-    <div class="dq-header"><span class="dq-icon">⚡</span><span class="dq-label">今日之问</span></div>
+    <div class="dq-header"><span class="dq-icon">✦</span><span class="dq-label">今日之问</span></div>
     <div class="dq-q" id="dqQ"></div>
     <div class="dq-opts" id="dqOpts"></div>
     <div class="dq-res" id="dqRes" style="display:none"></div>
   </div>
+</section>
 
-  <h1 class="hero-title"><span>找到真正</span><span class="line2">契合的聊天伙伴</span></h1>
-  <p class="hero-sub">匿名、安全、基于科学心理测评的校园社交空间。在这里，你可以遇见懂你的人。</p>
-</div>
-
-<div class="cards">
-
-  <div class="card" onclick="location.href='/match.html'">
-    <div class="card-index">01</div>
-    <div class="card-icon-wrap match">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-    </div>
-    <div class="card-title">
-      心理测评匹配
-      <span class="card-badge hot">核心</span>
-    </div>
-    <div class="card-desc">融合依恋理论、大五人格、五种爱之语与价值观匹配的 41 道系统化问卷，答题过程不透露测量维度，以保证结果真实性。</div>
-    <div class="card-action">
-      开始测评
-      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </div>
-  </div>
-
-  <div class="card" onclick="location.href='/chat.html'">
-    <div class="card-index">02</div>
-    <div class="card-icon-wrap chat">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-    </div>
-    <div class="card-title">私信 & 匹配对话</div>
-    <div class="card-desc">和心动的人一对一聊天，或开启随机匹配，遇见有缘人。</div>
-    <div class="card-action">
-      查看消息
-      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </div>
-  </div>
-
-  <div class="card" onclick="location.href='/campus.html'">
-    <div class="card-index">03</div>
-    <div class="card-icon-wrap wall">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-    </div>
-    <div class="card-title">
-      校园表白墙
-      <span class="card-badge new">新功能</span>
-    </div>
-    <div class="card-desc">匿名表白、树洞倾诉、校园捞人。在这里说出平时不敢说的话，每一个心动瞬间都值得被记录。</div>
-    <div class="card-action">
-      进入表白墙
-      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </div>
-  </div>
-
-  <div class="card" onclick="location.href='/qa.html'">
-    <div class="card-index">04</div>
-    <div class="card-icon-wrap ask">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-    </div>
-    <div class="card-title">
-      匿名提问箱
-      <span class="card-badge new">新功能</span>
-    </div>
-    <div class="card-desc">向感兴趣的人匿名提问，也可以回答来自陌生人的好奇。一种更温柔的相识方式。</div>
-    <div class="card-action">
-      进入提问箱
-      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </div>
-
-  </div>
-  <div class="card" onclick="location.href='/tarot.html'">
-    <div class="card-index">05</div>
-    <div class="card-icon-wrap ask">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
-    </div>
-    <div class="card-title">
-      塔罗牌
-      <span class="card-badge new">新功能</span>
-    </div>
-    <div class="card-desc">抽一张牌，AI 结合塔罗象征与你的心理测评结果，给出一份深度解读。</div>
-    <div class="card-action">
-      开始抽牌
-      <svg class="card-action-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </div>
-  </div>
-
-</div>
-
-<div class="footer">
-  心镜 · 社交 · 专为中学生和大学生打造的匿名社交空间<br>
+<!-- ===== 页脚 ===== -->
+<footer class="footer">
+  <div class="footer-brand">心镜 · SoulMirror</div>
+  一个探索自我人格、情感关系与潜意识倾向的 AI 心理探索空间<br>
   <a class="feedback-link" onclick="showFeedback()" style="margin-top:6px;display:inline-block;">意见反馈</a>
-</div>
+</footer>
 
 <div class="feedback-modal" id="feedbackModal">
   <div class="feedback-card">
@@ -548,14 +817,12 @@ window.markNotifRead = function(id, targetType, targetId) {
     body: JSON.stringify({ id: id })
   }).then(function(){
     loadNotifications();
-    // 如果是聊天消息，跳转到聊天页
     if (targetType === 'chat') {
       location.href = '/chat.html';
     }
   }).catch(function(){});
 };
 
-// Poll for notifications when logged in
 var notifPollTimer;
 function startNotifPoll() {
   if (Auth.isLoggedIn()) {
@@ -614,7 +881,6 @@ window.showFeedback = showFeedback;
 window.closeFeedback = closeFeedback;
 window.toggleNotifications = toggleNotifications;
 
-// Close notification panel when clicking outside
 document.addEventListener('click', function(e) {
   var panel = document.getElementById('notifPanel');
   if (panel.style.display !== 'none') {
@@ -626,42 +892,60 @@ document.addEventListener('click', function(e) {
 
 window.toggleNotifications = toggleNotifications;
 
+// ====== 杂志封面：移动端滑动进入视口后恢复彩色 ======
+// 仅对不支持 hover 的设备启用 Intersection Observer，桌面端由 CSS :hover 处理
+var cover = document.getElementById('magazineCover');
+if (cover && window.matchMedia && window.matchMedia('(hover: none)').matches) {
+  if ('IntersectionObserver' in window) {
+    var coverObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (entry.isIntersecting) {
+          cover.classList.add('is-visible');
+          coverObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.35 });
+    coverObserver.observe(cover);
+  } else {
+    // 降级：不支持 IO 时直接显示彩色
+    cover.classList.add('is-visible');
+  }
+}
+
 })();
 
-
-  var dqOptionsCache = {};
-  // ── Daily Question ──
-  (function(){
-    fetch('/api/daily-question',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
-      if(!d.question) return;
-      var el=document.getElementById('dq');el.style.display='block';
-      var q={A:d.question.option_a,B:d.question.option_b,C:d.question.option_c,D:d.question.option_d};
-      dqOptionsCache=q;
-      document.getElementById('dqQ').textContent=d.question.question;
-      if(d.userAnswer){showDQR(d,q);}else{
-        document.getElementById('dqOpts').innerHTML=Object.keys(q).map(function(k){
-          return '<button class="dq-opt" onclick="ansDQ(this,\''+k+'\')">'+he(q[k])+'</button>';
-        }).join('');
-      }
-    }).catch(function(){});
-  })();
-  function he(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-  async function ansDQ(b,k){
-    if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
-    b.classList.add('sel');
-    try{
-      var r=await fetch('/api/daily-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option:k}),credentials:'same-origin'});
-      var d=await r.json();
-      if(d.ok){ showDQR(d,dqOptionsCache); }
-      else { b.classList.remove('sel'); toast(d.error||'提交失败，请重试'); }
-    }catch(e){ b.classList.remove('sel'); toast('网络错误，请重试'); }
-  }
-  function showDQR(d,o){
-    document.getElementById('dqOpts').style.display='none';
-    var rs=document.getElementById('dqRes');rs.style.display='block';
-    var h='<div class="dq-res-t">全站投票结果（'+d.total+' 人参与）</div>';
-    Object.keys(d.distribution).forEach(function(k){var it=d.distribution[k];h+='<div class="dq-res-i"><div class="dq-res-l"><span>'+he(o[k]||k)+'</span><span>'+it.pct+'%</span></div><div class="dq-bar-wrap"><div class="dq-bar-fill" style="width:'+it.pct+'%"></div></div></div>';});
-    h+='<div class="dq-total">已投票</div>';rs.innerHTML=h;
-  }
+var dqOptionsCache = {};
+(function(){
+  fetch('/api/daily-question',{credentials:'same-origin'}).then(function(r){return r.json()}).then(function(d){
+    if(!d.question) return;
+    var el=document.getElementById('dq');el.style.display='block';
+    var q={A:d.question.option_a,B:d.question.option_b,C:d.question.option_c,D:d.question.option_d};
+    dqOptionsCache=q;
+    document.getElementById('dqQ').textContent=d.question.question;
+    if(d.userAnswer){showDQR(d,q);}else{
+      document.getElementById('dqOpts').innerHTML=Object.keys(q).map(function(k){
+        return '<button class="dq-opt" onclick="ansDQ(this,\''+k+'\')">'+he(q[k])+'</button>';
+      }).join('');
+    }
+  }).catch(function(){});
+})();
+function he(s){return String(s||'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');}
+async function ansDQ(b,k){
+  if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
+  b.classList.add('sel');
+  try{
+    var r=await fetch('/api/daily-question',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({option:k}),credentials:'same-origin'});
+    var d=await r.json();
+    if(d.ok){ showDQR(d,dqOptionsCache); }
+    else { b.classList.remove('sel'); toast(d.error||'提交失败，请重试'); }
+  }catch(e){ b.classList.remove('sel'); toast('网络错误，请重试'); }
+}
+function showDQR(d,o){
+  document.getElementById('dqOpts').style.display='none';
+  var rs=document.getElementById('dqRes');rs.style.display='block';
+  var h='<div class="dq-res-t">全站投票结果（'+d.total+' 人参与）</div>';
+  Object.keys(d.distribution).forEach(function(k){var it=d.distribution[k];h+='<div class="dq-res-i"><div class="dq-res-l"><span>'+he(o[k]||k)+'</span><span>'+it.pct+'%</span></div><div class="dq-bar-wrap"><div class="dq-bar-fill" style="width:'+it.pct+'%"></div></div></div>';});
+  h+='<div class="dq-total">已投票</div>';rs.innerHTML=h;
+}
 </script>
 </html>
