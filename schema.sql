@@ -362,3 +362,43 @@ CREATE TABLE IF NOT EXISTS tarot_readings (
     FOREIGN KEY (linked_quiz_id) REFERENCES quiz_results(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_tarot_user ON tarot_readings(user_id, created_at DESC);
+
+-- ── 个人动态（朋友圈/小红书式图文） ──
+-- 2026-08-01 新增：moments / moment_likes / moment_comments
+
+CREATE TABLE IF NOT EXISTS moments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    content TEXT DEFAULT '',
+    images_json TEXT DEFAULT '[]',
+    likes_count INTEGER DEFAULT 0,
+    comments_count INTEGER DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS moment_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    moment_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    UNIQUE(moment_id, user_id),
+    FOREIGN KEY (moment_id) REFERENCES moments(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS moment_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    moment_id INTEGER NOT NULL,
+    user_id INTEGER,
+    content TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (moment_id) REFERENCES moments(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_moments_user ON moments(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_moment_likes_moment ON moment_likes(moment_id);
+CREATE INDEX IF NOT EXISTS idx_moment_comments_moment ON moment_comments(moment_id, created_at);
+
+
