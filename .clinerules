@@ -1,0 +1,193 @@
+# SoulMirror（心镜）项目规则
+
+本文件定义本项目（SoulMirror / 心镜社交独立站）的开发规范。所有代码修改必须遵守以下规则。
+
+---
+
+## 1. 项目技术栈说明
+
+- **平台**：Cloudflare Pages（静态站点 + Functions 边缘函数）
+- **后端运行时**：Cloudflare Pages Functions（Workers 兼容，ES Module 语法）
+- **数据库**：Cloudflare D1（SQLite 兼容），绑定名 `DB`，通过 `env.DB` 访问
+- **AI 服务**：阿里云 DashScope（通义千问），模型默认 `qwen-plus`，统一封装在 `functions/_lib/ai.js`
+- **前端**：原生 HTML + 原生 JavaScript（无框架、无构建工具、无 npm 依赖）
+- **配置**：`wrangler.toml`（项目名 `soulmirror`，含 cron 触发器 `*/5 * * * *`）
+- **自定义域名**：`soulmirror.cc.cd`（Pages 默认域名会 301 重定向到该域名）
+- **Git 远程**：`https://github.com/Hatefishjustin/social.git`
+
+### 目录结构约定
+- `functions/`：所有后端函数（每个文件对应一个路由）
+- `functions/_lib/`：共享工具（`auth.js` 认证、`ai.js` AI 调用）
+- `functions/api/`：业务 API 子路由
+- `functions/auth/`、`functions/chat/`、`functions/quiz/`、`functions/tarot/`、`functions/askbox/`、`functions/admin/`：按业务模块划分
+- 根目录 `*.html`：前端页面
+- `schema.sql`：数据库完整 Schema（唯一权威定义）
+
+---
+
+## 2. 文件修改规范
+
+- **只改必要文件**：优先做最小改动，不重构无关代码。
+- **保持原生技术栈**：禁止引入框架、构建工具、npm 包或新的依赖。
+- **函数文件命名**：一个文件对应一个路由，文件名即路径（如 `functions/api/profile.js` → `/api/profile`）。
+- **函数导出约定**：使用 `export const onRequestGet / onRequestPost / onRequestPut / onRequestOptions` 等命名导出。
+- **共享逻辑复用**：认证必须用 `functions/_lib/auth.js` 的 `getCurrentUser`；AI 调用必须用 `functions/_lib/ai.js` 的 `callDashScope`。禁止在业务函数中重复实现。
+- **JSON 响应**：统一使用 `jsonResponse(body, status)` 辅助函数，设置 `Content-Type: application/json; charset=utf-8`。
+- **CORS**：需要跨域时，在响应头加入 `Access-Control-Allow-Origin: *` 等，并提供 `onRequestOptions` 处理预检请求。
+- **输入校验**：所有用户输入必须校验长度、类型，非法输入返回 400；未登录返回 401。
+- **注释**：新函数文件顶部需写清路径、方法、用途的注释（参考现有文件风格）。
+- **时间戳**：统一使用毫秒级 Unix 时间戳（`Date.now()`），与现有 `created_at` 字段一致。
+
+---
+
+## 3. Git 规范
+
+- **提交信息**：使用简洁、描述性的中文或英文提交信息，说明改动内容。
+- **不提交敏感信息**：禁止提交 API Key、密钥、Cookie 等敏感数据（如 `DASHSCOPE_API_KEY` 只能作为环境变量/Secret 配置，不得硬编码）。
+- **不提交本地临时文件**：避免提交 `.env`、本地缓存、日志等无关文件。
+- **保持仓库整洁**：提交前确认不包含无关的调试代码或临时改动。
+- **提交流程**：开发完成后，若修改属于安全范围，执行 `git status` → `git add` → `git commit`；**不要自动 push**，等待负责人确认后再 push。
+- **禁止自动提交**：若改动涉及以下任一情况，禁止自动提交（`git add` / `git commit` / `git push`），必须等待负责人明确确认：
+  - 数据库迁移
+  - 生产环境
+  - 权限系统
+
+
+---
+
+## 4. Cloudflare Pages / Workers 兼容要求
+
+- **ES Module 语法**：函数必须使用 ES Module（`import` / `export`），不使用 CommonJS（`require`）。
+- **无 Node 专属 API**：禁止使用 Node.js 专属模块（如 `fs`、`path`、`http`），只能使用 Web 标准 API（`fetch`、`Request`、`Response`、`URL`、`AbortController` 等）。
+- **环境变量**：通过 `env` 参数读取（如 `env.DB`、`env.DASHSCOPE_API_KEY`），禁止硬编码。
+- **绑定**：数据库绑定名为 `DB`（D1）。新增绑定需同步更新 `wrangler.toml`。
+- **Cron 触发器**：`wrangler.toml` 中已有 `*/5 * * * *` 定时任务，新增定时任务需在 `wrangler.toml` 的 `[triggers]` 中声明。
+- **重定向**：`functions/_middleware.js` 负责将 Pages 默认域名 301 重定向到自定义域名，修改时避免造成重定向死循环。
+- **兼容性日期**：`wrangler.toml` 中 `compatibility_date` 为 `2026-07-27`，使用 API 时需确保在该日期下可用。
+
+---
+
+## 5. 数据库修改规则
+
+- **唯一权威**：`schema.sql` 是数据库结构的唯一权威定义，所有表结构变更必须先更新 `schema.sql`。
+- **建表语句**：使用 `CREATE TABLE IF NOT EXISTS`，保证幂等可重复执行。
+- **外键**：涉及关联的表必须声明 `FOREIGN KEY`，并合理使用 `ON DELETE CASCADE` / `ON DELETE SET NULL`。
+- **索引**：为常用查询字段（如 `user_id`、`created_at`、`status`）建立索引，命名遵循 `idx_表名_字段` 约定。
+- **时间戳**：`created_at` 等时间字段统一为毫秒级整数（`unixepoch() * 1000` 或 `Date.now()`）。
+- **线上同步**：修改线上 D1 需通过 `wrangler d1 execute` 或 Cloudflare Dashboard 执行，并在 `schema.sql` 中同步记录迁移说明（参考 `reports` 表 `reported_id` 的迁移注释示例）。
+- **禁止破坏性操作**：禁止直接删除线上表或清空数据；结构变更需考虑向后兼容。
+- **SQL 参数化**：所有 SQL 必须使用 `?` 占位符 + `.bind()` 参数化查询，禁止字符串拼接 SQL（防注入）。
+
+---
+
+## 6. API 修改规则
+
+- **路由即文件**：新增 API 时，在 `functions/` 下按业务模块创建对应文件，文件名即路径。
+- **认证**：需要登录的接口必须调用 `getCurrentUser(request, env)` 校验会话，未登录返回 401。
+- **权限**：管理员接口必须校验 `isAdmin`（参考 `functions/admin-activity.js`）。
+- **方法语义**：GET 用于查询、POST 用于创建/提交、PUT 用于更新，遵循现有约定。
+- **错误处理**：统一返回结构化 JSON，如 `{ error: 'xxx' }` 或 `{ message: 'xxx' }`，并配合正确的 HTTP 状态码（400/401/404/502 等）。
+- **AI 接口**：调用 AI 的接口必须通过 `callDashScope`，并处理 `result.ok === false` 的失败分支；AI 返回 JSON 时需做解析兜底（参考 `functions/analyze.js`）。
+- **分页**：列表接口使用 `page` / `pageSize` 参数，返回 `pagination` 对象（参考 `functions/admin-activity.js`）。
+- **前端调用**：前端通过 `fetch` 调用对应路径，保持路径与函数文件一致。
+
+---
+
+## 7. 部署流程规范
+
+每次开发任务完成后，必须明确报告：
+
+【代码状态】
+- 本地修改是否完成
+- 修改文件列表
+
+【Git状态】
+- 是否 commit
+- commit hash
+
+【GitHub状态】
+- 是否 push
+
+【Cloudflare状态】
+- 是否触发部署
+- 部署结果
+
+【数据库状态】
+- 是否修改 D1
+- 是否执行迁移
+
+禁止混淆：本地代码 ≠ GitHub代码 ≠ 线上代码
+
+---
+
+## 8. 测试环境规范
+
+测试前必须明确：
+
+环境：
+- 本地开发环境
+- Cloudflare Preview环境
+- 生产环境
+
+数据库：
+- 本地D1
+- 线上D1
+
+禁止：未确认环境情况下执行测试。
+
+所有测试报告必须注明：测试环境 + 时间 + 数据来源。
+
+---
+
+## 9. 数据库操作规范
+
+任何数据库操作，必须说明：
+
+1. 修改哪张表
+2. 为什么修改
+3. 是否影响已有数据
+4. 是否需要迁移
+5. 回滚方式
+
+禁止：
+- 直接删除字段
+- 修改生产数据
+- 未备份执行危险SQL
+
+---
+
+## 10. AI协作规则
+
+项目负责人负责：
+- 产品方向
+- 功能确认
+- 最终上线决定
+
+AI负责：
+- 分析
+- 开发
+- 测试
+- 文档
+
+不要让负责人参与低价值操作。例如：
+- 不需要询问文件在哪里
+- 不需要询问明显技术细节
+- 不需要重复确认无风险操作
+
+只有高风险操作才请求确认。
+
+---
+
+## 11. 禁止事项
+
+
+- ❌ 禁止引入任何框架、构建工具、npm 依赖或新的技术栈。
+- ❌ 禁止在代码中硬编码 API Key、密钥、Token 等敏感信息。
+- ❌ 禁止使用 Node.js 专属 API（`require`、`fs`、`path` 等）。
+- ❌ 禁止字符串拼接 SQL（必须参数化查询）。
+- ❌ 禁止直接修改线上数据库结构而不更新 `schema.sql`。
+- ❌ 禁止破坏性数据库操作（删表、清空数据）。
+- ❌ 禁止在业务函数中重复实现认证或 AI 调用逻辑（必须复用 `_lib`）。
+- ❌ 禁止修改 `functions/_middleware.js` 造成重定向死循环。
+- ❌ 禁止提交无关文件、临时文件或调试代码。
+- ❌ 禁止在未确认需求的情况下大规模重构或重写现有功能。
