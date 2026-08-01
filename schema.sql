@@ -215,11 +215,21 @@ CREATE TABLE IF NOT EXISTS content_violations (
     action TEXT NOT NULL,
     admin_id INTEGER,
     admin_note TEXT,
+    -- 敏感词自动关闭（functions/chat/send.js）使用的字段
+    match_id INTEGER,
+    sender_id INTEGER,
+    content TEXT,
+    violation_type TEXT,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (report_id) REFERENCES reports(id),
     FOREIGN KEY (admin_id) REFERENCES users(id)
 );
+
+-- 迁移: 为 content_violations 表补充敏感词自动关闭所需字段（S-01）
+-- 新增: match_id, sender_id, content, violation_type
+-- 线上 D1 执行: wrangler d1 execute <DB_NAME> --file docs/migrations/2026-08-01-S01-content-violations.sql
+-- 或通过 Cloudflare Dashboard / API 执行
 
 -- ── 我想认识TA (contact_request) ──
 
@@ -331,6 +341,7 @@ CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is
 CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_content_violations_user ON content_violations(user_id);
+CREATE INDEX IF NOT EXISTS idx_content_violations_match ON content_violations(match_id);
 CREATE INDEX IF NOT EXISTS idx_contact_requests_post ON contact_requests(post_id);
 CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_page_views_page ON page_views(page, created_at DESC);
