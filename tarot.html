@@ -63,6 +63,12 @@ button { font-family:inherit; }
 }
 .back-btn:active { transform:scale(0.88); }
 .header-title { font-size:16px; font-weight:700; letter-spacing:-0.01em; }
+.header-brand { display:flex; align-items:center; gap:8px; }
+.header-brand-icon { width:22px; height:22px; object-fit:contain; filter:drop-shadow(0 0 8px var(--accent-glow)); }
+.header-brand-text { height:14px; width:auto; object-fit:contain; opacity:.9; }
+.header-title-wrap { display:flex; flex-direction:column; line-height:1.1; }
+.header-title-sub { font-size:10px; color:var(--text-tertiary); font-weight:400; letter-spacing:.5px; }
+
 
 .main { max-width:640px; margin:0 auto; padding:24px 18px calc(60px + var(--safe-bottom)); position:relative; z-index:1; }
 
@@ -108,6 +114,31 @@ button { font-family:inherit; }
 /* ── Shuffle ritual stage ── */
 .shuffle-stage { display:none; margin-top:8px; text-align:center; transition:opacity .5s ease; }
 .shuffle-stage.fade-out { opacity:0; pointer-events:none; }
+
+/* ── 仪式感增强：能量粒子 + 呼吸引导 ── */
+.ritual-particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:0; }
+.ritual-particle {
+  position:absolute; bottom:-10px; border-radius:50%;
+  background:radial-gradient(circle, rgba(223,182,178,0.9), rgba(223,182,178,0) 70%);
+  opacity:0; animation:particleRise linear infinite;
+}
+@keyframes particleRise {
+  0%{ transform:translateY(0) translateX(0) scale(1); opacity:0; }
+  10%{ opacity:var(--po,.6); }
+  90%{ opacity:var(--po,.6); }
+  100%{ transform:translateY(-420px) translateX(var(--px,20px)) scale(.4); opacity:0; }
+}
+.breath-guide {
+  font-size:12px; color:var(--text-tertiary); letter-spacing:2px; margin-top:6px;
+  opacity:0; transition:opacity .6s ease; min-height:18px;
+}
+.breath-guide.show { opacity:1; }
+.breath-guide .breath-dot {
+  display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent);
+  margin-right:8px; vertical-align:middle; animation:breathPulse 4s ease-in-out infinite;
+}
+@keyframes breathPulse { 0%,100%{ transform:scale(1); opacity:.5; } 50%{ transform:scale(1.6); opacity:1; } }
+
 .shuffle-ritual {
   position:relative; width:150px; height:230px; margin:30px auto 26px;
   perspective:1200px; cursor:pointer; user-select:none; -webkit-user-select:none;
@@ -227,7 +258,18 @@ button { font-family:inherit; }
   box-shadow:0 14px 34px -10px rgba(0,0,0,0.55);
 }
 .tarot-card.selecting .tarot-card-inner { box-shadow:0 30px 60px -8px rgba(0,0,0,0.7), 0 0 40px rgba(223,182,178,0.18); }
+.tarot-card.selecting::after {
+  content:''; position:absolute; inset:-14px; border-radius:var(--radius-md); pointer-events:none;
+  border:1.5px solid rgba(223,182,178,0.5);
+  animation:energyBurst .8s var(--ease) forwards;
+}
+@keyframes energyBurst {
+  0%{ transform:scale(.6); opacity:0; }
+  40%{ opacity:1; }
+  100%{ transform:scale(1.5); opacity:0; }
+}
 .tarot-card.flipped .tarot-card-inner { transform:rotateY(180deg); }
+
 
 .flip-glare {
   position:absolute; inset:0; z-index:9; pointer-events:none; border-radius:var(--radius-md); overflow:hidden;
@@ -347,7 +389,14 @@ button { font-family:inherit; }
     <button class="back-btn" onclick="location.href='/index.html'">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
     </button>
-    <div class="header-title">塔罗牌</div>
+    <div class="header-brand">
+      <img class="header-brand-icon" src="/logo-icon.png" alt="SoulMirror">
+      <div class="header-title-wrap">
+        <div class="header-title">塔罗牌</div>
+        <div class="header-title-sub">心镜 · 塔罗</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -385,6 +434,7 @@ button { font-family:inherit; }
   </div>
 
   <div class="shuffle-stage" id="shuffleStage">
+    <div class="ritual-particles" id="ritualParticles"></div>
     <div class="shuffle-ritual" id="shuffleRitual" onclick="doShuffle()">
       <div class="shuffle-deck" id="shuffleDeck">
         <div class="shuffle-card">
@@ -397,8 +447,10 @@ button { font-family:inherit; }
     </div>
     <div class="shuffle-progress" id="shuffleProgress"></div>
     <div class="shuffle-hint" id="shuffleHint"></div>
+    <div class="breath-guide" id="breathGuide"><span class="breath-dot"></span>深呼吸，静下心来，让意念与牌连接</div>
     <div class="shuffle-sub">轻触卡牌，集中意念，默念你的问题，让牌与你建立连接</div>
   </div>
+
 
   <div class="draw-stage" id="drawStage">
     <div class="tray" id="tray"></div>
@@ -601,8 +653,36 @@ function startDraw(){
 
   renderShuffleProgress();
   document.getElementById('shuffleHint').textContent = SHUFFLE_HINTS[0];
+
+  // 仪式感：生成能量粒子 + 呼吸引导
+  spawnRitualParticles();
+  var bg = document.getElementById('breathGuide');
+  bg.classList.add('show');
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+/* ── 仪式感：能量粒子生成 ── */
+function spawnRitualParticles(){
+  var wrap = document.getElementById('ritualParticles');
+  wrap.innerHTML = '';
+  var count = 14;
+  for (var i = 0; i < count; i++) {
+    var p = document.createElement('div');
+    p.className = 'ritual-particle';
+    var size = 3 + Math.random() * 5;
+    var left = Math.random() * 100;
+    var dur = 4 + Math.random() * 5;
+    var delay = Math.random() * 6;
+    var drift = (Math.random() * 60 - 30).toFixed(1);
+    var opacity = 0.25 + Math.random() * 0.45;
+    p.style.cssText = 'left:'+left+'%;width:'+size+'px;height:'+size+'px;' +
+      'animation-duration:'+dur+'s;animation-delay:'+delay+'s;' +
+      '--px:'+drift+'px;--po:'+opacity.toFixed(2)+';';
+    wrap.appendChild(p);
+  }
+}
+
 
 function renderShuffleProgress(){
   var wrap = document.getElementById('shuffleProgress');
@@ -857,8 +937,11 @@ function resetDraw(){
   shuffleStage.style.display = 'none';
   var ritual = document.getElementById('shuffleRitual');
   ritual.classList.remove('done', 'glow', 'shaking', 'spinning');
+  document.getElementById('breathGuide').classList.remove('show');
+  document.getElementById('ritualParticles').innerHTML = '';
 
   document.getElementById('drawStage').classList.remove('fade-out');
+
   document.getElementById('drawStage').style.display = 'none';
   document.getElementById('aiBlock').classList.remove('show');
   document.getElementById('aiError').classList.remove('show');
