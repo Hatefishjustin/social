@@ -40,7 +40,10 @@ body {
   display:flex; align-items:center; padding:4px;
 }
 .back-btn:hover { color: var(--text-primary); }
-.brand { font-size:15px; font-weight:600; color:var(--text-secondary); }
+.brand { display:flex; align-items:center; gap:8px; }
+.brand-icon { width:24px; height:24px; object-fit:contain; filter:drop-shadow(0 0 6px var(--accent-glow)); }
+.brand-text { height:15px; width:auto; object-fit:contain; }
+
 .topbar-right { display:flex; align-items:center; gap:8px; }
 
 .main {
@@ -234,7 +237,8 @@ body {
 
 <div class="topbar">
   <button class="back-btn" id="topBackBtn" onclick="goBack()">&larr;</button>
-  <span class="brand">心镜 · 对话</span>
+  <span class="brand"><img class="brand-icon" src="/logo-icon.png" alt="SoulMirror"><img class="brand-text" src="/logo-text.png" alt="SoulMirror"></span>
+
   <div class="topbar-right">
     <button class="auth-login-btn" style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;padding:6px 14px;font-size:13px;color:var(--text-secondary);cursor:pointer;display:none;" onclick="Auth.showLoginModal()">登录</button>
   </div>

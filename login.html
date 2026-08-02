@@ -38,10 +38,10 @@ body{
   padding:36px 28px;
   text-align:center;
 }
-.logo{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:24px}
-.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent-glow);animation:blink 2.8s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.logo-text{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px}
+.logo-icon{width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 0 10px var(--accent-glow))}
+.logo-text-img{height:20px;width:auto;object-fit:contain}
+
 .title{font-size:22px;font-weight:700;margin-bottom:6px}
 .desc{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
 .input-wrap{text-align:left;margin-bottom:16px}
@@ -66,7 +66,11 @@ body{
 </head>
 <body>
 <div class="container">
-  <div class="logo"><div class="logo-dot"></div><span class="logo-text">心镜 · 社交</span></div>
+  <div class="logo">
+    <img class="logo-icon" src="/logo-icon.png" alt="SoulMirror">
+    <img class="logo-text-img" src="/logo-text.png" alt="SoulMirror">
+  </div>
+
   <div class="title">登录</div>
   <div class="desc">输入邮箱，我们会发送一个魔法链接，点击即可登录。无需密码。</div>
 

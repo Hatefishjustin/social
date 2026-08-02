@@ -53,10 +53,10 @@ body {
 .app-container { width:100%; max-width:var(--max-width); padding:0 24px; display:flex; flex-direction:column; min-height:100vh; min-height:100dvh; }
 .nav-header { position:sticky; top:0; z-index:50; background:linear-gradient(var(--bg) 80%, transparent); padding:18px 0 12px; }
 .nav-brand { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
-.nav-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 12px var(--accent-glow); animation:pulse 2.5s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.5; transform:scale(.8); } }
-.nav-title { font-size:20px; font-weight:700; letter-spacing:-0.3px; color:var(--text-primary); cursor:pointer; }
-.nav-title:hover { opacity:.8; }
+.nav-icon { width:30px; height:30px; object-fit:contain; filter:drop-shadow(0 0 8px var(--accent-glow)); }
+.nav-text { height:18px; width:auto; object-fit:contain; cursor:pointer; }
+.nav-text:hover { opacity:.8; }
+
 .nav-subtitle { font-size:12px; color:var(--text-tertiary); font-weight:400; letter-spacing:.5px; }
 .tag-filter-row { display:flex; gap:8px; margin-top:12px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding:2px 0; flex-shrink:0; }
 .tag-filter-row::-webkit-scrollbar { display:none; }
@@ -169,13 +169,14 @@ body {
 <div class="app-container">
   <header class="nav-header">
     <div class="nav-brand">
-      <div class="nav-dot"></div>
+      <img class="nav-icon" src="/logo-icon.png" alt="SoulMirror">
       <div>
-        <div class="nav-title" onclick="location.href='/'">心镜 · 社交</div>
+        <img class="nav-text" src="/logo-text.png" alt="SoulMirror" onclick="location.href='/'">
         <div class="nav-subtitle">校园表白墙</div>
       </div>
       <button class="auth-login-btn" style="margin-left:auto">登录</button>
     </div>
+
     <div class="tag-filter-row" id="tagFilterRow">
       <button class="tag-chip active" data-tag="">最新</button>
       <button class="tag-chip feature-chip" data-tag="">精选</button>

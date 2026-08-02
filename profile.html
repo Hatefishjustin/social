@@ -30,6 +30,8 @@
     padding: 12px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px;
   }
   .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+  .header-brand { display: flex; align-items: center; gap: 8px; }
+  .header-brand-icon { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(223,182,178,.35)); }
   .back-btn { color: var(--muted); text-decoration: none; font-size: 14px; transition: color .2s; }
   .back-btn:hover { color: var(--accent); }
 
@@ -130,7 +132,10 @@
 <body>
 <div class="container">
   <div class="header">
-    <h1>个人设置</h1>
+    <div class="header-brand">
+      <img class="header-brand-icon" src="/logo-icon.png" alt="SoulMirror">
+      <h1>个人设置</h1>
+    </div>
     <a href="/" class="back-btn">返回</a>
   </div>
 
