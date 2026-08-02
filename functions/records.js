@@ -1,0 +1,104 @@
+/**
+ * Cloudflare Pages Function
+ * 路径: /records
+ * 方法: GET / POST
+ *
+ * 心理测评"我的历程"接口：
+ * - GET /records            → 返回当前用户的测评记录列表 { records: [{ id, headline, createdAt }] }
+ * - GET /records?id=X       → 返回单条记录详情 { data: { scores, answers } }
+ * - POST /records           → 保存一条测评记录 { headline, data: { scores, answers } }
+ *
+ * 数据存储于 quiz_results 表（id, user_id, created_at, headline, scores_json, answers_json）。
+ */
+import { getCurrentUser } from './_lib/auth.js';
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
+// 保存测评记录（POST）
+export const onRequestPost = async ({ request, env }) => {
+  const user = await getCurrentUser(request, env);
+  if (!user) return jsonResponse({ message: '请先登录' }, 401);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return jsonResponse({ message: '请求格式错误' }, 400);
+  }
+
+  const headline = (body && body.headline) ? String(body.headline).trim() : '';
+  // 兼容两种提交格式：{ headline, data: { scores, answers } } 或 { headline, scores, answers }
+  const data = (body && body.data) || body || {};
+  const scores = data.scores;
+  const answers = data.answers || {};
+
+  if (!headline || !scores) {
+    return jsonResponse({ message: '缺少 headline 或 scores' }, 400);
+  }
+
+  const result = await env.DB.prepare(
+    `INSERT INTO quiz_results (user_id, created_at, headline, scores_json, answers_json)
+     VALUES (?, ?, ?, ?, ?)`
+  ).bind(
+    user.id,
+    Date.now(),
+    headline.slice(0, 100),
+    JSON.stringify(scores),
+    JSON.stringify(answers)
+  ).run();
+
+  return jsonResponse({ ok: true, id: result.meta.last_row_id });
+};
+
+// 查询测评记录（GET）
+export const onRequestGet = async ({ request, env }) => {
+  const user = await getCurrentUser(request, env);
+  if (!user) return jsonResponse({ message: '请先登录' }, 401);
+
+  const url = new URL(request.url);
+  const idParam = url.searchParams.get('id');
+
+  // 单条详情：/records?id=X
+  if (idParam) {
+    const id = Number(idParam);
+    if (!Number.isInteger(id) || id <= 0) {
+      return jsonResponse({ message: '无效的记录 ID' }, 400);
+    }
+    const row = await env.DB.prepare(
+      `SELECT id, user_id, scores_json, answers_json
+       FROM quiz_results WHERE id = ? AND user_id = ?`
+    ).bind(id, user.id).first();
+
+    if (!row) return jsonResponse({ message: '记录不存在' }, 404);
+
+    let scores = {};
+    let answers = {};
+    try { scores = JSON.parse(row.scores_json); } catch (e) {}
+    try { answers = JSON.parse(row.answers_json || '{}'); } catch (e) {}
+
+    return jsonResponse({ data: { scores, answers } });
+  }
+
+  // 记录列表：/records
+  const rows = await env.DB.prepare(
+    `SELECT id, created_at, headline
+     FROM quiz_results WHERE user_id = ?
+     ORDER BY created_at DESC LIMIT 50`
+  ).bind(user.id).all();
+
+  const records = (rows.results || []).map(r => ({
+    id: r.id,
+    headline: r.headline,
+    createdAt: r.created_at,
+  }));
+
+  return jsonResponse({ records });
+};
