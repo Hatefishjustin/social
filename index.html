@@ -50,14 +50,18 @@ html, body {
 .brand {
   display: flex; align-items: center; gap: 10px;
 }
-.brand-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
-  animation: pulse 2s ease-in-out infinite;
+.brand-icon {
+  width: 30px; height: 30px; object-fit: contain;
+  filter: drop-shadow(0 0 8px var(--accent-glow));
 }
+.brand-text {
+  height: 18px; width: auto; object-fit: contain;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
 @keyframes heroReveal {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -66,13 +70,7 @@ html, body {
 .hero-title span { animation: heroReveal 0.8s 0.15s cubic-bezier(0.22, 0.61, 0.36, 1) both; display:inline-block; }
 .hero-sub { animation: heroReveal 0.8s 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 .hero-tag { animation: heroReveal 0.6s 0.05s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-  50% { opacity: 0.6; transform: scale(0.85); }
-}
-.brand-name {
-  font-size: 18px; font-weight: 600; letter-spacing: -0.3px;
-  background: linear-gradient(135deg, #fff 0%, #aaa 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
+
 .login-btn {
   font-size: 13px; color: var(--text-tertiary);
   background: transparent; border: 1px solid var(--border);
@@ -327,9 +325,10 @@ html, body {
 <div class="header">
   <div class="header-inner">
     <div class="brand">
-      <div class="brand-dot"></div>
-      <div class="brand-name">心镜 · 社交</div>
+      <img class="brand-icon" src="/logo-icon.png" alt="SoulMirror">
+      <img class="brand-text" src="/logo-text.png" alt="SoulMirror">
     </div>
+
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="bellBtn" class="bell-btn" onclick="toggleNotifications()" title="通知">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
