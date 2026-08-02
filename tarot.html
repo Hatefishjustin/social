@@ -105,9 +105,78 @@ button { font-family:inherit; }
 .draw-btn:active { transform:scale(0.97); }
 .draw-btn:disabled { opacity:0.5; }
 
+/* ── Shuffle ritual stage ── */
+.shuffle-stage { display:none; margin-top:8px; text-align:center; transition:opacity .5s ease; }
+.shuffle-stage.fade-out { opacity:0; pointer-events:none; }
+.shuffle-ritual {
+  position:relative; width:150px; height:230px; margin:30px auto 26px;
+  perspective:1200px; cursor:pointer; user-select:none; -webkit-user-select:none;
+}
+.shuffle-ritual:active { cursor:grabbing; }
+.shuffle-deck {
+  position:absolute; inset:0; transform-style:preserve-3d;
+  transition:transform .5s var(--ease);
+}
+.shuffle-ritual.shaking .shuffle-deck { animation:shuffleShake .5s ease-in-out; }
+@keyframes shuffleShake {
+  0%{ transform:rotateY(0) rotateZ(0) translateY(0); }
+  25%{ transform:rotateY(-14deg) rotateZ(-3deg) translateY(-6px); }
+  50%{ transform:rotateY(10deg) rotateZ(2deg) translateY(2px); }
+  75%{ transform:rotateY(-8deg) rotateZ(-2deg) translateY(-4px); }
+  100%{ transform:rotateY(0) rotateZ(0) translateY(0); }
+}
+.shuffle-ritual.spinning .shuffle-deck { animation:shuffleSpin .9s var(--ease); }
+@keyframes shuffleSpin {
+  0%{ transform:rotateY(0) rotateZ(0); }
+  100%{ transform:rotateY(360deg) rotateZ(6deg); }
+}
+.shuffle-card {
+  position:absolute; inset:0; border-radius:var(--radius-md);
+  background:
+    radial-gradient(circle at 50% 44%, rgba(223,182,178,0.14) 0%, transparent 55%),
+    repeating-conic-gradient(from 0deg at 50% 44%, rgba(223,182,178,0.06) 0deg 7.5deg, transparent 7.5deg 15deg),
+    linear-gradient(160deg, #2a1e33, #170e1f 72%);
+  border:1px solid var(--border-strong);
+  box-shadow:0 14px 34px -10px rgba(0,0,0,0.6);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.shuffle-card::after {
+  content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.05) 50%, transparent 58%);
+  background-size:260% 260%; animation:tcbShimmer 5s ease-in-out infinite;
+}
+.shuffle-card .tcb-frame { inset:10px; }
+.shuffle-card .tcb-glyph { font-size:34px; }
+.shuffle-ritual.glow .shuffle-card {
+  box-shadow:0 0 60px rgba(223,182,178,0.35), 0 14px 34px -10px rgba(0,0,0,0.6);
+}
+.shuffle-ritual.glow .shuffle-card::before {
+  content:''; position:absolute; inset:-2px; border-radius:inherit;
+  border:1px solid rgba(223,182,178,0.5); animation:glowPulse 1.2s ease-in-out infinite;
+}
+@keyframes glowPulse { 0%,100%{opacity:.3; transform:scale(1);} 50%{opacity:.9; transform:scale(1.03);} }
+.shuffle-ritual.done .shuffle-deck { animation:shuffleDone .8s var(--ease) forwards; }
+@keyframes shuffleDone {
+  0%{ transform:rotateY(0) rotateZ(0) translateY(0); opacity:1; }
+  100%{ transform:rotateY(720deg) rotateZ(0) translateY(-40px); opacity:0; }
+}
+.shuffle-ritual.done { pointer-events:none; }
+
+.shuffle-progress { display:flex; justify-content:center; gap:8px; margin:0 auto 22px; }
+.shuffle-dot {
+  width:8px; height:8px; border-radius:50%; background:var(--border-strong);
+  transition:all .3s var(--ease);
+}
+.shuffle-dot.lit { background:var(--accent); box-shadow:0 0 10px rgba(223,182,178,0.6); transform:scale(1.2); }
+
+.shuffle-hint { font-size:13px; color:var(--text-secondary); font-weight:500; min-height:20px; transition:opacity .2s; }
+.shuffle-sub { font-size:11.5px; color:var(--text-tertiary); margin-top:8px; line-height:1.6; }
+
 /* ── Draw stage: real spread-and-pick interaction ── */
 .draw-stage { display:none; margin-top:8px; transition:opacity .5s ease; }
 .draw-stage.fade-out { opacity:0; pointer-events:none; }
+
 
 /* Tray：已选中的牌集中展示在上方 */
 .tray { display:flex; gap:10px; justify-content:center; margin-bottom:22px; }
@@ -214,11 +283,11 @@ button { font-family:inherit; }
 .tarot-card-front.reversed .tcf-name,
 .tarot-card-front.reversed .tcf-symbol { transform:rotate(180deg); }
 .tcf-badge { font-size:8.5px; font-weight:700; letter-spacing:0.1em; color:var(--text-quaternary); text-transform:uppercase; }
-.tcf-symbol { font-size:22px; margin:auto 0; color:var(--accent); }
-.tcf-name { font-size:13.5px; font-weight:800; letter-spacing:-0.01em; line-height:1.25; }
-.tcf-dir { font-size:9.5px; color:var(--text-tertiary); margin-top:3px; }
+.tcf-symbol { margin:auto 0; color:var(--accent); display:flex; align-items:center; justify-content:center; }
+.card-art { width:60px; height:60px; display:block; filter:drop-shadow(0 0 5px rgba(223,182,178,0.28)); }
 
 .reveal-hint { text-align:center; font-size:12.5px; color:var(--text-tertiary); margin-top:20px; }
+
 
 /* ── AI analysis rendering (shares visual language with quiz's AI section) ── */
 .ai-block { display:none; margin-top:28px; }
@@ -315,12 +384,29 @@ button { font-family:inherit; }
     </a>
   </div>
 
+  <div class="shuffle-stage" id="shuffleStage">
+    <div class="shuffle-ritual" id="shuffleRitual" onclick="doShuffle()">
+      <div class="shuffle-deck" id="shuffleDeck">
+        <div class="shuffle-card">
+          <div class="tcb-frame"></div>
+          <span class="tcb-corner tl">+</span><span class="tcb-corner tr">+</span>
+          <span class="tcb-corner bl">+</span><span class="tcb-corner br">+</span>
+          <div class="tcb-glyph">✦</div>
+        </div>
+      </div>
+    </div>
+    <div class="shuffle-progress" id="shuffleProgress"></div>
+    <div class="shuffle-hint" id="shuffleHint"></div>
+    <div class="shuffle-sub">轻触卡牌，集中意念，默念你的问题，让牌与你建立连接</div>
+  </div>
+
   <div class="draw-stage" id="drawStage">
     <div class="tray" id="tray"></div>
     <div class="stage-hint" id="stageHint"></div>
     <div class="deck-scroller" id="deckSpread"></div>
     <div class="reveal-hint">从这副牌中，凭直觉挑选</div>
   </div>
+
 
   <div class="ai-loading" id="aiLoading">
     <div class="ai-spinner"></div>
@@ -370,6 +456,103 @@ var SINGLE_HINTS = ['凭直觉，选一张属于此刻的牌', ''];
 var THREE_HINTS = ['选择代表「过去」的牌', '选择代表「现在」的牌', '选择代表「未来」的牌', ''];
 var SPREAD_SIZE = 24;
 
+var SHUFFLE_TARGET = 5;
+var SHUFFLE_HINTS = [
+  '轻触卡牌，开始洗牌',
+  '继续洗牌，感受牌的能量',
+  '牌在回应你的意念…',
+  '再洗一次，让答案浮现',
+  '牌已准备好，最后一次',
+  '牌已与你建立连接'
+];
+
+/* ── 卡面精致 SVG 图标系统 ── */
+var ART_STROKE = '#dfb6b2';
+var ART_FILL = 'rgba(223,182,178,0.22)';
+var ART_FILL_SOFT = 'rgba(223,182,178,0.12)';
+
+// 小阿卡纳四元素符号（居中于 40,40）
+var ELEMENT_GLYPH = {
+  swords: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M0 -26 L5 6 L0 26 L-5 6 Z" fill="'+ART_FILL+'" stroke-width="1.6"/>' +
+    '<line x1="0" y1="-26" x2="0" y2="26" stroke-width="0.8" opacity="0.7"/>' +
+    '<line x1="-12" y1="6" x2="12" y2="6" stroke-width="2.2"/>' +
+    '<rect x="-3" y="26" width="6" height="10" rx="1.5" fill="'+ART_FILL_SOFT+'" stroke-width="1.2"/>' +
+    '<circle cx="0" cy="40" r="3" fill="'+ART_STROKE+'" stroke="none"/>' +
+  '</g>',
+  cups: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M-14 -14 C-14 -2 -8 4 0 6 C8 4 14 -2 14 -14 Z" fill="'+ART_FILL+'" stroke-width="1.6"/>' +
+    '<ellipse cx="0" cy="-14" rx="14" ry="4" stroke-width="1.6"/>' +
+    '<path d="M0 6 L0 16 M-8 16 L8 16 M-5 22 L5 22" stroke-width="1.6"/>' +
+    '<path d="M-8 -6 Q-4 -9 0 -6 Q4 -3 8 -6" stroke-width="1" opacity="0.7"/>' +
+  '</g>',
+  wands: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-linecap="round" stroke-linejoin="round">' +
+    '<line x1="0" y1="-26" x2="0" y2="26" stroke-width="3"/>' +
+    '<path d="M0 -26 C-6 -20 -6 -14 0 -12 C6 -14 6 -20 0 -26 Z" fill="'+ART_FILL+'" stroke-width="1.2"/>' +
+    '<path d="M0 -8 C-8 -6 -10 0 -8 6" stroke-width="1.4"/>' +
+    '<path d="M0 2 C8 4 10 10 8 16" stroke-width="1.4"/>' +
+    '<path d="M-8 6 C-12 4 -14 8 -10 10 C-8 10 -7 8 -8 6 Z" fill="'+ART_FILL_SOFT+'" stroke-width="1"/>' +
+    '<path d="M8 16 C12 14 14 18 10 20 C8 20 7 18 8 16 Z" fill="'+ART_FILL_SOFT+'" stroke-width="1"/>' +
+  '</g>',
+  pentacles: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-linecap="round" stroke-linejoin="round">' +
+    '<circle r="16" fill="'+ART_FILL+'" stroke-width="1.8"/>' +
+    '<circle r="12" stroke-width="0.8" opacity="0.5"/>' +
+    '<path d="M0 -9 L2.6 -3 L9 -3 L4 1.5 L5.8 8 L0 4.5 L-5.8 8 L-4 1.5 L-9 -3 L-2.6 -3 Z" fill="'+ART_STROKE+'" stroke="none"/>' +
+  '</g>'
+};
+
+// 大阿卡纳 22 张符号（居中于 40,40）
+var MAJOR_ART = {
+  m00: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-linecap="round" stroke-linejoin="round"><circle r="10" fill="'+ART_FILL+'" stroke-width="1.6"/><g stroke-width="1.4"><line x1="0" y1="-16" x2="0" y2="-20"/><line x1="0" y1="16" x2="0" y2="20"/><line x1="-16" y1="0" x2="-20" y2="0"/><line x1="16" y1="0" x2="20" y2="0"/><line x1="-11" y1="-11" x2="-14" y2="-14"/><line x1="11" y1="-11" x2="14" y2="-14"/><line x1="-11" y1="11" x2="-14" y2="14"/><line x1="11" y1="11" x2="14" y2="14"/></g></g>',
+  m01: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-12 -8 C-4 -16 4 -16 12 -8 C20 0 20 8 12 8 C4 16 -4 16 -12 8 C-20 0 -20 -8 -12 -8 Z"/></g>',
+  m02: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M6 -14 A16 16 0 1 0 6 14 A12 12 0 1 1 6 -14 Z" fill="'+ART_FILL+'"/></g>',
+  m03: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><circle cx="0" cy="-8" r="8"/><line x1="0" y1="0" x2="0" y2="14"/><line x1="-6" y1="10" x2="6" y2="10"/></g>',
+  m04: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-14 6 C-14 -6 -6 -12 0 -12 C6 -12 14 -6 14 6"/><path d="M0 -12 C-2 -16 -6 -18 -8 -16 C-6 -14 -4 -14 -2 -12"/><path d="M0 -12 C2 -16 6 -18 8 -16 C6 -14 4 -14 2 -12"/></g>',
+  m05: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><circle cx="-6" cy="-6" r="8"/><line x1="2" y1="2" x2="14" y2="14"/><line x1="10" y1="10" x2="16" y2="16"/><line x1="12" y1="8" x2="18" y2="14"/></g>',
+  m06: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2"><circle cx="-7" cy="0" r="9"/><circle cx="7" cy="0" r="9"/></g>',
+  m07: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2"><circle r="12"/><line x1="-12" y1="0" x2="12" y2="0"/><line x1="0" y1="-12" x2="0" y2="12"/><line x1="-8" y1="-8" x2="8" y2="8"/><line x1="8" y1="-8" x2="-8" y2="8"/></g>',
+  m08: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><circle cx="0" cy="2" r="10"/><g stroke-width="1.6"><line x1="-10" y1="-6" x2="-16" y2="-12"/><line x1="-8" y1="-10" x2="-12" y2="-16"/><line x1="10" y1="-6" x2="16" y2="-12"/><line x1="8" y1="-10" x2="12" y2="-16"/></g></g>',
+  m09: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-8 -14 L8 -14 L6 6 L-6 6 Z"/><line x1="0" y1="-14" x2="0" y2="-18"/><path d="M-6 6 L6 6 L4 12 L-4 12 Z"/><line x1="0" y1="12" x2="0" y2="16"/></g>',
+  m10: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2"><circle r="13"/><circle r="4"/><line x1="-13" y1="0" x2="13" y2="0"/><line x1="0" y1="-13" x2="0" y2="13"/></g>',
+  m11: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><line x1="0" y1="-16" x2="0" y2="16"/><line x1="-14" y1="-8" x2="14" y2="-8"/><line x1="-14" y1="-8" x2="-14" y2="-2"/><line x1="14" y1="-8" x2="14" y2="-2"/><path d="M-18 -2 L-10 -2 L-14 4 Z"/><path d="M10 -2 L18 -2 L14 4 Z"/></g>',
+  m12: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M0 -14 L14 10 L-14 10 Z"/><line x1="0" y1="-14" x2="0" y2="-18"/></g>',
+  m13: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-14 10 A16 16 0 0 1 14 -6 L14 10 Z"/><line x1="14" y1="-6" x2="14" y2="10"/></g>',
+  m14: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-10 -12 L-4 -12 L-4 0 L-10 0 Z"/><path d="M4 -12 L10 -12 L10 0 L4 0 Z"/><path d="M-4 -6 C0 -2 0 -2 4 -6" stroke-width="1.6"/></g>',
+  m15: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linejoin="round"><path d="M0 -12 L3.5 -4 L12 -4 L5 1.5 L7.5 10 L0 5 L-7.5 10 L-5 1.5 L-12 -4 L-3.5 -4 Z" fill="'+ART_FILL+'"/></g>',
+  m16: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-8 14 L-8 -6 L0 -14 L8 -6 L8 14 Z"/><line x1="-8" y1="-6" x2="8" y2="-6"/><line x1="0" y1="-14" x2="0" y2="-18"/></g>',
+  m17: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linejoin="round"><path d="M0 -14 L3.5 -5 L13 -5 L5.5 1 L8 10 L0 4.5 L-8 10 L-5.5 1 L-13 -5 L-3.5 -5 Z" fill="'+ART_FILL+'"/></g>',
+  m18: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2"><circle r="12"/><path d="M-4 -12 A10 10 0 0 0 -4 12 A8 8 0 0 1 -4 -12 Z" fill="'+ART_FILL+'"/></g>',
+  m19: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><circle r="9" fill="'+ART_FILL+'"/><g stroke-width="1.6"><line x1="0" y1="-14" x2="0" y2="-18"/><line x1="0" y1="14" x2="0" y2="18"/><line x1="-14" y1="0" x2="-18" y2="0"/><line x1="14" y1="0" x2="18" y2="0"/><line x1="-10" y1="-10" x2="-13" y2="-13"/><line x1="10" y1="-10" x2="13" y2="-13"/><line x1="-10" y1="10" x2="-13" y2="13"/><line x1="10" y1="10" x2="13" y2="13"/></g></g>',
+  m20: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2" stroke-linecap="round"><path d="M-14 4 L14 -8 L14 4 Z"/><line x1="14" y1="-8" x2="14" y2="4"/><line x1="-14" y1="4" x2="-14" y2="8"/></g>',
+  m21: '<g transform="translate(40 40)" fill="none" stroke="'+ART_STROKE+'" stroke-width="2"><ellipse rx="14" ry="9" transform="rotate(30)"/><ellipse rx="14" ry="9" transform="rotate(-30)"/></g>'
+};
+
+var ROMAN = ['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+
+function cardArt(c){
+  var inner;
+  if (c.arcana === 'major') {
+    inner = MAJOR_ART[c.id] || '';
+  } else {
+    inner = ELEMENT_GLYPH[c.arcana] || '';
+  }
+  // 小阿卡纳数字牌：顶部罗马数字
+  var num = '';
+  if (c.arcana !== 'major') {
+    var n = parseInt(String(c.id).slice(1), 10);
+    if (n >= 1 && n <= 10) {
+      num = '<text x="40" y="15" text-anchor="middle" font-size="10" font-weight="700" fill="'+ART_STROKE+'" opacity="0.85">'+ROMAN[n]+'</text>';
+    }
+  }
+  return '<svg viewBox="0 0 80 80" class="card-art">' +
+    '<circle cx="40" cy="40" r="30" fill="rgba(223,182,178,0.06)" stroke="rgba(223,182,178,0.22)" stroke-width="1"/>' +
+    '<circle cx="40" cy="40" r="24" fill="none" stroke="rgba(223,182,178,0.12)" stroke-width="0.8" stroke-dasharray="2 3"/>' +
+    inner + num +
+  '</svg>';
+}
+
+
+
 function selectSpread(type){
   state.spreadType = type;
   document.getElementById('spreadSingle').classList.toggle('active', type==='single');
@@ -390,12 +573,13 @@ function buildSpread(){
   var deck = shuffleDeck();
   state.spreadCards = deck.slice(0, SPREAD_SIZE).map(function(c){
     return {
-      id: c.id, name: c.name, name_en: c.name_en,
+      id: c.id, name: c.name, name_en: c.name_en, arcana: c.arcana,
       reversed: Math.random() < 0.5,
       upright_keywords: c.upright, reversed_keywords: c.reversed,
       used: false
     };
   });
+
   state.pickedCount = 0;
   state.drawnCards = [];
 }
@@ -406,14 +590,76 @@ function startDraw(){
   buildSpread();
   document.getElementById('setupScreen').style.display = 'none';
 
-  var stage = document.getElementById('drawStage');
-  stage.classList.remove('fade-out');
-  stage.style.display = 'block';
+  // 进入洗牌仪式
+  state.shuffleCount = 0;
+  var shuffleStage = document.getElementById('shuffleStage');
+  shuffleStage.classList.remove('fade-out');
+  shuffleStage.style.display = 'block';
 
-  renderTray();
-  renderSpread();
-  updateHint();
+  var ritual = document.getElementById('shuffleRitual');
+  ritual.classList.remove('done', 'glow', 'shaking', 'spinning');
+
+  renderShuffleProgress();
+  document.getElementById('shuffleHint').textContent = SHUFFLE_HINTS[0];
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function renderShuffleProgress(){
+  var wrap = document.getElementById('shuffleProgress');
+  var html = '';
+  for (var i = 0; i < SHUFFLE_TARGET; i++) {
+    html += '<div class="shuffle-dot' + (i < state.shuffleCount ? ' lit' : '') + '"></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+function doShuffle(){
+  if (state.shuffleCount >= SHUFFLE_TARGET) return;
+
+  var ritual = document.getElementById('shuffleRitual');
+  if (ritual.classList.contains('done')) return;
+
+  state.shuffleCount++;
+  renderShuffleProgress();
+
+  // 动画反馈
+  ritual.classList.remove('shaking', 'spinning');
+  void ritual.offsetWidth; // 强制重排以重启动画
+  if (state.shuffleCount >= SHUFFLE_TARGET) {
+    ritual.classList.add('spinning');
+  } else {
+    ritual.classList.add('shaking');
+  }
+  if (state.shuffleCount >= 2) ritual.classList.add('glow');
+
+  document.getElementById('shuffleHint').textContent = SHUFFLE_HINTS[Math.min(state.shuffleCount, SHUFFLE_HINTS.length - 1)];
+
+  if (state.shuffleCount >= SHUFFLE_TARGET) {
+    setTimeout(finishShuffle, 900);
+  }
+}
+
+function finishShuffle(){
+  var ritual = document.getElementById('shuffleRitual');
+  ritual.classList.add('done');
+
+  var shuffleStage = document.getElementById('shuffleStage');
+  shuffleStage.classList.add('fade-out');
+
+  setTimeout(function(){
+    shuffleStage.style.display = 'none';
+
+    var stage = document.getElementById('drawStage');
+    stage.classList.remove('fade-out');
+    stage.style.display = 'block';
+
+    renderTray();
+    renderSpread();
+    updateHint();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 500);
+}
+
 
 function renderTray(){
   var tray = document.getElementById('tray');
@@ -443,9 +689,10 @@ function renderSpread(){
           '</div>' +
           '<div class="tarot-card-face tarot-card-front' + (c.reversed?' reversed':'') + '">' +
             '<div class="tcf-badge">CARD</div>' +
-            '<div class="tcf-symbol">✦</div>' +
+            '<div class="tcf-symbol">'+cardArt(c)+'</div>' +
             '<div class="tcf-name">'+esc(c.name)+'</div>' +
             '<div class="tcf-dir">'+(c.reversed?'逆位':'正位')+'</div>' +
+
           '</div>' +
         '</div>' +
         '<div class="flip-glare"></div>' +
@@ -602,6 +849,15 @@ function resetDraw(){
   state.spreadCards = [];
   state.pickedCount = 0;
   state.drawnCards = [];
+  state.shuffleCount = 0;
+
+  // 重置洗牌仪式状态
+  var shuffleStage = document.getElementById('shuffleStage');
+  shuffleStage.classList.remove('fade-out');
+  shuffleStage.style.display = 'none';
+  var ritual = document.getElementById('shuffleRitual');
+  ritual.classList.remove('done', 'glow', 'shaking', 'spinning');
+
   document.getElementById('drawStage').classList.remove('fade-out');
   document.getElementById('drawStage').style.display = 'none';
   document.getElementById('aiBlock').classList.remove('show');
@@ -610,6 +866,7 @@ function resetDraw(){
   document.getElementById('setupScreen').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 
 if (!Auth.isLoggedIn()) {
   Auth.onAuthChange(function(){});
