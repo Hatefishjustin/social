@@ -89,6 +89,10 @@ body{
 .profile-share-btn:hover{background:var(--accent2);box-shadow:0 6px 20px var(--accent-glow)}
 .profile-share-btn:active{transform:scale(.94)}
 .profile-share-btn svg{width:14px;height:14px}
+.profile-import-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--radius-pill);background:rgba(255,255,255,.06);color:var(--text2);border:1px solid var(--border);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .25s var(--ease);position:relative;z-index:1}
+.profile-import-btn:hover{background:rgba(255,255,255,.1);border-color:var(--border-strong);color:var(--text)}
+.profile-import-btn:active{transform:scale(.94)}
+.profile-import-btn svg{width:14px;height:14px}
 
 /* ── Tab ── */
 .tabs{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)}
@@ -245,10 +249,16 @@ body{
           <div class="profile-sub">有什么想问的？</div>
         </div>
       </div>
-      <button class="profile-share-btn" id="btnShareProfile">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        分享提问箱
-      </button>
+      <div style="display:flex;gap:8px;position:relative;z-index:1">
+        <button class="profile-import-btn" id="btnImportMemory" onclick="location.href='/memory.html'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          导入记忆
+        </button>
+        <button class="profile-share-btn" id="btnShareProfile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          分享提问箱
+        </button>
+      </div>
     </div>
     <div class="profile-stats">
       <div class="profile-stat">
