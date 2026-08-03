@@ -70,7 +70,7 @@ mp-5dcb9f9e-a8e8-4d51-a064-e30f76421e0a
 
 - clientSecret 已从前端 bundle 定位：
   ```
-  bXt46OTsd+sQiENPhLf7Vg==
+  （已移除：该密钥曾随公开仓库泄露，必须轮换；新值仅配置在 Cloudflare Secret 中）
   ```
 - `x-serverless-sign` 算法：**HMAC-MD5**
   - body 顶层字段按 key 排序
