@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>匿名记忆导入 · 心镜</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0f0f13;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 20px));
+  }
+  .container { width: 100%; max-width: 560px; }
+  .header { text-align: center; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .header p { font-size: 13px; color: rgba(255,255,255,.45); line-height: 1.6; }
+
+  .card {
+    background: #1a1a1e;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+
+  .notice {
+    background: rgba(255,59,92,.08);
+    border: 1px solid rgba(255,59,92,.2);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: rgba(255,255,255,.7);
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .notice b { color: #FF3B5C; }
+
+  label { display: block; font-size: 13px; color: rgba(255,255,255,.55); margin-bottom: 8px; }
+  input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.1);
+    background: rgba(255,255,255,.04);
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    font-family: inherit;
+  }
+  input[type="text"]:focus { border-color: #FF3B5C; box-shadow: 0 0 0 3px rgba(255,59,92,.12); }
+  input[type="text"]::placeholder { color: rgba(255,255,255,.25); }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    border-radius: 100px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    transition: all .2s;
+    margin-top: 14px;
+  }
+  .btn-primary { background: #FF3B5C; color: #fff; }
+  .btn-primary:hover { background: #C4293F; box-shadow: 0 6px 20px rgba(255,59,92,.25); }
+  .btn-primary:active { transform: scale(.97); }
+  .btn-primary:disabled { opacity: .4; pointer-events: none; }
+  .btn-ghost { background: transparent; color: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.08); }
+  .btn-ghost:hover { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.2); }
+
+  .err { font-size: 12px; color: #f87171; min-height: 18px; margin-top: 8px; padding: 0 4px; line-height: 1.5; }
+  .success { font-size: 13px; color: #4ade80; margin-top: 8px; line-height: 1.6; }
+
+  .preview-item {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .preview-item .q { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .preview-item .a { font-size: 13px; color: rgba(255,255,255,.6); line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .preview-meta { font-size: 12px; color: rgba(255,255,255,.4); margin-bottom: 12px; }
+  .preview-item .time { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 6px; }
+
+  .hidden { display: none; }
+
+  /* 加载状态 */
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 4px;
+    font-size: 13px;
+    color: rgba(255,255,255,.55);
+  }
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,.15);
+    border-top-color: #FF3B5C;
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 成功结果 */
+  .result-box { text-align: center; padding: 8px 0 4px; }
+  .result-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: rgba(74,222,128,.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #4ade80;
+  }
+  .result-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .result-desc { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.7; margin-bottom: 6px; }
+  .result-actions { margin-top: 18px; }
+  .result-actions .btn { margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>匿名记忆导入</h1>
+    <p>把你曾经在其他平台留下的匿名问答，<br>导入到心镜，永久珍藏。</p>
+  </div>
+
+  <div class="notice">
+    <b>迁移说明：</b>本功能用于将你在其他匿名提问箱平台（如轻匿）的<b>公开问答</b>导入到心镜。
+    仅导入公开可见的内容，私密问答不会被导入。导入后可在心镜中查看与管理。
+  </div>
+
+  <div class="card">
+    <div class="card-title">输入来源链接</div>
+    <label for="sourceUrl">粘贴你的匿名提问箱公开链接，或直接输入分享码</label>
+    <input type="text" id="sourceUrl" placeholder="https://qntwx.com/XXXXXX 或 XXXXXX" autocomplete="off">
+    <div class="err" id="err"></div>
+    <button class="btn btn-primary" id="previewBtn">预览可导入内容</button>
+  </div>
+
+  <div id="previewSection" class="hidden">
+    <div class="card">
+      <div class="card-title">预览结果</div>
+      <div class="preview-meta" id="previewMeta"></div>
+      <div id="previewList"></div>
+      <div class="err" id="confirmErr"></div>
+      <button class="btn btn-primary" id="confirmBtn">确认导入</button>
+      <button class="btn btn-ghost" id="resetBtn">重新输入</button>
+    </div>
+  </div>
+
+  <div id="resultSection" class="hidden">
+    <div class="card">
+      <div class="result-box">
+        <div class="result-icon">✓</div>
+        <div class="result-title">导入成功</div>
+        <div class="result-desc" id="resultMsg"></div>
+        <div class="result-actions">
+          <button class="btn btn-primary" id="viewBtn">查看我的记忆</button>
+          <button class="btn btn-ghost" id="againBtn">继续导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/auth.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  var sourceUrlInput = document.getElementById('sourceUrl');
+  var previewBtn = document.getElementById('previewBtn');
+  var errEl = document.getElementById('err');
+  var previewSection = document.getElementById('previewSection');
+  var previewMeta = document.getElementById('previewMeta');
+  var previewList = document.getElementById('previewList');
+  var confirmBtn = document.getElementById('confirmBtn');
+  var confirmErr = document.getElementById('confirmErr');
+  var resetBtn = document.getElementById('resetBtn');
+  var resultSection = document.getElementById('resultSection');
+  var resultMsg = document.getElementById('resultMsg');
+  var viewBtn = document.getElementById('viewBtn');
+  var againBtn = document.getElementById('againBtn');
+
+  var currentPreview = null;
+
+  function showErr(el, msg) { el.textContent = msg || ''; }
+
+  // 按钮加载态：记录原始文案，避免恢复异常
+  function setLoading(btn, loading, text) {
+    if (loading) {
+      if (!btn.dataset.orig) btn.dataset.orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = text;
+    } else {
+      btn.disabled = false;
+      btn.textContent = btn.dataset.orig || btn.textContent;
+    }
+  }
+
+  // HTML 实体转义（用 fromCharCode 构造，避免源码中出现实体字面量）
+  function esc(s) {
+    var A = String.fromCharCode(38); // '&'
+    return String(s == null ? '' : s)
+      .replace(/&/g, A + 'amp;')
+      .replace(/</g, A + 'lt;')
+      .replace(/>/g, A + 'gt;')
+      .replace(/"/g, A + 'quot;');
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  // 平台名称映射
+  function platformName(p) {
+    var map = { lightbox: '轻匿' };
+    return map[p] || p || '未知平台';
+  }
+
+  // 后端错误码 → 友好提示
+  function friendlyError(code, fallback) {
+    var map = {
+      invalid_url: '链接格式不正确，请粘贴轻匿公开链接（如 https://qntwx.com/XXXXXX）或分享码。',
+      auth_failed: '轻匿服务暂时不可用，请稍后重试。',
+      fetch_failed: '获取轻匿数据失败，请检查链接是否正确，稍后重试。',
+      box_not_found: '未找到该链接对应的提问箱，请确认链接是否正确。',
+      no_public: '该提问箱暂无公开问答，无法导入。',
+      already_imported: '该提问箱已经导入过，无需重复导入。',
+      invalid_preview: '预览数据无效，请重新预览后再导入。',
+      invalid_action: '操作不支持，请刷新页面后重试。',
+      unauthorized: '请先登录后再导入。'
+    };
+    return map[code] || fallback || '操作失败，请稍后重试。';
+  }
+
+  // 前端预校验：提取 url_code（支持完整链接或纯分享码）
+  function extractUrlCode(input) {
+    var trimmed = (input || '').trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed)) {
+      try {
+        var url = new URL(trimmed);
+        var host = url.hostname.replace(/^www\./, '');
+        if (host !== 'qntwx.com') return { invalid: true, reason: '仅支持轻匿（qntwx.com）链接' };
+        var segments = url.pathname.split('/').filter(Boolean);
+        var code = segments.length ? segments[segments.length - 1] : null;
+        if (!code) return { invalid: true, reason: '链接中缺少分享码' };
+        return { code: code };
+      } catch (e) {
+        return { invalid: true, reason: '链接格式不正确' };
+      }
+    }
+    // 纯分享码（去尾部斜杠）
+    var code = trimmed.replace(/\/+$/, '');
+    if (!/^[A-Za-z0-9]+$/.test(code)) {
+      return { invalid: true, reason: '分享码格式不正确' };
+    }
+    return { code: code };
+  }
+
+  previewBtn.addEventListener('click', async function(){
+    showErr(errEl, '');
+    var raw = sourceUrlInput.value.trim();
+    if (!raw) { showErr(errEl, '请输入来源链接或分享码'); return; }
+
+    var parsed = extractUrlCode(raw);
+    if (parsed.invalid) { showErr(errEl, parsed.reason); return; }
+
+    if (!window.Auth || !window.Auth.isLoggedIn()) {
+      showErr(errEl, '请先登录后再导入');
+      if (window.Auth && window.Auth.showLoginModal) window.Auth.showLoginModal();
+      return;
+    }
+
+    // 显示加载状态
+    var loadingEl = document.createElement('div');
+    loadingEl.className = 'loading';
+    loadingEl.innerHTML = '<div class="spinner"></div><span>正在获取公开问答，请稍候...</span>';
+    previewList.innerHTML = '';
+    previewList.appendChild(loadingEl);
+    previewSection.classList.remove('hidden');
+    resultSection.classList.add('hidden');
+
+    setLoading(previewBtn, true, '预览中...');
+    try {
+      var res = await fetch('/memory/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ sourceUrl: raw })
+      });
+      var data = await res.json();
+      if (!data.ok) {
+        showErr(errEl, friendlyError(data.error, data.message));
+        previewSection.classList.add('hidden');
+        return;
+      }
+      currentPreview = data.preview;
+      renderPreview(currentPreview);
+    } catch(e) {
+      showErr(errEl, '网络错误，请稍后重试');
+      previewSection.classList.add('hidden');
+    } finally {
+      setLoading(previewBtn, false, '预览可导入内容');
+    }
+  });
+
+  function renderPreview(p) {
+    var meta = '来源：' + esc(platformName(p.platform));
+    if (p.title) meta += ' · ' + esc(p.title);
+    meta += ' · 共 ' + p.totalCount + ' 条公开问答';
+    previewMeta.textContent = meta;
+
+    var html = '';
+    (p.questions || []).forEach(function(q){
+      html += '<div class="preview-item">';
+      html += '<div class="q">' + esc(q.question) + '</div>';
+      if (q.answer) html += '<div class="a">' + esc(q.answer) + '</div>';
+      if (q.sourceCreatedAt) html += '<div class="time">' + fmtTime(q.sourceCreatedAt) + '</div>';
+      html += '</div>';
+    });
+    previewList.innerHTML = html;
+    previewSection.classList.remove('hidden');
+    resultSection.classList.add('hidden');
+    previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  confirmBtn.addEventListener('click', async function(){
+    showErr(confirmErr, '');
+    if (!currentPreview) return;
+    setLoading(confirmBtn, true, '导入中...');
+    try {
+      var res = await fetch('/memory/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ action: 'confirm', preview: currentPreview })
+      });
+      var data = await res.json();
+      if (!data.ok) {
+        showErr(confirmErr, friendlyError(data.code, data.message));
+        return;
+      }
+      previewSection.classList.add('hidden');
+      resultSection.classList.remove('hidden');
+      resultMsg.textContent = '已成功导入 ' + data.totalCount + ' 条匿名记忆，可在「我的记忆」中查看。';
+      currentPreview = null;
+    } catch(e) {
+      showErr(confirmErr, '网络错误，请稍后重试');
+    } finally {
+      setLoading(confirmBtn, false, '确认导入');
+    }
+  });
+
+  resetBtn.addEventListener('click', function(){
+    previewSection.classList.add('hidden');
+    sourceUrlInput.value = '';
+    sourceUrlInput.focus();
+  });
+
+  againBtn.addEventListener('click', function(){
+    resultSection.classList.add('hidden');
+    sourceUrlInput.value = '';
+    sourceUrlInput.focus();
+  });
+
+  // 查看我的记忆：跳转到用户页（若存在记忆入口）
+  viewBtn.addEventListener('click', function(){
+    var uid = (window.Auth && window.Auth.getUserId) ? window.Auth.getUserId() : null;
+    if (uid) {
+      window.location.href = '/user.html?userId=' + encodeURIComponent(uid);
+    } else {
+      window.location.href = '/user.html';
+    }
+  });
+
+  sourceUrlInput.addEventListener('keydown', function(e){
+    if (e.key === 'Enter') previewBtn.click();
+  });
+})();
+</script>
+</body>
+</html>
