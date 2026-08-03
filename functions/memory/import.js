@@ -277,19 +277,44 @@ export const onRequestPost = async ({ request, env }) => {
     // 2. 写入问答明细（原子批量执行）
     //    使用 D1 batch() 确保所有 INSERT 在同一事务内执行，
     //    避免部分写入成功后断连导致脏数据（questions 条数与 total_count 不匹配）。
-    const stmts = preview.questions.map((q) =>
-      env.DB.prepare(
-        `INSERT OR IGNORE INTO imported_questions (import_id, source_question_id, question, answer, source_created_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      ).bind(
-        importId,
-        q.sourceQuestionId || q.source_question_id || '',
-        q.question || '',
-        q.answer || '',
-        q.sourceCreatedAt || q.source_created_at || null,
-        now
-      )
-    );
+    const stmts = [];
+    for (const q of preview.questions) {
+      stmts.push(
+        env.DB.prepare(
+          `INSERT OR IGNORE INTO imported_questions (import_id, source_question_id, question, answer, source_created_at, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(
+          importId,
+          q.sourceQuestionId || q.source_question_id || '',
+          q.question || '',
+          q.answer || '',
+          q.sourceCreatedAt || q.source_created_at || null,
+          now
+        )
+      );
+      // 同步写入站内提问箱：导入的问答全部展示在导入者自己的提问箱（匿名提问者）
+      const askboxAnswer = (q.answer || '').trim();
+      const askboxTime = q.sourceCreatedAt || q.source_created_at || now;
+      stmts.push(
+        env.DB.prepare(
+          `INSERT INTO askbox_questions (asker_id, target_id, content, is_anonymous, answer_content, answered_at, created_at)
+           SELECT NULL, ?, ?, 1, ?, ?, ?
+           WHERE NOT EXISTS (
+             SELECT 1 FROM askbox_questions
+             WHERE target_id = ? AND content = ? AND COALESCE(answer_content, '') = COALESCE(?, '')
+           )`
+        ).bind(
+          user.id,
+          q.question || '',
+          askboxAnswer || null,
+          askboxAnswer ? askboxTime : null,
+          askboxTime,
+          user.id,
+          q.question || '',
+          askboxAnswer || ''
+        )
+      );
+    }
     await env.DB.batch(stmts);
 
     // 3. 全部写入成功 → 更新状态为 imported
