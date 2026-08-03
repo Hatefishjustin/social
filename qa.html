@@ -459,14 +459,12 @@ function syncWithAuth() {
 
 // ── Share ──
 function getShareUrl() {
+  if (state.targetId) {
+    // 微信分享卡片：走 /askbox-share 服务端渲染 OG 标签（<昵称> 的提问箱）
+    return location.origin + '/askbox-share?u=' + encodeURIComponent(state.targetId);
+  }
   var url = new URL(location.href);
   url.search = '';
-  if (state.targetId) {
-    url.searchParams.set('u', state.targetId);
-    // 附带名称作为访客页快速显示
-    var name = Auth.getDisplayName() || (Auth.getEmail() ? Auth.getEmail().split('@')[0] : '');
-    if (name) url.searchParams.set('n', name);
-  }
   return url.toString();
 }
 
