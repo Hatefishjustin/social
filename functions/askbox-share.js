@@ -44,13 +44,13 @@ export const onRequestGet = async ({ request, env }) => {
     ? origin + '/qa.html?u=' + encodeURIComponent(userId)
     : origin + '/qa.html';
 
-  const title = name ? name + ' 的提问箱' : '心镜 · 匿名提问箱';
+  const title = name ? 'SoulMirror 心镜 · ' + name + ' 的提问箱' : 'SoulMirror 心镜 · 匿名提问箱';
   const desc = name
     ? (answered > 0
-        ? name + ' 的匿名提问箱，已收录 ' + answered + ' 条回答，来聊聊吧～'
-        : name + ' 的匿名提问箱，有什么想说的都可以来问～')
-    : '匿名提问，温柔回应。';
-  const image = origin + '/assets/share-cover.png';
+        ? 'SoulMirror 心镜｜' + name + ' 的匿名提问箱，已收录 ' + answered + ' 条回答，来聊聊吧～'
+        : 'SoulMirror 心镜｜' + name + ' 的匿名提问箱，有什么想说的都可以来问～')
+    : 'SoulMirror 心镜 · 匿名提问，温柔回应。';
+  const image = origin + '/assets/share-card.png';
 
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
