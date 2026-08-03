@@ -818,7 +818,7 @@ function submitAsk() {
         }
         var imports = data.imports || [];
         if (imports.length === 0) {
-          memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>还没有导入记忆<br><span style="font-size:12px">去「记忆导入」页导入你的轻匿问答吧</span></div>';
+          memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>还没有导入记忆<br><a href="/memory.html" style="color:var(--accent);text-decoration:none;font-size:14px;margin-top:8px;display:inline-block;">去导入轻匿记忆 →</a></div>';
           return;
         }
         memoryList.innerHTML = imports.map(renderImport).join('');
