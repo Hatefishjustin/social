@@ -236,7 +236,37 @@
     cursor: pointer; font-family: inherit; transition: all .2s;
   }
   .moment-publish-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── 我的记忆（仅本人可见） ── */
+  .memory-card { margin-bottom: 16px; }
+  .memory-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .memory-avatar {
+    width: 40px; height: 40px; border-radius: 10px; object-fit: cover;
+    border: 1px solid var(--border); background: #1a1a1e; flex-shrink: 0;
+  }
+  .memory-avatar-ph {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px dashed var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 16px; flex-shrink: 0;
+  }
+  .memory-title { font-size: 14px; font-weight: 600; color: #fff; }
+  .memory-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .memory-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 100px;
+    background: rgba(255,255,255,.06); color: var(--muted); font-size: 11px;
+    margin-left: 6px; vertical-align: middle;
+  }
+  .memory-q { font-size: 13px; color: var(--text); font-weight: 600; margin: 8px 0 2px; }
+  .memory-a {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+    white-space: pre-wrap; word-break: break-word;
+    background: rgba(255,255,255,.03); border-radius: 8px; padding: 8px 10px;
+  }
+  .memory-more { font-size: 12px; color: var(--accent); margin-top: 8px; }
+  .memory-source-link { color: var(--accent); text-decoration: none; font-size: 12px; }
+  .memory-source-link:hover { text-decoration: underline; }
 </style>
+
 
 
 </head>
@@ -287,8 +317,16 @@
     </div>
   </div>
 
+  <div class="card" id="memoryCard" style="display:none">
+    <div class="card-title">我的记忆</div>
+    <div id="memoryList">
+      <div class="empty-state"><div class="empty-icon">📚</div>加载中...</div>
+    </div>
+  </div>
+
 
   <div class="ask-btn-bar">
+
     <button class="btn btn-primary" id="askBtn" onclick="showAskModal()" style="display:none">向TA提问</button>
   </div>
 </div>
@@ -714,9 +752,90 @@ function submitAsk() {
   loadMoments();
 })();
 
+/* ── 我的记忆（仅本人可见） ── */
+(function() {
+  var memoryCard = document.getElementById('memoryCard');
+  var memoryList = document.getElementById('memoryList');
+  if (!memoryCard || !memoryList) return;
+  var targetId = new URLSearchParams(location.search).get('userId');
+
+  function isSelf() {
+    var u = Auth.getUser();
+    return !!u && String(u.userId) === String(targetId);
+  }
+
+  function platformLabel(p) {
+    if (p === 'lightbox') return '轻匿';
+    return p || '来源';
+  }
+
+  function renderImport(imp) {
+    var avatarHtml = imp.avatar
+      ? '<img class="memory-avatar" src="' + imp.avatar + '" onerror="this.outerHTML=\'<div class=memory-avatar-ph>📚</div>\'">'
+      : '<div class="memory-avatar-ph">📚</div>';
+
+    var sourceLink = imp.sourceUrl
+      ? '<a class="memory-source-link" href="' + esc(imp.sourceUrl) + '" target="_blank" rel="noopener">查看来源 ↗</a>'
+      : '';
+
+    // 展示前 3 条问答摘要
+    var qs = (imp.questions || []).slice(0, 3);
+    var qHtml = qs.map(function(q) {
+      return '<div class="memory-q">' + esc(q.question) + '</div>' +
+        '<div class="memory-a">' + esc(q.answer) + '</div>';
+    }).join('');
+
+    var moreHtml = (imp.questions || []).length > 3
+      ? '<div class="memory-more">还有 ' + ((imp.questions || []).length - 3) + ' 条记忆…</div>'
+      : '';
+
+    return '<div class="memory-card">' +
+      '<div class="memory-head">' + avatarHtml +
+        '<div>' +
+          '<div class="memory-title">' + esc(imp.title || '我的记忆') +
+            '<span class="memory-badge">' + esc(platformLabel(imp.platform)) + '</span>' +
+          '</div>' +
+          '<div class="memory-meta">共 ' + (imp.totalCount || 0) + ' 条 · 导入于 ' + fmtTime(imp.createdAt) + '</div>' +
+        '</div>' +
+      '</div>' +
+      qHtml +
+      moreHtml +
+      (sourceLink ? '<div class="memory-more">' + sourceLink + '</div>' : '') +
+    '</div>';
+  }
+
+  function loadMemory() {
+    if (!isSelf()) return;
+    memoryCard.style.display = 'block';
+    memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>加载中...</div>';
+
+    fetch('/memory/list')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">😿</div>' + esc(data.message || '加载失败') + '</div>';
+          return;
+        }
+        var imports = data.imports || [];
+        if (imports.length === 0) {
+          memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div>还没有导入记忆<br><span style="font-size:12px">去「记忆导入」页导入你的轻匿问答吧</span></div>';
+          return;
+        }
+        memoryList.innerHTML = imports.map(renderImport).join('');
+      })
+      .catch(function() {
+        memoryList.innerHTML = '<div class="empty-state"><div class="empty-icon">😿</div>加载失败</div>';
+      });
+  }
+
+  loadMemory();
+  Auth.onAuthChange(loadMemory);
+})();
+
 
 
 function openMomentViewer(src) { openViewer(src); }
+
 
 function toggleMomentLike(id, btn) {
   if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
