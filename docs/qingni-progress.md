@@ -2,8 +2,8 @@
 
 > 项目：SoulMirror（心镜）社交独立站
 > 日期：2026-08-03
-> 阶段：Phase 0 已通过 ✅（协议验证完成），进入 Phase 1（实现 qingni-client.js）
-> 说明：本文档为交接文档，供后续新对话继续开发使用。
+> 阶段：全部完成 ✅（Phase 0~Phase 4 已全部完成并上线）
+> 说明：本文档为历史记录，轻匿导入功能已开发完成并部署上线。
 
 ---
 
@@ -179,11 +179,9 @@ const command = {
 
 ---
 
-## 4. 当前状态（阻塞已解除）
+## 4. 当前状态（全部完成 ✅）
 
-~~核心问题：`xxx.where() is not supported`~~ → **已解决**（见 3.3）。
-
-Phase 0 全部通过，可以进入 Phase 1。
+所有 Phase 0~Phase 4 已全部完成并上线。
 
 ---
 
@@ -307,15 +305,11 @@ memory.html 输入链接 → POST /memory/import (preview) → 展示预览
 
 **前端走查**：memory.html 与 user.html 的字段与后端 API 返回结构完全匹配；`Auth.getUserId()` 与 `Auth.getUser().userId` 一致，跳转闭环正确。
 
-### 8.4 部署状态
+### 8.4 部署状态（已上线 ✅）
 
-- 本地代码：已完成（memory.html / list.js / user.html）
-- Git：**未提交**（等待负责人确认）
-- GitHub：未 push
-- Cloudflare：未触发部署
-- 数据库：未修改（复用已有 `content_imports` + `imported_questions` 表，无迁移）
-
-### 8.5 待确认事项
-
-- 是否提交 git / push / 部署，等待负责人确认。
-- 临时测试文件（`_qingni_list_test.js` 等）是否保留或删除，等待负责人确认。
+- 本地代码：已完成 ✅
+- Git：已提交 ✅
+- GitHub：已 push ✅
+- Cloudflare：已触发部署 ✅
+- 数据库：迁移 S03 已执行到线上 D1 ✅
+- 临时文件：已全部删除 ✅
