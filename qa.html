@@ -256,6 +256,16 @@ body{
 .card-reply-send:hover{background:var(--accent2);}
 .card-reply-send:disabled{opacity:.3;pointer-events:none;}
 
+/* 可见性切换按钮（箱主管理历史回答） */
+.vis-toggle-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:none;border:1px solid var(--border);color:var(--text3);font-size:12px;font-family:inherit;
+  padding:5px 12px;border-radius:var(--radius-pill);cursor:pointer;transition:all .2s;
+  margin-top:12px;
+}
+.vis-toggle-btn:hover{background:var(--surface);border-color:var(--text3);color:var(--text2);}
+.vis-toggle-btn:active{transform:scale(.95);}
+
 /* 可见性选择器 */
 .visibility-selector{
   display:inline-flex;align-items:center;gap:4px;
@@ -655,8 +665,18 @@ function renderCard(q) {
   var visBadge = '';
   if (q.answer_content && q.answer_visibility === 'private') {
     visBadge = '<span class="card-visibility-badge private">仅提问者可见</span>';
-  } else if (q.answer_content && q.answer_visibility === 'public') {
+  } else if (q.answer_content && (q.answer_visibility === 'public' || !q.answer_visibility)) {
     visBadge = '<span class="card-visibility-badge public">公开</span>';
+  }
+
+  // 箱主可见的公开状态切换按钮（仅已回复的问题）
+  var visToggleHtml = '';
+  if (q.answer_content && state.isOwnerView) {
+    var isPublic = q.answer_visibility !== 'private';
+    visToggleHtml =
+      '<button class="vis-toggle-btn" data-qid="' + q.id + '" data-current="' + (isPublic ? 'public' : 'private') + '">' +
+        (isPublic ? '🌐 公开回复' : '🔒 私密回复') +
+      '</button>';
   }
 
   var replyHtml = '';
@@ -686,7 +706,7 @@ function renderCard(q) {
           '<span>' + fmtTime(q.created_at) + '</span>' +
         '</div>' +
       '</div>' +
-    '</div>' + answerHtml + replyHtml +
+    '</div>' + answerHtml + visToggleHtml + replyHtml +
   '</article>';
 }
 
@@ -1006,6 +1026,14 @@ QA('.sheet-pf-btn').forEach(function(btn) {
 
 // 可见性选择器切换
 dom.feedList.addEventListener('click', function(e) {
+  var visToggle = e.target.closest('.vis-toggle-btn');
+  if (visToggle) {
+    var qId = visToggle.dataset.qid;
+    var current = visToggle.dataset.current;
+    toggleVisibility(qId, current, visToggle);
+    return;
+  }
+
   var visBtn = e.target.closest('.vis-opt-btn');
   if (visBtn) {
     var selector = visBtn.closest('.visibility-selector');
@@ -1036,6 +1064,46 @@ dom.feedList.addEventListener('click', function(e) {
   }
   submitAnswer(qId, btn, input, vis);
 });
+
+// ── Toggle visibility ──
+async function toggleVisibility(qId, current, btnEl) {
+  var newVis = current === 'public' ? 'private' : 'public';
+  btnEl.disabled = true;
+
+  try {
+    var r = await fetch('/askbox/visibility', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+      body: JSON.stringify({ questionId: qId, answerVisibility: newVis })
+    });
+    if (!r.ok) {
+      var errData = await r.json().catch(function() { return {}; });
+      throw new Error(errData.message || errData.error || '操作失败');
+    }
+    // 更新按钮状态
+    btnEl.dataset.current = newVis;
+    btnEl.textContent = newVis === 'public' ? '🌐 公开回复' : '🔒 私密回复';
+    // 同步更新可见性标签
+    var card = btnEl.closest('.card');
+    if (card) {
+      var badge = card.querySelector('.card-visibility-badge');
+      if (badge) {
+        if (newVis === 'private') {
+          badge.className = 'card-visibility-badge private';
+          badge.textContent = '仅提问者可见';
+        } else {
+          badge.className = 'card-visibility-badge public';
+          badge.textContent = '公开';
+        }
+      }
+    }
+    toast(newVis === 'public' ? '已设置为公开回复' : '已设置为私密回复', 'ok');
+  } catch (e) {
+    toast(e.message || '操作失败', 'err');
+  } finally {
+    btnEl.disabled = false;
+  }
+}
 
 dom.feedList.addEventListener('input', function(e) {
   var input = e.target.closest('.card-reply-input');
