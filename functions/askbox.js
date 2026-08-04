@@ -262,7 +262,8 @@ export const onRequestPost = async ({ request, env }) => {
 
 export const onRequest = async ({ request, env, next }) => {
   const url = new URL(request.url);
-  if (url.pathname === '/askbox/answer' && request.method === 'POST') {
+  // 子路径路由转发
+  if ((url.pathname === '/askbox/answer' || url.pathname === '/askbox/visibility') && request.method === 'POST') {
     return next();
   }
   return next();
