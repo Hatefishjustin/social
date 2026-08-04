@@ -1,28 +1,10 @@
 /**
  * 路径: /functions/askbox/answer.js
  * 路由: /askbox/answer
- * 提取自 askbox.js 的 onRequest handler，
- * Cloudflare Pages Functions 要求 /askbox/answer 必须独立文件。
+ * v2: 回答时支持设置 answer_visibility（public / private）
  */
 
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
-
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at as expires_at, users.id as user_id, users.email as email
-     FROM sessions JOIN users ON sessions.user_id = users.id
-     WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.user_id, email: row.email };
-}
+import { parseCookie, getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -82,10 +64,13 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'invalid_body' }, 400);
   }
 
-  const { questionId, answerContent } = body || {};
+  const { questionId, answerContent, answerVisibility } = body || {};
   if (!questionId || !answerContent || answerContent.length > 2000) {
     return jsonResponse({ error: 'invalid_params' }, 400);
   }
+
+  // 校验可见性值
+  const visibility = answerVisibility === 'private' ? 'private' : 'public';
 
   const q = await env.DB.prepare(
     `SELECT target_id, content, asker_id, is_anonymous FROM askbox_questions WHERE id = ?`
@@ -97,8 +82,8 @@ export const onRequestPost = async ({ request, env }) => {
   }
 
   await env.DB.prepare(
-    `UPDATE askbox_questions SET answer_content = ?, answered_at = ? WHERE id = ?`
-  ).bind(answerContent, Date.now(), questionId).run();
+    `UPDATE askbox_questions SET answer_content = ?, answered_at = ?, answer_visibility = ? WHERE id = ?`
+  ).bind(answerContent, Date.now(), visibility, questionId).run();
 
   await logActivity(env, meta, user, 'askbox_answer', 'askbox', questionId, answerContent, false);
 

@@ -3,7 +3,7 @@
  * Returns { id, email, displayName, avatarUrl, isAdmin } or null
  */
 
-function parseCookie(cookieHeader, name) {
+export function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
   const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
   return match ? match[1] : null;
