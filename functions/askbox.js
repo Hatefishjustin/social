@@ -7,6 +7,7 @@
  */
 
 import { parseCookie, getCurrentUser } from './_lib/auth.js';
+import { getRequestMeta } from './_lib/ip.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -20,14 +21,6 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-function getRequestMeta(request) {
-  return {
-    ip: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
-    ua: (request.headers.get('User-Agent') || '').slice(0, 500),
-    country: (request.cf || {}).country || '',
-    city: (request.cf || {}).city || '',
-  };
-}
 
 async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous) {
   try {
@@ -81,7 +74,7 @@ export const onRequestGet = async ({ request, env }) => {
 
     if (user && user.id === parseInt(targetId, 10)) {
       // 箱主本人 → 看到全部
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -91,7 +84,7 @@ export const onRequestGet = async ({ request, env }) => {
       countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE target_id = ?`;
     } else if (visitorToken) {
       // 有 visitor_token → 看到 public + 自己的 private
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -109,7 +102,7 @@ export const onRequestGet = async ({ request, env }) => {
       allParams.push(visitorToken);
     } else {
       // 普通访客 → 仅看到 public
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -123,7 +116,7 @@ export const onRequestGet = async ({ request, env }) => {
     // 广场（公共 feed）
     if (user) {
       // 已登录用户 → 看到所有已回复的 public + 自己的已回复 private
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -141,7 +134,7 @@ export const onRequestGet = async ({ request, env }) => {
       allParams.push(user.id);
     } else if (visitorToken) {
       // 未登录但有 visitor_token
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -159,7 +152,7 @@ export const onRequestGet = async ({ request, env }) => {
       allParams.push(visitorToken);
     } else {
       // 纯游客 → 仅看到 public 已回复
-      sql = `SELECT q.id, q.asker_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
                     q.answer_visibility, q.visitor_token,
                     p.nickname as asker_name, a.image_data as asker_avatar
              FROM askbox_questions q
@@ -174,8 +167,54 @@ export const onRequestGet = async ({ request, env }) => {
   const { results } = await env.DB.prepare(sql).bind(...allParams, PAGE_SIZE, offset).all();
   const countRow = await env.DB.prepare(countSql).bind(...allParams).first();
 
+  const questions = results || [];
+
+  // ── 追问对话线程 ──
+  // 仅「提问者本人 / 箱主本人」可见；其他访客看不到任何追问内容
+  // 访客视角：只看到 问题 + 公开回答（S04 逻辑原样保留）
+  if (user && questions.length > 0) {
+    try {
+      // 当前用户有权限查看线程的问题（作为提问者 asker 或箱主 target）
+      const allowedIds = questions
+        .filter(q =>
+          (q.asker_id != null && String(q.asker_id) === String(user.id)) ||
+          (q.target_id != null && String(q.target_id) === String(user.id))
+        )
+        .map(q => q.id);
+
+      if (allowedIds.length > 0) {
+        const placeholders = allowedIds.map(() => '?').join(',');
+        const msgRes = await env.DB.prepare(
+          `SELECT m.id, m.question_id, m.sender_id, m.role, m.message_type, m.content, m.created_at,
+                  u.display_name AS sender_name
+           FROM askbox_messages m
+           LEFT JOIN users u ON u.id = m.sender_id
+           WHERE m.question_id IN (${placeholders})
+           ORDER BY m.question_id, m.created_at ASC`
+        ).bind(...allowedIds).all();
+
+        const msgMap = {};
+        (msgRes.results || []).forEach(m => {
+          if (!msgMap[m.question_id]) msgMap[m.question_id] = [];
+          msgMap[m.question_id].push(m);
+        });
+        questions.forEach(q => {
+          q.messages_thread = msgMap[q.id] || [];
+        });
+      } else {
+        questions.forEach(q => { q.messages_thread = []; });
+      }
+    } catch (e) {
+      console.error('askbox_messages load failed:', e.message);
+      questions.forEach(q => { q.messages_thread = []; });
+    }
+  } else {
+    // 未登录 / 游客：不附加任何线程
+    questions.forEach(q => { q.messages_thread = []; });
+  }
+
   return jsonResponse({
-    questions: results,
+    questions,
     pagination: { page, pageSize: PAGE_SIZE, total: countRow?.total || 0 },
   });
 };

@@ -206,6 +206,33 @@ CREATE TABLE IF NOT EXISTS askbox_questions (
     FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- ── 提问箱追问对话（S-08 新增） ──
+-- 已登录提问者与箱主之间在原有问答下方形成连续对话线程。
+-- 说明:
+--   - 每条消息独立存储，question_id 关联根问题
+--   - role: 消息发送者的角色（asker=提问者 / owner=箱主），用于身份展示
+--   - message_type: 消息行为类型（follow_up=提问者追问 / owner_reply=箱主回复），预留扩展（AI 回复/系统消息等）
+--   - parent_message_id: 预留字段，用于未来支持回复某条消息（第一版仅线性排序，不嵌套）
+--   - 隐私: 追问线程仅提问者本人与箱主可见，其他访客看不到
+-- 迁移文件: docs/migrations/2026-08-06-S08-askbox-thread.sql
+CREATE TABLE IF NOT EXISTS askbox_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL,           -- 关联 askbox_questions.id（根问题）
+    sender_id INTEGER NOT NULL,             -- 发送者用户ID（提问者或箱主）
+    role TEXT NOT NULL CHECK(role IN ('asker','owner')),
+    message_type TEXT NOT NULL CHECK(message_type IN ('follow_up','owner_reply')),
+    parent_message_id INTEGER DEFAULT NULL, -- 预留：回复某条消息（第一版置 NULL）
+    content TEXT NOT NULL,                  -- 追问/回复内容（≤500字）
+    created_at INTEGER NOT NULL,            -- 毫秒级时间戳 Date.now()
+    FOREIGN KEY (question_id) REFERENCES askbox_questions(id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_askbox_messages_question ON askbox_messages(question_id, created_at);
+
+-- 迁移备注: S-08 (2026-08-06) 新增 askbox_messages 表（提问箱追问对话）
+-- 线上 D1 执行（待确认）: wrangler d1 execute <DB_NAME> --remote --file docs/migrations/2026-08-06-S08-askbox-thread.sql
+
 -- ── 通知 ──
 
 CREATE TABLE IF NOT EXISTS notifications (
