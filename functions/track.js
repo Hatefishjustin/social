@@ -8,6 +8,7 @@
  * 数据写入 activity_log 表，action 固定为 'quiz_completed'。
  */
 import { getCurrentUser } from './_lib/auth.js';
+import { getOrCreateVisitor } from './_lib/visitor.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -42,14 +43,17 @@ export const onRequestPost = async ({ request, env }) => {
     user = null;
   }
 
+  // S-07: 获取/创建匿名身份（已有 cookie 不写库，仅读取）
+  const { visitorId } = await getOrCreateVisitor(request, env);
+
   const cf = request.cf || {};
   const ip = request.headers.get('CF-Connecting-IP') || '';
   const userAgent = request.headers.get('User-Agent') || '';
 
   await env.DB.prepare(
     `INSERT INTO activity_log
-       (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, visitor_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     user ? user.id : null,
     user ? user.email : null,
@@ -62,6 +66,7 @@ export const onRequestPost = async ({ request, env }) => {
     cf.country || '',
     cf.city || '',
     user ? 0 : 1,
+    visitorId || null,
     Date.now()
   ).run();
 

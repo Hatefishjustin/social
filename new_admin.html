@@ -322,7 +322,7 @@
       <div class="table-scroll"><table>
         <thead><tr>
           <th>ID</th><th>邮箱</th><th>昵称</th><th>注册时间</th><th>IP</th><th>地区</th>
-          <th>设备</th><th>系统</th><th>浏览器</th><th>测评</th><th>塔罗</th><th>操作</th>
+          <th>设备</th><th>系统</th><th>浏览器</th><th>测评</th><th>塔罗</th><th>备注</th><th>匿名访问</th><th>操作</th>
         </tr></thead>
         <tbody id="usersBody"></tbody>
       </table></div>
@@ -938,13 +938,14 @@ function maskIP(ip) {
 function renderUsersRows(users) {
   var body = document.getElementById('usersBody');
   if (!users || users.length === 0) {
-    body.innerHTML = '<tr class="no-data"><td colspan="12" style="color:var(--muted);">暂无用户</td></tr>';
+    body.innerHTML = '<tr class="no-data"><td colspan="14" style="color:var(--muted);">暂无用户</td></tr>';
     return;
   }
   body.innerHTML = users.map(function(u){
     var nickname = u.display_name || (u.nickname ? u.nickname : '—');
     var loc = formatLocation(u.country, u.city);
     var dev = renderUserDevice(u.device, u.os, u.browser);
+    var note = u.admin_note ? '<span title="' + esc(u.admin_note) + '">' + esc(u.admin_note.length > 12 ? u.admin_note.slice(0, 12) + '…' : u.admin_note) + '</span>' : '<span style="color:var(--muted);">—</span>';
     return '<tr>' +
       '<td class="mono">' + u.id + '</td>' +
       '<td>' + esc(u.email) + '</td>' +
@@ -957,7 +958,12 @@ function renderUsersRows(users) {
       '<td>' + esc(u.browser || '—') + '</td>' +
       '<td>' + u.quizCount + '</td>' +
       '<td>' + u.tarotCount + '</td>' +
-      '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showUserDetail(' + u.id + ')">查看详情</button></td>' +
+      '<td>' + note + '</td>' +
+      '<td>' + (u.anonymousVisits || 0) + '</td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button class="filter-btn" style="font-size:11px;padding:4px 10px;margin-right:4px;" onclick="editUserNote(' + u.id + ')">编辑备注</button>' +
+        '<button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showUserDetail(' + u.id + ')">查看详情</button>' +
+      '</td>' +
     '</tr>';
   }).join('');
 }
@@ -1003,32 +1009,73 @@ window.showUserDetail = async function(id) {
     var nickname = u.display_name || u.nickname || '—';
     var loginStatus = u.activeSessions > 0 ? '<span style="color:var(--green);">在线</span>' : '<span style="color:var(--muted);">离线</span>';
     var lastActLoc = formatLocation(u.lastActivityCountry, u.lastActivityCity);
+    // 匿名行为画像
+    var anonVisitors = (u.anonymousVisitors || []).map(function(v){
+      return '<div style="margin-bottom:4px;">' +
+        '<span class="mono">' + esc(v.visitor_id) + '</span>' +
+        '<span style="color:var(--muted);"> 首访 ' + formatDate(v.created_at) + '</span>' +
+        (v.first_country ? '<span style="color:var(--muted);"> ' + esc(v.first_country + (v.first_city ? ' ' + v.first_city : '')) + '</span>' : '') +
+      '</div>';
+    }).join('');
+    var anonActivityRows = (u.anonActivity || []).slice(0, 10).map(function(a){
+      return '<tr>' +
+        '<td>' + esc(a.action || '—') + '</td>' +
+        '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(a.content || '') + '">' + esc(a.content || '—') + '</td>' +
+        '<td class="mono">' + formatDate(a.created_at) + '</td>' +
+      '</tr>';
+    }).join('');
+    var anonActivityHtml = anonActivityRows
+      ? '<table style="width:100%;font-size:12px;"><thead><tr><th>类型</th><th>内容</th><th>时间</th></tr></thead><tbody>' + anonActivityRows + '</tbody></table>'
+      : '<div style="color:var(--muted);">暂无匿名行为记录</div>';
     body.innerHTML =
-      '<div style="margin-bottom:16px;"><div class="section-title">账号</div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">身份信息</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+          '<div>用户ID：' + u.id + '</div>' +
           '<div>邮箱：' + esc(u.email) + '</div>' +
           '<div>昵称：' + esc(nickname) + '</div>' +
-          '<div>注册时间：' + formatDate(u.createdAt) + '</div>' +
           '<div>登录状态：' + loginStatus + '</div>' +
+          '<div>管理员备注：' + (u.admin_note ? esc(u.admin_note) : '<span style="color:var(--muted);">—</span>') + '</div>' +
         '</div></div>' +
-      '<div style="margin-bottom:16px;"><div class="section-title">网络</div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">网络信息</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
           '<div>注册IP：' + esc(u.ip || '—') + '</div>' +
           '<div>注册地区：' + esc(formatLocation(u.country, u.city)) + '</div>' +
-          '<div>最近活跃IP：' + esc(u.lastActivityIp || '—') + '</div>' +
-          '<div>最近活动地区：' + esc(lastActLoc) + '</div>' +
+          '<div>最近登录IP：' + esc(u.last_login_ip || '—') + '</div>' +
+          '<div>最近登录地区：' + esc(formatLocation(u.last_login_country, u.last_login_city)) + '</div>' +
+          '<div>最近登录时间：' + (u.last_login_at ? formatDate(u.last_login_at) : '—') + '</div>' +
+          '<div>注册时间：' + formatDate(u.createdAt) + '</div>' +
         '</div></div>' +
-      '<div style="margin-bottom:16px;"><div class="section-title">设备</div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">设备信息</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
           '<div>设备：' + esc(formatDevice(u.device, u.os)) + '</div>' +
           '<div>系统：' + esc(u.os || '—') + '</div>' +
           '<div>浏览器：' + esc(u.browser || '—') + '</div>' +
           '<div>最近活跃：' + (u.lastActive ? formatDate(u.lastActive) : '—') + '</div>' +
         '</div></div>' +
-      '<div><div class="section-title">行为</div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">匿名行为</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">' +
+          '<div>匿名访问次数：' + (u.anonymousVisits || 0) + '</div>' +
+          '<div>首次访问时间：' + (u.firstVisitAt ? formatDate(u.firstVisitAt) : '—') + '</div>' +
+          '<div>匿名行为日志：' + (u.anonActivityCount || 0) + ' 条</div>' +
+          '<div>匿名提问箱问题：' + (u.anonQuestions || 0) + ' 个</div>' +
+        '</div>' +
+        '<div style="margin-bottom:8px;">' +
+          '<div style="color:var(--muted);margin-bottom:4px;">绑定 visitor_id：</div>' +
+          (anonVisitors || '<div style="color:var(--muted);">—</div>') +
+        '</div>' +
+        '<div>' +
+          '<div style="color:var(--muted);margin-bottom:4px;">最近匿名行为：</div>' +
+          anonActivityHtml +
+        '</div>' +
+      '</div>' +
+      '<div><div class="section-title">行为统计</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
           '<div>心理测评：' + u.quizCount + ' 次</div>' +
           '<div>塔罗抽牌：' + u.tarotCount + ' 次</div>' +
+          '<div>提问箱提问：' + (u.askboxAsked || 0) + ' 次</div>' +
+          '<div>提问箱收到：' + (u.askboxReceived || 0) + ' 次</div>' +
+          '<div>个人动态：' + (u.momentCount || 0) + ' 条</div>' +
+          '<div>最后活跃：' + (u.lastBehaviorAt ? formatDate(u.lastBehaviorAt) : '—') + '</div>' +
         '</div></div>';
   } catch (e) {
     body.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
@@ -1037,6 +1084,39 @@ window.showUserDetail = async function(id) {
 
 window.closeUserDetail = function() {
   document.getElementById('userDetailModal').style.display = 'none';
+};
+
+// 编辑用户管理员备注
+window.editUserNote = async function(id) {
+  var note = '';
+  try {
+    var r0 = await fetch('/api/admin/users?id=' + id, { credentials: 'include' });
+    var d0 = await r0.json();
+    if (d0.user && d0.user.admin_note) note = d0.user.admin_note;
+  } catch (e) {}
+  var newNote = prompt('编辑用户 #' + id + ' 的管理员备注（最多 200 字符），输入空内容可清除备注：', note);
+  if (newNote === null) return; // 取消
+  var trimmed = newNote.trim();
+  if (trimmed.length > 200) {
+    alert('备注不能超过 200 字符');
+    return;
+  }
+  try {
+    var r = await fetch('/api/admin/users?id=' + id, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminNote: trimmed })
+    });
+    var d = await r.json();
+    if (d.ok) {
+      alert('备注已保存');
+      loadUsers(usersPage);
+    } else {
+      alert(d.message || d.error || '保存失败');
+    }
+  } catch (e) {
+    alert('网络错误');
+  }
 };
 
 // ==================== 举报管理 ====================

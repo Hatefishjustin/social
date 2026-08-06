@@ -16,11 +16,18 @@ CREATE TABLE IF NOT EXISTS users (
     ip TEXT DEFAULT '',               -- 注册时真实 IP（S-06 新增）
     country TEXT DEFAULT '',          -- 注册国家（S-06 新增）
     city TEXT DEFAULT '',             -- 注册城市（S-06 新增）
-    user_agent TEXT DEFAULT ''        -- 注册浏览器 UA（S-06 新增）
+    user_agent TEXT DEFAULT '',       -- 注册浏览器 UA（S-06 新增）
+    admin_note TEXT DEFAULT '',       -- 管理员自定义备注（S-07 新增，最大 200 字符）
+    last_login_ip TEXT DEFAULT '',    -- 最近登录 IP（S-07 新增，每次登录更新）
+    last_login_country TEXT DEFAULT '',  -- 最近登录国家（S-07 新增）
+    last_login_city TEXT DEFAULT '',     -- 最近登录城市（S-07 新增）
+    last_login_at INTEGER DEFAULT NULL   -- 最近登录时间（S-07 新增，Date.now()）
 );
 
 -- 迁移备注: S-06 (2026-08-06) 为 users 补充 ip/country/city/user_agent 字段
 -- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S06-users-meta.sql
+-- 迁移备注: S-07 (2026-08-06) 为 users 补充 admin_note / last_login_* 字段
+-- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S07-visitor-tracking.sql
 
 CREATE TABLE IF NOT EXISTS login_tokens (
     token TEXT PRIMARY KEY,
@@ -35,6 +42,31 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id INTEGER NOT NULL,
     expires_at INTEGER NOT NULL
 );
+
+-- ── 匿名访问者身份（S-07 新增） ──
+-- 游客首次访问时生成 sm_v_<UUID> 存入 cookie（有效期 1 年），
+-- 首次生成时在此表记录首访 IP/地区/UA。
+-- 用户注册/登录后通过 linked_user_id 关联，形成完整画像。
+CREATE TABLE IF NOT EXISTS anonymous_visitors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visitor_id TEXT UNIQUE NOT NULL,        -- 形如 sm_v_<UUID>，随机不可预测
+    first_ip TEXT DEFAULT '',               -- 首访 IP
+    first_country TEXT DEFAULT '',          -- 首访国家
+    first_city TEXT DEFAULT '',             -- 首访城市
+    user_agent TEXT DEFAULT '',             -- 首访浏览器 UA
+    created_at INTEGER NOT NULL,            -- 首访时间（Date.now() 毫秒）
+    linked_user_id INTEGER DEFAULT NULL,    -- 注册/登录后绑定的用户
+    FOREIGN KEY (linked_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_anonymous_visitors_linked_user
+    ON anonymous_visitors(linked_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_anonymous_visitors_created
+    ON anonymous_visitors(created_at);
+
+-- 迁移备注: S-07 (2026-08-06) 新增 anonymous_visitors 表
+-- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S07-visitor-tracking.sql
 
 CREATE TABLE IF NOT EXISTS ip_trust (
     ip TEXT NOT NULL,
@@ -312,8 +344,14 @@ CREATE TABLE IF NOT EXISTS activity_log (
     country TEXT,
     city TEXT,
     is_anonymous INTEGER DEFAULT 0,
+    visitor_id TEXT DEFAULT NULL,      -- 匿名身份标识，关联 anonymous_visitors（S-07 新增）
     created_at INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_activity_log_visitor ON activity_log(visitor_id);
+
+-- 迁移备注: S-07 (2026-08-06) 为 activity_log 补充 visitor_id 字段
+-- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S07-visitor-tracking.sql
 
 -- ── 页面访问统计 ──
 

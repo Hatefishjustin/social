@@ -677,12 +677,20 @@ window.toggleNotifications = toggleNotifications;
       else { b.classList.remove('sel'); toast(d.error||'提交失败，请重试'); }
     }catch(e){ b.classList.remove('sel'); toast('网络错误，请重试'); }
   }
-  function showDQR(d,o){
-    document.getElementById('dqOpts').style.display='none';
-    var rs=document.getElementById('dqRes');rs.style.display='block';
-    var h='<div class="dq-res-t">全站投票结果（'+d.total+' 人参与）</div>';
-    Object.keys(d.distribution).forEach(function(k){var it=d.distribution[k];h+='<div class="dq-res-i"><div class="dq-res-l"><span>'+he(o[k]||k)+'</span><span>'+it.pct+'%</span></div><div class="dq-bar-wrap"><div class="dq-bar-fill" style="width:'+it.pct+'%"></div></div></div>';});
-    h+='<div class="dq-total">已投票</div>';rs.innerHTML=h;
-  }
-</script>
-</html>
+   function showDQR(d,o){
+     document.getElementById('dqOpts').style.display='none';
+     var rs=document.getElementById('dqRes');rs.style.display='block';
+     var h='<div class="dq-res-t">全站投票结果（'+d.total+' 人参与）</div>';
+     Object.keys(d.distribution).forEach(function(k){var it=d.distribution[k];h+='<div class="dq-res-i"><div class="dq-res-l"><span>'+he(o[k]||k)+'</span><span>'+it.pct+'%</span></div><div class="dq-bar-wrap"><div class="dq-bar-fill" style="width:'+it.pct+'%"></div></div></div>';});
+     h+='<div class="dq-total">已投票</div>';rs.innerHTML=h;
+   }
+   // S-07: 匿名身份初始化
+   // 页面加载时调用 /api/visitor，若首次访问则生成并写入 visitor_id cookie（1 年有效）
+   (function initVisitor(){
+     try {
+       if (document.cookie.indexOf('visitor_id=') !== -1) return; // 已有身份，跳过
+       fetch('/api/visitor', { credentials: 'same-origin' }).catch(function(){});
+     } catch(e) {}
+   })();
+ </script>
+ </html>

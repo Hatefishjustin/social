@@ -2,6 +2,8 @@
  * POST /auth/code-login
  * 使用6位登录码创建会话（跨浏览器登录）
  */
+import { afterLogin } from '../_lib/visitor.js';
+
 function generateToken() {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
@@ -34,6 +36,9 @@ export const onRequestPost = async ({ request, env }) => {
   await env.DB.prepare(
     `INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)`
   ).bind(sessionToken, row.user_id, expiresAt).run();
+
+  // S-07: 登录后绑定匿名身份 + 补充注册信息 + 更新最近登录信息
+  await afterLogin(request, env, row.user_id);
 
   const headers = new Headers({
     'Content-Type': 'application/json',

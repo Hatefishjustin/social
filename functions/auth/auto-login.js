@@ -3,6 +3,7 @@
  * 路径: /auth/auto-login
  * GET - 检查当前IP是否有信任记录，有则自动创建session
  */
+import { afterLogin } from '../_lib/visitor.js';
 
 function generateToken() {
   const arr = new Uint8Array(32);
@@ -44,6 +45,9 @@ export const onRequestGet = async ({ request, env }) => {
   await env.DB.prepare(
     `DELETE FROM ip_trust WHERE ip = ?`
   ).bind(clientIP).run();
+
+  // S-07: 登录后绑定匿名身份 + 补充注册信息 + 更新最近登录信息
+  await afterLogin(request, env, trust.user_id);
 
   // Get user info
   const user = await env.DB.prepare(
