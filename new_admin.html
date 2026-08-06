@@ -252,6 +252,7 @@
       <button class="tab-btn active" data-tab="activity">用户活动</button>
       <button class="tab-btn" data-tab="quiz">心理测评</button>
       <button class="tab-btn" data-tab="tarot">塔罗数据</button>
+      <button class="tab-btn" data-tab="users">用户管理</button>
       <button class="tab-btn" data-tab="reports">举报管理</button>
     </div>
 
@@ -314,6 +315,30 @@
 
       <div class="pagination" id="tarotPagination"></div>
       <button class="refresh-btn" onclick="loadTarotStats()">刷新数据</button>
+    </div>
+
+    <!-- ======== 用户管理 Tab ======== -->
+    <div class="tab-content" id="tab-users">
+      <div class="table-scroll"><table>
+        <thead><tr>
+          <th>ID</th><th>邮箱</th><th>昵称</th><th>注册时间</th><th>IP</th><th>地区</th>
+          <th>设备</th><th>系统</th><th>浏览器</th><th>测评</th><th>塔罗</th><th>操作</th>
+        </tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table></div>
+      <div class="pagination" id="usersPagination"></div>
+      <button class="refresh-btn" onclick="loadUsers(1)">刷新数据</button>
+    </div>
+
+    <!-- 用户详情弹窗 -->
+    <div id="userDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeUserDetail()">
+      <div style="background:#111;border:1px solid #333;border-radius:14px;max-width:640px;width:100%;max-height:85vh;overflow:auto;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:16px;color:#fff;margin:0;">用户详情 #<span id="userDetailId"></span></h2>
+          <button class="filter-btn" onclick="closeUserDetail()">关闭</button>
+        </div>
+        <div id="userDetailBody" style="font-size:13px;color:#ccc;line-height:1.6;"></div>
+      </div>
     </div>
 
     <!-- ======== 举报管理 Tab ======== -->
@@ -885,6 +910,135 @@ async function loadTarotStats() {
   }
 }
 
+// ==================== 用户管理 ====================
+var usersPage = 1;
+
+function renderUserDevice(device, os, browser) {
+  // 设备友好名（旧数据空值显示 —）
+  var osBase = (os || '').split(' ')[0];
+  var devLabel = '—';
+  if (device === 'mobile') devLabel = osBase === 'iOS' ? 'iPhone' : (osBase === 'Android' ? 'Android手机' : '手机');
+  else if (device === 'tablet') devLabel = '平板';
+  else if (device === 'desktop') devLabel = osBase === 'macOS' ? 'Mac' : 'PC';
+  var parts = [devLabel];
+  if (os) parts.push(os);
+  if (browser) parts.push(browser);
+  return parts.filter(function(x){ return x && x !== '—'; }).join(' · ') || '—';
+}
+
+// IP 脱敏：保留前两段，其余 *（IPv4: 1.2.*.*；IPv6: 保留前 4 段）
+function maskIP(ip) {
+  if (!ip) return '—';
+  var parts = String(ip).split('.');
+  if (parts.length === 4) return parts[0] + '.' + parts[1] + '.*.*';
+  // IPv6：保留前 4 段
+  return String(ip).split(':').slice(0, 4).join(':') + ':…';
+}
+
+function renderUsersRows(users) {
+  var body = document.getElementById('usersBody');
+  if (!users || users.length === 0) {
+    body.innerHTML = '<tr class="no-data"><td colspan="12" style="color:var(--muted);">暂无用户</td></tr>';
+    return;
+  }
+  body.innerHTML = users.map(function(u){
+    var nickname = u.display_name || (u.nickname ? u.nickname : '—');
+    var loc = formatLocation(u.country, u.city);
+    var dev = renderUserDevice(u.device, u.os, u.browser);
+    return '<tr>' +
+      '<td class="mono">' + u.id + '</td>' +
+      '<td>' + esc(u.email) + '</td>' +
+      '<td>' + esc(nickname) + '</td>' +
+      '<td class="mono">' + formatDate(u.createdAt) + '</td>' +
+      '<td class="mono">' + esc(maskIP(u.ip)) + '</td>' +
+      '<td>' + esc(loc) + '</td>' +
+      '<td>' + esc(dev) + '</td>' +
+      '<td>' + esc(u.os || '—') + '</td>' +
+      '<td>' + esc(u.browser || '—') + '</td>' +
+      '<td>' + u.quizCount + '</td>' +
+      '<td>' + u.tarotCount + '</td>' +
+      '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showUserDetail(' + u.id + ')">查看详情</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderUsersPagination(pagination) {
+  var p = document.getElementById('usersPagination');
+  if (!pagination || pagination.totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML =
+    '<button ' + (pagination.page <= 1 ? 'disabled' : '') + ' onclick="loadUsers('+(pagination.page-1)+')">上一页</button>' +
+    '<span class="page-info">第 '+pagination.page+' / '+pagination.totalPages+' 页</span>' +
+    '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="loadUsers('+(pagination.page+1)+')">下一页</button>';
+}
+
+window.loadUsers = async function(page) {
+  usersPage = page || 1;
+  try {
+    var r = await fetch('/api/admin/users?page=' + usersPage, { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    if (data.error) throw new Error(data.message || data.error);
+    renderUsersRows(data.users);
+    renderUsersPagination(data.pagination);
+  } catch (e) {
+    document.getElementById('usersBody').innerHTML =
+      '<tr><td colspan="12" class="error-msg">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+};
+
+window.showUserDetail = async function(id) {
+  var modal = document.getElementById('userDetailModal');
+  var body = document.getElementById('userDetailBody');
+  document.getElementById('userDetailId').textContent = id;
+  body.innerHTML = '<div class="loading">加载中...</div>';
+  modal.style.display = 'flex';
+  try {
+    var r = await fetch('/api/admin/users?id=' + id, { credentials: 'include' });
+    var data = await r.json();
+    if (data.error || !data.user) {
+      body.innerHTML = '<div class="error-msg">' + esc(data.message || data.error || '加载失败') + '</div>';
+      return;
+    }
+    var u = data.user;
+    var nickname = u.display_name || u.nickname || '—';
+    var loginStatus = u.activeSessions > 0 ? '<span style="color:var(--green);">在线</span>' : '<span style="color:var(--muted);">离线</span>';
+    var lastActLoc = formatLocation(u.lastActivityCountry, u.lastActivityCity);
+    body.innerHTML =
+      '<div style="margin-bottom:16px;"><div class="section-title">账号</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+          '<div>邮箱：' + esc(u.email) + '</div>' +
+          '<div>昵称：' + esc(nickname) + '</div>' +
+          '<div>注册时间：' + formatDate(u.createdAt) + '</div>' +
+          '<div>登录状态：' + loginStatus + '</div>' +
+        '</div></div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">网络</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+          '<div>注册IP：' + esc(u.ip || '—') + '</div>' +
+          '<div>注册地区：' + esc(formatLocation(u.country, u.city)) + '</div>' +
+          '<div>最近活跃IP：' + esc(u.lastActivityIp || '—') + '</div>' +
+          '<div>最近活动地区：' + esc(lastActLoc) + '</div>' +
+        '</div></div>' +
+      '<div style="margin-bottom:16px;"><div class="section-title">设备</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+          '<div>设备：' + esc(formatDevice(u.device, u.os)) + '</div>' +
+          '<div>系统：' + esc(u.os || '—') + '</div>' +
+          '<div>浏览器：' + esc(u.browser || '—') + '</div>' +
+          '<div>最近活跃：' + (u.lastActive ? formatDate(u.lastActive) : '—') + '</div>' +
+        '</div></div>' +
+      '<div><div class="section-title">行为</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+          '<div>心理测评：' + u.quizCount + ' 次</div>' +
+          '<div>塔罗抽牌：' + u.tarotCount + ' 次</div>' +
+        '</div></div>';
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+};
+
+window.closeUserDetail = function() {
+  document.getElementById('userDetailModal').style.display = 'none';
+};
+
 // ==================== 举报管理 ====================
 async function loadReports() {
   var list = document.getElementById('reportsList');
@@ -958,6 +1112,7 @@ window.handleReport = async function(id, action) {
 var quizLoaded = false;
 var quizSource = 'yourlover';
 var tarotLoaded = false;
+var usersLoaded = false;
 var reportsLoaded = false;
 var reportsStatus = 'pending';
 
@@ -984,6 +1139,12 @@ function switchTab(tabName) {
     if (!tarotLoaded) {
       tarotLoaded = true;
       loadTarotStats();
+    }
+  } else if (tabName === 'users') {
+    document.getElementById('headerSub').textContent = '注册用户管理';
+    if (!usersLoaded) {
+      usersLoaded = true;
+      loadUsers(1);
     }
   } else if (tabName === 'reports') {
     document.getElementById('headerSub').textContent = '举报管理';

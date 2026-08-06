@@ -4,6 +4,7 @@
  * GET - 显示登录确认页面（不立即消费 token）
  * POST - 确认登录，创建会话
  */
+import { getRequestMeta } from '../_lib/ip.js';
 
 function generateToken() {
   const arr = new Uint8Array(32);
@@ -157,9 +158,10 @@ export const onRequestPost = async ({ request, env }) => {
   ).bind(email).first();
 
   if (!user) {
+    const meta = getRequestMeta(request);
     const result = await env.DB.prepare(
-      `INSERT INTO users (email, created_at) VALUES (?, ?)`
-    ).bind(email, Date.now()).run();
+      `INSERT INTO users (email, created_at, ip, country, city, user_agent) VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(email, Date.now(), meta.ip, meta.country, meta.city, meta.ua).run();
     user = { id: result.meta.last_row_id };
   }
 

@@ -12,8 +12,15 @@ CREATE TABLE IF NOT EXISTS users (
     display_name TEXT DEFAULT '',
     avatar_url TEXT DEFAULT '',
     is_admin INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    ip TEXT DEFAULT '',               -- 注册时真实 IP（S-06 新增）
+    country TEXT DEFAULT '',          -- 注册国家（S-06 新增）
+    city TEXT DEFAULT '',             -- 注册城市（S-06 新增）
+    user_agent TEXT DEFAULT ''        -- 注册浏览器 UA（S-06 新增）
 );
+
+-- 迁移备注: S-06 (2026-08-06) 为 users 补充 ip/country/city/user_agent 字段
+-- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S06-users-meta.sql
 
 CREATE TABLE IF NOT EXISTS login_tokens (
     token TEXT PRIMARY KEY,
