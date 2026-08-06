@@ -5,6 +5,7 @@
  * POST - 确认登录，创建会话
  */
 import { getRequestMeta } from '../_lib/ip.js';
+import { afterLogin } from '../_lib/visitor.js';
 
 function generateToken() {
   const arr = new Uint8Array(32);
@@ -171,6 +172,9 @@ export const onRequestPost = async ({ request, env }) => {
   await env.DB.prepare(
     `INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)`
   ).bind(sessionToken, user.id, expiresAt).run();
+
+  // S-07: 登录后绑定匿名身份 + 补充注册信息 + 更新最近登录信息
+  await afterLogin(request, env, user.id);
 
   // Generate 6-digit cross-browser login code (valid 30 min)
   const codeDigits = '0123456789';

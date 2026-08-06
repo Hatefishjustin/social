@@ -53,12 +53,13 @@ export function getRequestMeta(request) {
  * @param {string} content - 操作内容摘要
  * @param {number} isAnonymous - 是否匿名（0 或 1）
  */
-export async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous = 0) {
+export async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous = 0, extra = {}) {
   try {
+    const visitorId = extra.visitorId || null;
     await env.DB.prepare(
       `INSERT INTO activity_log 
-       (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       (user_id, user_email, action, target_type, target_id, content, ip, user_agent, country, city, is_anonymous, visitor_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       user ? user.id : null,
       user ? user.email : null,
@@ -71,6 +72,7 @@ export async function logActivity(env, meta, user, action, targetType, targetId,
       meta.country,
       meta.city,
       isAnonymous,
+      visitorId,
       Date.now()
     ).run();
   } catch (e) {
