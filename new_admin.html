@@ -273,6 +273,10 @@
 
     <!-- ======== 心理测评 Tab ======== -->
     <div class="tab-content" id="tab-quiz">
+      <div class="filters" id="quizSourceFilters">
+        <button class="filter-btn active" data-source="yourlover">Yourlover测评站</button>
+        <button class="filter-btn" data-source="soulmirror">SoulMirror社交站</button>
+      </div>
       <div class="loading" id="quizLoading">正在加载心理测评数据...</div>
       <div id="quizDashboard"></div>
     </div>
@@ -652,6 +656,69 @@ async function loadQuizStats() {
   }
 }
 
+// ==================== 心理测评（SoulMirror 社交站本地数据源） ====================
+function renderQuizLocalDashboard(data) {
+  var el = document.getElementById('quizDashboard');
+
+  el.innerHTML =
+    '<div class="stats">' +
+      '<div class="stat-card"><div class="num">' + (data.totals.records || 0) + '</div><div class="label">累计测评</div></div>' +
+      '<div class="stat-card"><div class="num">' + (data.totals.users || 0) + '</div><div class="label">测评用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + (data.today.records || 0) + '</div><div class="label">今日测评</div></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">近14天测评趋势</div>' +
+      renderTrend(data.dailyTrend) +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">测评结果分布（Top 20）</div>' +
+      '<div class="breakdown-list">' + renderBreakdown(data.headlineBreakdown) + '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近50条测评记录</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr>' +
+          '<th>ID</th><th>用户</th><th>结果摘要</th><th>时间</th>' +
+        '</tr></thead><tbody>' +
+        (data.recentRecords.length === 0
+          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          : data.recentRecords.map(function(r){
+              return '<tr>' +
+                '<td class="mono">' + r.id + '</td>' +
+                '<td>' + (r.userEmail ? esc(r.userEmail) : ('#' + r.userId)) + '</td>' +
+                '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.headline || '') + '">' + (r.headline ? esc(r.headline) : '—') + '</td>' +
+                '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+              '</tr>';
+            }).join(''))
+        + '</tbody></table></div>' +
+    '</div>' +
+
+    '<button class="refresh-btn" onclick="loadQuizStatsLocal()">刷新数据</button>';
+}
+
+async function loadQuizStatsLocal() {
+  var loading = document.getElementById('quizLoading');
+  var dashboard = document.getElementById('quizDashboard');
+  loading.style.display = 'block';
+  dashboard.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/quiz-stats-local', { credentials: 'include' });
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      dashboard.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderQuizLocalDashboard(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    dashboard.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ==================== 塔罗数据 ====================
 var tarotState = { page: 1, days: '' };
 var spreadTypeLabels = { single: '单张牌', three: '三张牌阵' };
@@ -819,6 +886,7 @@ window.handleReport = async function(id, action) {
 
 // ==================== Init ====================
 var quizLoaded = false;
+var quizSource = 'yourlover';
 var tarotLoaded = false;
 var reportsLoaded = false;
 var reportsStatus = 'pending';
@@ -835,7 +903,11 @@ function switchTab(tabName) {
     document.getElementById('headerSub').textContent = '心理测评统计';
     if (!quizLoaded) {
       quizLoaded = true;
-      loadQuizStats();
+      if (quizSource === 'soulmirror') {
+        loadQuizStatsLocal();
+      } else {
+        loadQuizStats();
+      }
     }
   } else if (tabName === 'tarot') {
     document.getElementById('headerSub').textContent = '塔罗数据统计';
@@ -911,6 +983,20 @@ document.addEventListener('DOMContentLoaded', function(){
       tarotState.days = btn.dataset.days;
       tarotState.page = 1;
       loadTarotPage(1, tarotState.days);
+    });
+  });
+
+  // Quiz source filter buttons (Yourlover / SoulMirror)
+  document.querySelectorAll('#quizSourceFilters .filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#quizSourceFilters .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      quizSource = btn.dataset.source;
+      if (quizSource === 'soulmirror') {
+        loadQuizStatsLocal();
+      } else {
+        loadQuizStats();
+      }
     });
   });
 });
