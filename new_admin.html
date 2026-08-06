@@ -331,6 +331,17 @@
   </div>
 </div>
 
+<!-- 测评详情弹窗 -->
+<div id="quizDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeQuizDetail()">
+  <div style="background:#111;border:1px solid #333;border-radius:14px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:16px;color:#fff;margin:0;">测评详情 #<span id="quizDetailId"></span></h2>
+      <button class="filter-btn" onclick="closeQuizDetail()">关闭</button>
+    </div>
+    <div id="quizDetailBody" style="font-size:13px;color:#ccc;line-height:1.6;"></div>
+  </div>
+</div>
+
 <script src="/auth.js"></script>
 <script>
 (function(){
@@ -681,16 +692,17 @@ function renderQuizLocalDashboard(data) {
       '<div class="section-title">最近50条测评记录</div>' +
       '<div class="table-scroll"><table>' +
         '<thead><tr>' +
-          '<th>ID</th><th>用户</th><th>结果摘要</th><th>时间</th>' +
+          '<th>ID</th><th>用户</th><th>结果摘要</th><th>时间</th><th>操作</th>' +
         '</tr></thead><tbody>' +
         (data.recentRecords.length === 0
-          ? '<tr><td colspan="4" style="color:var(--muted);">暂无数据</td></tr>'
+          ? '<tr><td colspan="5" style="color:var(--muted);">暂无数据</td></tr>'
           : data.recentRecords.map(function(r){
               return '<tr>' +
                 '<td class="mono">' + r.id + '</td>' +
                 '<td>' + (r.userEmail ? esc(r.userEmail) : ('#' + r.userId)) + '</td>' +
                 '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.headline || '') + '">' + (r.headline ? esc(r.headline) : '—') + '</td>' +
                 '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+                '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showQuizDetail(' + r.id + ')">查看详情</button></td>' +
               '</tr>';
             }).join(''))
         + '</tbody></table></div>' +
@@ -718,6 +730,91 @@ async function loadQuizStatsLocal() {
     dashboard.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
   }
 }
+
+// ==================== 测评详情弹窗 ====================
+var deviceLabelMap = { mobile: '手机', desktop: '桌面', tablet: '平板' };
+
+function renderScoreTable(obj) {
+  var keys = Object.keys(obj || {});
+  if (keys.length === 0) return '<div style="color:var(--muted);">无分数数据</div>';
+  return '<table style="width:100%;border-collapse:collapse;">' +
+    '<thead><tr><th style="text-align:left;padding:6px 8px;">维度</th><th style="text-align:left;padding:6px 8px;">得分</th></tr></thead><tbody>' +
+    keys.map(function(k){
+      var v = obj[k];
+      var vStr = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v);
+      return '<tr><td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(k) + '</td>' +
+        '<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(vStr) + '</td></tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+function renderAnswerTable(obj) {
+  var keys = Object.keys(obj || {});
+  if (keys.length === 0) return '<div style="color:var(--muted);">无答题数据</div>';
+  return '<table style="width:100%;border-collapse:collapse;">' +
+    '<thead><tr><th style="text-align:left;padding:6px 8px;">题目</th><th style="text-align:left;padding:6px 8px;">答案</th></tr></thead><tbody>' +
+    keys.map(function(k){
+      var v = obj[k];
+      var vStr = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v);
+      return '<tr><td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(k) + '</td>' +
+        '<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(vStr) + '</td></tr>';
+    }).join('') +
+    '</tbody></table>';
+}
+
+function renderQuizDetailBody(d) {
+  var location = [d.country, d.city].filter(Boolean).join(' ') || '—';
+  var uaShort = d.userAgent ? (d.userAgent.length > 60 ? d.userAgent.slice(0, 57) + '...' : d.userAgent) : '—';
+  return '' +
+    '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;margin-bottom:16px;">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">' +
+        '<div><span style="color:var(--muted);">用户：</span>' + esc(d.userEmail || ('#' + d.userId)) + '</div>' +
+        '<div><span style="color:var(--muted);">时间：</span>' + formatDate(d.createdAt) + '</div>' +
+        '<div><span style="color:var(--muted);">IP：</span>' + esc(d.ip || '—') + '</div>' +
+        '<div><span style="color:var(--muted);">地区：</span>' + esc(location) + '</div>' +
+        '<div><span style="color:var(--muted);">设备：</span>' + esc((deviceLabelMap[d.device] || d.device) || '—') + '</div>' +
+        '<div><span style="color:var(--muted);">系统：</span>' + esc(d.os || '—') + '</div>' +
+        '<div><span style="color:var(--muted);">浏览器：</span>' + esc(d.browser || '—') + '</div>' +
+        '<div><span style="color:var(--muted);">UA：</span>' + esc(uaShort) + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:16px;">' +
+      '<div class="section-title">结果摘要</div>' +
+      '<div>' + esc(d.headline || '—') + '</div>' +
+    '</div>' +
+    '<div style="margin-bottom:16px;">' +
+      '<div class="section-title">分数明细</div>' +
+      renderScoreTable(d.scores) +
+    '</div>' +
+    '<div>' +
+      '<div class="section-title">答题明细</div>' +
+      renderAnswerTable(d.answers) +
+    '</div>';
+}
+
+window.showQuizDetail = async function(id) {
+  var modal = document.getElementById('quizDetailModal');
+  var body = document.getElementById('quizDetailBody');
+  var idEl = document.getElementById('quizDetailId');
+  idEl.textContent = id;
+  body.innerHTML = '<div class="loading">加载中...</div>';
+  modal.style.display = 'flex';
+  try {
+    var r = await fetch('/api/admin/quiz-readings-local?id=' + id, { credentials: 'include' });
+    var data = await r.json();
+    if (data.error || !data.detail) {
+      body.innerHTML = '<div class="error-msg">' + esc(data.message || data.error || '加载失败') + '</div>';
+      return;
+    }
+    body.innerHTML = renderQuizDetailBody(data.detail);
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+};
+
+window.closeQuizDetail = function() {
+  document.getElementById('quizDetailModal').style.display = 'none';
+};
 
 // ==================== 塔罗数据 ====================
 var tarotState = { page: 1, days: '' };

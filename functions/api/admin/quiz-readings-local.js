@@ -39,6 +39,55 @@ export const onRequestGet = async ({ request, env }) => {
   }
 
   const url = new URL(request.url);
+  const idParam = url.searchParams.get('id');
+
+  // 单条详情模式：/api/admin/quiz-readings-local?id=X
+  if (idParam) {
+    const id = Number(idParam);
+    if (!Number.isInteger(id) || id <= 0) {
+      return jsonResponse({ error: 'invalid_id', message: '无效的记录 ID' }, 400);
+    }
+
+    const row = await env.DB.prepare(
+      `SELECT r.id, r.user_id, r.created_at, r.headline, r.scores_json, r.answers_json,
+              r.ip, r.user_agent, r.country, r.city, r.device, r.os, r.browser,
+              u.email as user_email, u.display_name as user_display_name
+       FROM quiz_results r
+       LEFT JOIN users u ON r.user_id = u.id
+       WHERE r.id = ?`
+    ).bind(id).first();
+
+    if (!row) {
+      return jsonResponse({ error: 'not_found', message: '记录不存在' }, 404);
+    }
+
+    let scores = {};
+    let answers = {};
+    try { scores = JSON.parse(row.scores_json || '{}'); } catch (e) {}
+    try { answers = JSON.parse(row.answers_json || '{}'); } catch (e) {}
+
+    return jsonResponse({
+      source: 'soulmirror',
+      detail: {
+        id: row.id,
+        userId: row.user_id,
+        userEmail: row.user_email || '',
+        userDisplayName: row.user_display_name || '',
+        headline: row.headline || '',
+        createdAt: row.created_at,
+        ip: row.ip || '',
+        country: row.country || '',
+        city: row.city || '',
+        device: row.device || '',
+        os: row.os || '',
+        browser: row.browser || '',
+        userAgent: row.user_agent || '',
+        scores,
+        answers,
+      },
+    });
+  }
+
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
   const pageSize = Math.min(
     MAX_PAGE_SIZE,

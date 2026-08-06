@@ -49,6 +49,8 @@ export const onRequestGet = async ({ request, env }) => {
       todayRow,
       totalUsersRow,
       headlineBreakdown,
+      countryBreakdown,
+      deviceBreakdown,
       dailyTrend,
       recentRecords,
     ] = await Promise.all([
@@ -61,13 +63,25 @@ export const onRequestGet = async ({ request, env }) => {
          GROUP BY headline ORDER BY cnt DESC LIMIT 20`
       ).all(),
       env.DB.prepare(
+        `SELECT country, COUNT(*) as cnt FROM quiz_results
+         WHERE country IS NOT NULL AND country != ''
+         GROUP BY country ORDER BY cnt DESC LIMIT 10`
+      ).all(),
+      env.DB.prepare(
+        `SELECT device, COUNT(*) as cnt FROM quiz_results
+         WHERE device IS NOT NULL AND device != ''
+         GROUP BY device ORDER BY cnt DESC`
+      ).all(),
+      env.DB.prepare(
         `SELECT cast(created_at / ${DAY_MS} as integer) as day_bucket, COUNT(*) as cnt
          FROM quiz_results WHERE created_at >= ?
          GROUP BY day_bucket ORDER BY day_bucket ASC`
       ).bind(fourteenDaysAgoMs).all(),
       env.DB.prepare(
         `SELECT r.id, r.user_id, r.created_at, r.headline,
+                r.ip, r.country, r.city, r.device, r.os, r.browser,
                 (r.scores_json IS NOT NULL) as has_scores,
+                (r.ip IS NOT NULL AND r.ip != '') as has_meta,
                 u.email as user_email, u.display_name as user_display_name
          FROM quiz_results r
          LEFT JOIN users u ON r.user_id = u.id
@@ -98,6 +112,14 @@ export const onRequestGet = async ({ request, env }) => {
         key: r.headline,
         count: r.cnt,
       })),
+      countryBreakdown: (countryBreakdown.results || []).map(r => ({
+        key: r.country,
+        count: r.cnt,
+      })),
+      deviceBreakdown: (deviceBreakdown.results || []).map(r => ({
+        key: r.device,
+        count: r.cnt,
+      })),
       dailyTrend: trend,
       recentRecords: (recentRecords.results || []).map(r => ({
         id: r.id,
@@ -106,7 +128,14 @@ export const onRequestGet = async ({ request, env }) => {
         userDisplayName: r.user_display_name || '',
         headline: r.headline || '',
         createdAt: r.created_at,
+        ip: r.ip || '',
+        country: r.country || '',
+        city: r.city || '',
+        device: r.device || '',
+        os: r.os || '',
+        browser: r.browser || '',
         hasScores: !!r.has_scores,
+        hasMeta: !!r.has_meta,
       })),
     });
   } catch (err) {

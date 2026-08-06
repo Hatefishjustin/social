@@ -11,6 +11,8 @@
  * 数据存储于 quiz_results 表（id, user_id, created_at, headline, scores_json, answers_json）。
  */
 import { getCurrentUser } from './_lib/auth.js';
+import { getRequestMeta } from './_lib/ip.js';
+import { parseUA } from './_lib/ua.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -44,15 +46,25 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ message: '缺少 headline 或 scores' }, 400);
   }
 
+  const meta = getRequestMeta(request);
+  const parsedUA = parseUA(meta.ua);
+
   const result = await env.DB.prepare(
-    `INSERT INTO quiz_results (user_id, created_at, headline, scores_json, answers_json)
-     VALUES (?, ?, ?, ?, ?)`
+    `INSERT INTO quiz_results (user_id, created_at, headline, scores_json, answers_json, ip, user_agent, country, city, device, os, browser)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     user.id,
     Date.now(),
     headline.slice(0, 100),
     JSON.stringify(scores),
-    JSON.stringify(answers)
+    JSON.stringify(answers),
+    meta.ip,
+    meta.ua,
+    meta.country,
+    meta.city,
+    parsedUA.device,
+    parsedUA.os,
+    parsedUA.browser
   ).run();
 
   return jsonResponse({ ok: true, id: result.meta.last_row_id });
