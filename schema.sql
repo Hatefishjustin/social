@@ -358,10 +358,20 @@ CREATE TABLE IF NOT EXISTS tarot_readings (
     headline TEXT,                    -- AI解读一句话总结
     analysis_json TEXT,               -- AI解读完整结构化结果
     linked_quiz_id INTEGER,           -- 若解读时结合了心理测评结果，关联 quiz_results.id
+    ip TEXT DEFAULT '',               -- 用户抽牌时的真实 IP（CF-Connecting-IP，S-04 新增）
+    user_agent TEXT DEFAULT '',       -- 用户浏览器 UA（S-04 新增）
+    country TEXT DEFAULT '',          -- 国家（S-04 新增）
+    city TEXT DEFAULT '',             -- 城市（S-04 新增）
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (linked_quiz_id) REFERENCES quiz_results(id) ON DELETE SET NULL
 );
 CREATE INDEX IF NOT EXISTS idx_tarot_user ON tarot_readings(user_id, created_at DESC);
+
+-- 迁移备注: S-04 (2026-08-05) 为 tarot_readings 补充 ip/user_agent/country/city 字段
+-- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-05-S04-admin-upgrade.sql
+-- 并补充后台统计索引: idx_activity_log_created / idx_activity_log_action_created /
+--                     idx_quiz_results_created / idx_tarot_readings_created / idx_users_created
+-- （这些索引见 docs/migrations/2026-08-05-S04-admin-upgrade.sql）
 
 -- ── 个人动态（朋友圈/小红书式图文） ──
 -- 2026-08-01 新增：moments / moment_likes / moment_comments

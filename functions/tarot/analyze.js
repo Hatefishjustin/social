@@ -9,6 +9,7 @@
  */
 import { callDashScope } from '../_lib/ai.js';
 import { getCurrentUser } from '../_lib/auth.js';
+import { getRequestMeta } from '../_lib/ip.js';
 
 const SYSTEM_PROMPT = `你是一位专业的塔罗牌解读师，同时具备心理咨询背景。用户会提供抽到的塔罗牌信息（可能是单张牌，也可能是"过去-现在-未来"三张牌阵），有时还会附上一个具体问题，以及用户的心理测评结果作为参考背景。
 
@@ -182,15 +183,17 @@ export const onRequestPost = async ({ request, env }) => {
         id: c.id || '', name: c.name, reversed: !!c.reversed,
         position: spreadType === 'three' ? (['past','present','future'][i] || null) : null,
       }));
+      const meta = getRequestMeta(request);
       const insertResult = await env.DB.prepare(
-        `INSERT INTO tarot_readings (user_id, created_at, spread_type, question, cards_json, headline, analysis_json, linked_quiz_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO tarot_readings (user_id, created_at, spread_type, question, cards_json, headline, analysis_json, linked_quiz_id, ip, user_agent, country, city)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       ).bind(
         user.id, Date.now(), spreadType, question || null,
         JSON.stringify(cardsToStore),
         analysis ? analysis.headline : null,
         JSON.stringify(analysis || { raw: analysisRaw }),
-        linkedQuizId
+        linkedQuizId,
+        meta.ip, meta.ua, meta.country, meta.city
       ).run();
       readingId = insertResult.meta.last_row_id;
     } catch (e) {
