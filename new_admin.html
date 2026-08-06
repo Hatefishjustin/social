@@ -251,6 +251,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="activity">用户活动</button>
       <button class="tab-btn" data-tab="quiz">心理测评</button>
+      <button class="tab-btn" data-tab="tarot">塔罗数据</button>
       <button class="tab-btn" data-tab="reports">举报管理</button>
     </div>
 
@@ -274,6 +275,41 @@
     <div class="tab-content" id="tab-quiz">
       <div class="loading" id="quizLoading">正在加载心理测评数据...</div>
       <div id="quizDashboard"></div>
+    </div>
+
+    <!-- ======== 塔罗数据 Tab ======== -->
+    <div class="tab-content" id="tab-tarot">
+      <div class="stats" id="tarotStats"></div>
+
+      <div class="filters">
+        <button class="filter-btn active" data-days="">全部</button>
+        <button class="filter-btn" data-days="7">近7天</button>
+        <button class="filter-btn" data-days="30">近30天</button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">近14天抽牌趋势</div>
+        <div id="tarotTrend"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">牌阵分布</div>
+        <div class="breakdown-list" id="tarotSpreadBreakdown"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">最近抽牌记录</div>
+        <div class="table-scroll"><table>
+          <thead><tr>
+            <th>ID</th><th>用户</th><th>牌阵</th><th>问题</th>
+            <th>国家</th><th>IP</th><th>时间</th>
+          </tr></thead>
+          <tbody id="tarotRecordsBody"></tbody>
+        </table></div>
+      </div>
+
+      <div class="pagination" id="tarotPagination"></div>
+      <button class="refresh-btn" onclick="loadTarotStats()">刷新数据</button>
     </div>
 
     <!-- ======== 举报管理 Tab ======== -->
@@ -616,6 +652,102 @@ async function loadQuizStats() {
   }
 }
 
+// ==================== 塔罗数据 ====================
+var tarotState = { page: 1, days: '' };
+var spreadTypeLabels = { single: '单张牌', three: '三张牌阵' };
+
+function renderTarotTrend(trend) {
+  if (!trend || trend.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无趋势数据</div>';
+  var max = Math.max(1, trend.map(function(t){ return t.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  var bars = trend.map(function(t){
+    return '<div class="trend-bar" style="height:' + Math.max(4, Math.round(t.count/max*100)) + '%">' +
+      '<div class="tip">' + formatShortDate(t.date) + '：' + t.count + '次</div>' +
+    '</div>';
+  }).join('');
+  var labels = '<span>' + formatShortDate(trend[0].date) + '</span><span>' + formatShortDate(trend[trend.length-1].date) + '</span>';
+  return '<div class="trend-chart">' + bars + '</div><div class="trend-labels">' + labels + '</div>';
+}
+
+function renderSpreadBreakdown(items) {
+  if (!items || items.length === 0) return '<div style="color:var(--muted);font-size:12px;">暂无数据</div>';
+  var max = Math.max(1, items.map(function(i){ return i.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  return items.map(function(i){
+    return '<div class="breakdown-row">' +
+      '<div class="name">' + esc(spreadTypeLabels[i.spreadType] || i.spreadType || '未知') + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(i.count/max*100) + '%"></div></div>' +
+      '<div class="count">' + i.count + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderTarotRecords(records) {
+  var body = document.getElementById('tarotRecordsBody');
+  if (!records || records.length === 0) {
+    body.innerHTML = '<tr class="no-data"><td colspan="7" style="color:var(--muted);">暂无抽牌记录</td></tr>';
+    return;
+  }
+  body.innerHTML = records.map(function(r){
+    var userLabel = r.userEmail ? esc(r.userEmail) : ('#' + r.userId);
+    return '<tr>' +
+      '<td class="mono">' + r.id + '</td>' +
+      '<td>' + userLabel + '</td>' +
+      '<td>' + esc(spreadTypeLabels[r.spreadType] || r.spreadType) + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.question || '') + '">' + (r.question ? esc(r.question) : '—') + '</td>' +
+      '<td>' + (r.country ? esc(r.country + (r.city ? ' ' + r.city : '')) : '—') + '</td>' +
+      '<td class="mono">' + (r.ip ? esc(r.ip) : '—') + '</td>' +
+      '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderTarotPagination(pagination) {
+  var p = document.getElementById('tarotPagination');
+  if (!pagination || pagination.totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML =
+    '<button ' + (pagination.page <= 1 ? 'disabled' : '') + ' onclick="tarotGoPage('+(pagination.page-1)+')">上一页</button>' +
+    '<span class="page-info">第 '+pagination.page+' / '+pagination.totalPages+' 页</span>' +
+    '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="tarotGoPage('+(pagination.page+1)+')">下一页</button>';
+}
+
+window.tarotGoPage = function(p) { loadTarotPage(p, tarotState.days); };
+
+async function loadTarotPage(page, days) {
+  try {
+    var r = await fetch('/api/admin/tarot-readings?page=' + (page || 1) + '&days=' + (days || ''), { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    if (data.error) throw new Error(data.message || data.error);
+    tarotState.page = data.pagination.page;
+    tarotState.totalPages = data.pagination.totalPages;
+    renderTarotRecords(data.readings);
+    renderTarotPagination(data.pagination);
+  } catch (e) {
+    document.getElementById('tarotRecordsBody').innerHTML =
+      '<tr><td colspan="7" class="error-msg">加载失败: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+async function loadTarotStats() {
+  try {
+    var r = await fetch('/api/admin/tarot-stats', { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    if (data.error) throw new Error(data.message || data.error);
+
+    document.getElementById('tarotStats').innerHTML =
+      '<div class="stat-card"><div class="num">' + (data.totals.readings || 0) + '</div><div class="label">累计抽牌</div></div>' +
+      '<div class="stat-card"><div class="num">' + (data.today.readings || 0) + '</div><div class="label">今日抽牌</div></div>';
+
+    document.getElementById('tarotTrend').innerHTML = renderTarotTrend(data.dailyTrend);
+    document.getElementById('tarotSpreadBreakdown').innerHTML = renderSpreadBreakdown(data.spreadBreakdown);
+
+    loadTarotPage(tarotState.page, tarotState.days);
+  } catch (e) {
+    document.getElementById('tarotStats').innerHTML =
+      '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ==================== 举报管理 ====================
 async function loadReports() {
   var list = document.getElementById('reportsList');
@@ -687,6 +819,7 @@ window.handleReport = async function(id, action) {
 
 // ==================== Init ====================
 var quizLoaded = false;
+var tarotLoaded = false;
 var reportsLoaded = false;
 var reportsStatus = 'pending';
 
@@ -703,6 +836,12 @@ function switchTab(tabName) {
     if (!quizLoaded) {
       quizLoaded = true;
       loadQuizStats();
+    }
+  } else if (tabName === 'tarot') {
+    document.getElementById('headerSub').textContent = '塔罗数据统计';
+    if (!tarotLoaded) {
+      tarotLoaded = true;
+      loadTarotStats();
     }
   } else if (tabName === 'reports') {
     document.getElementById('headerSub').textContent = '举报管理';
@@ -761,6 +900,17 @@ document.addEventListener('DOMContentLoaded', function(){
       btn.classList.add('active');
       reportsStatus = btn.dataset.status;
       loadReports();
+    });
+  });
+
+  // Tarot filter buttons
+  document.querySelectorAll('#tab-tarot .filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#tab-tarot .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      tarotState.days = btn.dataset.days;
+      tarotState.page = 1;
+      loadTarotPage(1, tarotState.days);
     });
   });
 });
