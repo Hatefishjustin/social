@@ -342,6 +342,7 @@
   </div>
 </div>
 
+<script src="/quiz-display-helper.js"></script>
 <script src="/auth.js"></script>
 <script>
 (function(){
@@ -692,15 +693,18 @@ function renderQuizLocalDashboard(data) {
       '<div class="section-title">最近50条测评记录</div>' +
       '<div class="table-scroll"><table>' +
         '<thead><tr>' +
-          '<th>ID</th><th>用户</th><th>结果摘要</th><th>时间</th><th>操作</th>' +
+          '<th>ID</th><th>用户</th><th>结果摘要</th><th>IP</th><th>地区</th><th>设备/系统/浏览器</th><th>时间</th><th>操作</th>' +
         '</tr></thead><tbody>' +
         (data.recentRecords.length === 0
-          ? '<tr><td colspan="5" style="color:var(--muted);">暂无数据</td></tr>'
+          ? '<tr><td colspan="8" style="color:var(--muted);">暂无数据</td></tr>'
           : data.recentRecords.map(function(r){
               return '<tr>' +
                 '<td class="mono">' + r.id + '</td>' +
                 '<td>' + (r.userEmail ? esc(r.userEmail) : ('#' + r.userId)) + '</td>' +
-                '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.headline || '') + '">' + (r.headline ? esc(r.headline) : '—') + '</td>' +
+                '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.headline || '') + '">' + (r.headline ? esc(r.headline) : '—') + '</td>' +
+                '<td class="mono">' + esc(r.ip || '—') + '</td>' +
+                '<td>' + esc(formatLocation(r.country, r.city)) + '</td>' +
+                '<td>' + esc(formatMetaShort(r.device, r.os, r.browser)) + '</td>' +
                 '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
                 '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showQuizDetail(' + r.id + ')">查看详情</button></td>' +
               '</tr>';
@@ -732,38 +736,7 @@ async function loadQuizStatsLocal() {
 }
 
 // ==================== 测评详情弹窗 ====================
-var deviceLabelMap = { mobile: '手机', desktop: '桌面', tablet: '平板' };
-
-function renderScoreTable(obj) {
-  var keys = Object.keys(obj || {});
-  if (keys.length === 0) return '<div style="color:var(--muted);">无分数数据</div>';
-  return '<table style="width:100%;border-collapse:collapse;">' +
-    '<thead><tr><th style="text-align:left;padding:6px 8px;">维度</th><th style="text-align:left;padding:6px 8px;">得分</th></tr></thead><tbody>' +
-    keys.map(function(k){
-      var v = obj[k];
-      var vStr = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v);
-      return '<tr><td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(k) + '</td>' +
-        '<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(vStr) + '</td></tr>';
-    }).join('') +
-    '</tbody></table>';
-}
-
-function renderAnswerTable(obj) {
-  var keys = Object.keys(obj || {});
-  if (keys.length === 0) return '<div style="color:var(--muted);">无答题数据</div>';
-  return '<table style="width:100%;border-collapse:collapse;">' +
-    '<thead><tr><th style="text-align:left;padding:6px 8px;">题目</th><th style="text-align:left;padding:6px 8px;">答案</th></tr></thead><tbody>' +
-    keys.map(function(k){
-      var v = obj[k];
-      var vStr = (typeof v === 'object' && v !== null) ? JSON.stringify(v) : String(v);
-      return '<tr><td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(k) + '</td>' +
-        '<td style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.05);">' + esc(vStr) + '</td></tr>';
-    }).join('') +
-    '</tbody></table>';
-}
-
 function renderQuizDetailBody(d) {
-  var location = [d.country, d.city].filter(Boolean).join(' ') || '—';
   var uaShort = d.userAgent ? (d.userAgent.length > 60 ? d.userAgent.slice(0, 57) + '...' : d.userAgent) : '—';
   return '' +
     '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;margin-bottom:16px;">' +
@@ -771,8 +744,8 @@ function renderQuizDetailBody(d) {
         '<div><span style="color:var(--muted);">用户：</span>' + esc(d.userEmail || ('#' + d.userId)) + '</div>' +
         '<div><span style="color:var(--muted);">时间：</span>' + formatDate(d.createdAt) + '</div>' +
         '<div><span style="color:var(--muted);">IP：</span>' + esc(d.ip || '—') + '</div>' +
-        '<div><span style="color:var(--muted);">地区：</span>' + esc(location) + '</div>' +
-        '<div><span style="color:var(--muted);">设备：</span>' + esc((deviceLabelMap[d.device] || d.device) || '—') + '</div>' +
+        '<div><span style="color:var(--muted);">地区：</span>' + esc(formatLocation(d.country, d.city)) + '</div>' +
+        '<div><span style="color:var(--muted);">设备：</span>' + esc(formatDevice(d.device, d.os)) + '</div>' +
         '<div><span style="color:var(--muted);">系统：</span>' + esc(d.os || '—') + '</div>' +
         '<div><span style="color:var(--muted);">浏览器：</span>' + esc(d.browser || '—') + '</div>' +
         '<div><span style="color:var(--muted);">UA：</span>' + esc(uaShort) + '</div>' +
@@ -783,12 +756,12 @@ function renderQuizDetailBody(d) {
       '<div>' + esc(d.headline || '—') + '</div>' +
     '</div>' +
     '<div style="margin-bottom:16px;">' +
-      '<div class="section-title">分数明细</div>' +
-      renderScoreTable(d.scores) +
+      '<div class="section-title">测评结果解析</div>' +
+      formatScores(d.scores) +
     '</div>' +
     '<div>' +
-      '<div class="section-title">答题明细</div>' +
-      renderAnswerTable(d.answers) +
+      '<div class="section-title">作答明细</div>' +
+      formatAnswers(d.answers) +
     '</div>';
 }
 
