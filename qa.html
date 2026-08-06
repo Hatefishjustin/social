@@ -191,6 +191,42 @@ body{
 }
 .chip:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent);}
 
+/* 访客创建提问箱引导卡（Luxury Editorial） */
+.cta-card{
+  width:100%;max-width:var(--max-w);padding:0 16px 8px;
+}
+.cta-card-inner{
+  background:#F9F8F6;color:#1c1c1c;
+  border:1px solid rgba(192,154,78,.35);
+  border-radius:var(--radius);
+  padding:32px 24px 26px;
+  text-align:center;
+  position:relative;overflow:hidden;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);
+}
+.cta-card-inner::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,#C9A86A,transparent);
+}
+.cta-card-icon{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(201,168,106,.14);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;
+}
+.cta-card-title{font-size:17px;font-weight:700;color:#1c1c1c;margin-bottom:6px;letter-spacing:-0.01em;}
+.cta-card-desc{font-size:13px;color:#8a8a8a;margin-bottom:18px;line-height:1.6;}
+.cta-card-btn{
+  background:linear-gradient(135deg,#d4af6a,#c09a4e);
+  color:#1a1a1a;border:none;
+  padding:12px 32px;border-radius:100px;
+  font-size:14px;font-weight:600;font-family:inherit;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 14px rgba(192,154,78,.28);
+}
+.cta-card-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(192,154,78,.4);}
+.cta-card-btn:active{transform:scale(.97);}
+
 /* Feed */
 .feed{width:100%;max-width:var(--max-w);padding:0 16px;}
 .feed-list.loading{opacity:.6;}
@@ -377,7 +413,7 @@ body{
 <nav class="nav">
   <button class="nav-back" id="btnBack">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    返回
+    首页
   </button>
   <span class="nav-title" id="navTitle">提问箱</span>
   <button class="nav-share" id="btnShareTop">
@@ -446,6 +482,18 @@ body{
       <button class="chip" data-text="你最想对现在的自己说什么？">对现在的自己说</button>
       <button class="chip" data-text="有没有一个念头，你一直不敢说出口？">不敢说出口的话</button>
       <button class="chip" data-text="你对未来十年有什么期待？">未来十年？</button>
+    </div>
+  </div>
+
+  <!-- 访客创建提问箱引导卡 -->
+  <div class="cta-card" id="createAskboxCta" style="display:none">
+    <div class="cta-card-inner">
+      <div class="cta-card-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#B8860B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+      </div>
+      <div class="cta-card-title">也创建一个属于你的提问箱</div>
+      <div class="cta-card-desc">匿名收集朋友真实想法</div>
+      <button class="cta-card-btn" id="btnCreateAskbox">创建我的提问箱</button>
     </div>
   </div>
 
@@ -550,6 +598,7 @@ function initTarget() {
     dom.profileAvatar.textContent = '?';
   }
   updateShareLink();
+  updateVisitorUI();
 }
 
 function setVisitorProfile(name, userId) {
@@ -571,6 +620,7 @@ function syncWithAuth() {
   // 访问特定提问箱（?u=xxx）：保持 visitor 模式
   if (state.targetId && !state.isOwnerView) {
     // 已经是 visitor 模式，不做修改
+    updateVisitorUI();
     return;
   }
 
@@ -598,6 +648,7 @@ function syncWithAuth() {
     dom.askArea.style.pointerEvents = 'auto';
   }
   updateShareLink();
+  updateVisitorUI();
   loadFeed(true);
 }
 
@@ -613,6 +664,42 @@ function getShareUrl() {
 
 function updateShareLink() {
   dom.shareLink.textContent = getShareUrl();
+}
+
+// ── 访客视图 UI 控制 ──
+// 根据 owner / visitor 状态切换展示：
+//   owner view  → 完整功能（分享、导入记忆等）
+//   visitor view → 仅保留返回首页、提问输入、查看公开内容、创建引导
+function updateVisitorUI() {
+  var isVisitor = !!(state.targetId && !state.isOwnerView);
+  // 若 URL ?u= 指向当前登录用户自己（通过自己分享链接进入），视为自己的提问箱
+  if (isVisitor && Auth.isLoggedIn() && String(Auth.getUserId()) === String(state.targetId)) {
+    isVisitor = false;
+  }
+
+  // 箱主专属：分享入口（顶部导航 + 资料卡）
+  var btnShareTop = Q('#btnShareTop');
+  var btnShareProfile = Q('#btnShareProfile');
+  if (btnShareTop) btnShareTop.style.display = isVisitor ? 'none' : '';
+  if (btnShareProfile) btnShareProfile.style.display = isVisitor ? 'none' : '';
+
+  // 箱主专属：导入记忆
+  var btnImportMemory = Q('#btnImportMemory');
+  if (btnImportMemory) btnImportMemory.style.display = isVisitor ? 'none' : '';
+
+  // 访客专属：创建提问箱引导卡（仅访客显示）
+  var cta = Q('#createAskboxCta');
+  if (cta) cta.style.display = isVisitor ? 'block' : 'none';
+}
+
+function goCreateAskbox() {
+  if (Auth.isLoggedIn()) {
+    // 已登录：直接进入自己的提问箱（当前创建流程 = 登录后访问 /qa.html）
+    location.href = '/qa.html';
+  } else {
+    // 未登录：跳转登录页并保留创建意图，登录后回到 /qa.html 进入自己的提问箱
+    location.href = '/login.html?redirect=' + encodeURIComponent('/qa.html');
+  }
 }
 
 // ── Toast ──
@@ -1006,6 +1093,12 @@ QA('.tab-btn').forEach(function(btn) {
   });
 });
 
+// 顶部返回首页
+Q('#btnBack').addEventListener('click', function() { location.href = '/'; });
+
+// 访客创建提问箱
+Q('#btnCreateAskbox').addEventListener('click', goCreateAskbox);
+
 // Share buttons
 Q('#btnShareTop').addEventListener('click', openShare);
 Q('#btnShareProfile').addEventListener('click', openShare);
@@ -1165,7 +1258,14 @@ function init() {
   Auth.onAuthChange(function(user) {
     // 如果已经在访问别人的提问箱，不切换
     var p = new URLSearchParams(location.search);
-    if (p.get('u')) return;
+    if (p.get('u')) {
+      // 若当前登录用户就是该提问箱主人（通过自己分享链接进入），标记为箱主并隐藏创建引导卡
+      if (user && String(user.userId) === String(state.targetId)) {
+        state.isOwnerView = true;
+      }
+      updateVisitorUI();
+      return;
+    }
 
     if (user) {
       syncWithAuth();
@@ -1182,6 +1282,7 @@ function init() {
           b.classList.toggle('active', b.dataset.tab === 'square');
         });
       }
+      updateVisitorUI();
       loadFeed(true);
     }
   });
