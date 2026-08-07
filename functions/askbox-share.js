@@ -85,7 +85,9 @@ export const onRequestGet = async ({ request, env }) => {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      'Cache-Control': 'public, max-age=300',
+      // 分享落地页包含 ?u= 目标参数，必须禁止缓存：
+      // 微信内置浏览器若命中缓存，可能丢失 u 参数导致串号（打开成自己的提问箱）
+      'Cache-Control': 'no-store, max-age=0',
     },
   });
 };

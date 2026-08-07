@@ -578,7 +578,12 @@ var state = {
   page: 1,
   isLoading: false,
   hasMore: true,
-  targetId: null  // 从 URL ?u= 获取
+  // 从 URL ?u= 获取，分享链接目标提问箱（最高优先级，登录态不可覆盖）
+  urlTargetId: null,
+  // 当前目标提问箱（URL 锁定 > 登录用户）
+  targetId: null,
+  // 是否箱主视图（登录用户 == 目标提问箱主人）
+  isOwnerView: false
 };
 
 // ── DOM ──
@@ -599,6 +604,8 @@ function initTarget() {
   var p = new URLSearchParams(location.search);
   var u = p.get('u');
   if (u) {
+    // 分享链接目标提问箱：最高优先级，锁定后登录态不可覆盖
+    state.urlTargetId = u;
     state.targetId = u;
     state.isOwnerView = false;
     var n = p.get('n');
@@ -646,6 +653,15 @@ function setVisitorProfile(name, userId) {
 function syncWithAuth() {
   var uid = Auth.getUserId();
   var email = Auth.getEmail();
+
+  // 分享链接目标提问箱（?u=xxx）优先级最高：
+  // 无论登录状态如何，都保持目标提问箱，绝不覆盖为当前登录用户自己的提问箱
+  if (state.urlTargetId) {
+    state.targetId = state.urlTargetId;
+    state.isOwnerView = !!(Auth.isLoggedIn() && String(Auth.getUserId()) === String(state.urlTargetId));
+    updateVisitorUI();
+    return;
+  }
 
   // 访问特定提问箱（?u=xxx）：保持 visitor 模式
   if (state.targetId && !state.isOwnerView) {
@@ -904,7 +920,12 @@ async function loadFeed(reset) {
 
   try {
     var url = '/askbox?page=' + state.page;
-    if (state.tab === 'mine' && state.targetId) {
+    // 分享链接目标提问箱（urlTargetId 锁定）优先级最高：
+    // 无论当前 tab 如何，只要存在 URL 目标提问箱，请求一律绑定它，
+    // 防止 tab 切换或登录态变化导致请求退化为自己的提问箱 / 广场
+    if (state.urlTargetId) {
+      url += '&targetId=' + encodeURIComponent(state.urlTargetId);
+    } else if (state.tab === 'mine' && state.targetId) {
       url += '&targetId=' + encodeURIComponent(state.targetId);
     }
     // 广场模式不带 targetId，后端只返回已回答
@@ -1383,6 +1404,15 @@ function init() {
 
   // 监听登录状态变化
   Auth.onAuthChange(function(user) {
+    // 分享链接目标提问箱（?u=xxx）优先级最高：登录/登出都不改变目标
+    if (state.urlTargetId) {
+      state.targetId = state.urlTargetId;
+      // 若当前登录用户就是该提问箱主人（通过自己分享链接进入），标记为箱主并隐藏创建引导卡
+      state.isOwnerView = !!(user && String(user.userId) === String(state.urlTargetId));
+      updateVisitorUI();
+      return;
+    }
+
     // 如果已经在访问别人的提问箱，不切换
     var p = new URLSearchParams(location.search);
     if (p.get('u')) {
