@@ -349,7 +349,8 @@
       });
       var data = await res.json();
       if (!data.ok) {
-        showErr(confirmErr, friendlyError(data.code, data.message));
+        // 优先展示后端返回的真实错误码/错误信息，便于定位导入失败原因
+        showErr(confirmErr, friendlyError(data.code || data.error, data.message || data.error));
         return;
       }
       previewSection.classList.add('hidden');

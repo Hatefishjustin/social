@@ -83,34 +83,32 @@ export const onRequestGet = async ({ request, env }) => {
              WHERE q.target_id = ? ORDER BY q.created_at DESC LIMIT ? OFFSET ?`;
       countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE target_id = ?`;
     } else if (visitorToken) {
-      // 有 visitor_token → 看到 public + 自己的 private
-      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
-                    q.answer_visibility, q.visitor_token,
-                    p.nickname as asker_name, a.image_data as asker_avatar
+      // 有 visitor_token 的访客 → 仅看到「已回复的公开内容」+「自己提问的私密回复」（保持原匿名提问者查看自身私密回复能力）
+      // 仅返回已回复内容，且对 SELECT 做脱敏：不返回匿名提问者身份（asker_id/asker_name/asker_avatar）
+      // 与 visitor_token 标识本身，避免访客视角泄露隐藏数据。
+      sql = `SELECT q.id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+                    q.answer_visibility
              FROM askbox_questions q
-             LEFT JOIN profiles p ON p.user_id = q.asker_id
-             LEFT JOIN avatars a ON a.user_id = q.asker_id
-             WHERE q.target_id = ? AND (
+             WHERE q.target_id = ? AND q.answered_at IS NOT NULL AND (
                (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
                OR (q.visitor_token = ?)
              )
-             ORDER BY q.created_at DESC LIMIT ? OFFSET ?`;
-      countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE target_id = ? AND (
-        (answer_visibility = 'public' OR answer_visibility IS NULL)
-        OR (visitor_token = ?)
-      )`;
+             ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
+      countSql = `SELECT COUNT(*) as total FROM askbox_questions
+                  WHERE target_id = ? AND answered_at IS NOT NULL AND (
+                    (answer_visibility = 'public' OR answer_visibility IS NULL)
+                    OR (visitor_token = ?)
+                  )`;
       allParams.push(visitorToken);
     } else {
-      // 普通访客 → 仅看到 public
-      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
-                    q.answer_visibility, q.visitor_token,
-                    p.nickname as asker_name, a.image_data as asker_avatar
+      // 普通访客（无 token）→ 仅看到「已回复的公开内容」，完全脱敏（不返回访客身份敏感字段）
+      sql = `SELECT q.id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
+                    q.answer_visibility
              FROM askbox_questions q
-             LEFT JOIN profiles p ON p.user_id = q.asker_id
-             LEFT JOIN avatars a ON a.user_id = q.asker_id
-             WHERE q.target_id = ? AND (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
-             ORDER BY q.created_at DESC LIMIT ? OFFSET ?`;
-      countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE target_id = ? AND (answer_visibility = 'public' OR answer_visibility IS NULL)`;
+             WHERE q.target_id = ? AND q.answered_at IS NOT NULL AND q.answer_visibility = 'public'
+             ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
+      countSql = `SELECT COUNT(*) as total FROM askbox_questions
+                  WHERE target_id = ? AND answered_at IS NOT NULL AND answer_visibility = 'public'`;
     }
   } else {
     // 广场（公共 feed）

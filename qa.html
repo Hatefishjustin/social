@@ -578,11 +578,13 @@ var state = {
   page: 1,
   isLoading: false,
   hasMore: true,
+  // 当前模式：'owner'（主人管理视图）| 'visitor'（访客公开展示）| 'guest'（未登录且无目标）
+  mode: 'guest',
   // 从 URL ?u= 获取，分享链接目标提问箱（最高优先级，登录态不可覆盖）
   urlTargetId: null,
   // 当前目标提问箱（URL 锁定 > 登录用户）
   targetId: null,
-  // 是否箱主视图（登录用户 == 目标提问箱主人）
+  // 是否箱主视图（登录用户 == 目标提问箱主人，由 mode==='owner' 推导）
   isOwnerView: false
 };
 
@@ -607,6 +609,8 @@ function initTarget() {
     // 分享链接目标提问箱：最高优先级，锁定后登录态不可覆盖
     state.urlTargetId = u;
     state.targetId = u;
+    // 进入访客模式（登录后若发现就是自己，syncWithAuth 会升级为 owner）
+    state.mode = 'visitor';
     state.isOwnerView = false;
     var n = p.get('n');
     if (n) {
@@ -654,25 +658,41 @@ function syncWithAuth() {
   var uid = Auth.getUserId();
   var email = Auth.getEmail();
 
-  // 分享链接目标提问箱（?u=xxx）优先级最高：
-  // 无论登录状态如何，都保持目标提问箱，绝不覆盖为当前登录用户自己的提问箱
+  // ── 分享链接目标提问箱（?u=xxx）：最高优先级，URL 目标不可被登录态覆盖 ──
   if (state.urlTargetId) {
     state.targetId = state.urlTargetId;
-    state.isOwnerView = !!(Auth.isLoggedIn() && String(Auth.getUserId()) === String(state.urlTargetId));
+    // 仅当登录用户 == 目标提问箱主人 → Owner Mode；其余一律 Visitor Mode
+    state.isOwnerView = !!(Auth.isLoggedIn() && String(uid) === String(state.urlTargetId));
+    state.mode = state.isOwnerView ? 'owner' : 'visitor';
+
+    if (state.isOwnerView) {
+      // 自己通过分享链接进入自己的提问箱 → 主人管理视图
+      var dName = Auth.getDisplayName() || (email ? email.split('@')[0] : '我');
+      dom.profileName.textContent = dName + ' 的提问箱';
+      var aUrl = Auth.getAvatarUrl();
+      if (aUrl) {
+        dom.profileAvatar.innerHTML = '<img src="' + aUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'">';
+      } else {
+        dom.profileAvatar.textContent = (dName[0] || '?').toUpperCase();
+      }
+      dom.navTitle.textContent = dName + ' · 提问箱';
+      dom.askArea.style.opacity = '0.35';
+      dom.askArea.style.pointerEvents = 'none';
+    } else {
+      // 访客模式 → 目标提问箱公开展示，不动提问输入区（保留匿名提问能力）
+      if (dom.tabBadge) dom.tabBadge.style.display = 'none';
+    }
+    updateShareLink();
     updateVisitorUI();
+    loadFeed(true);
     return;
   }
 
-  // 访问特定提问箱（?u=xxx）：保持 visitor 模式
-  if (state.targetId && !state.isOwnerView) {
-    // 已经是 visitor 模式，不做修改
-    updateVisitorUI();
-    return;
-  }
-
+  // ── 无 URL 目标：登录 = Owner Mode（自己的提问箱），未登录 = Guest ──
   if (Auth.isLoggedIn()) {
     state.targetId = String(uid);
     state.isOwnerView = true;
+    state.mode = 'owner';
     var displayName = Auth.getDisplayName();
     var userName = displayName || (email ? email.split('@')[0] : '我');
     dom.profileName.textContent = userName + ' 的提问箱';
@@ -688,6 +708,7 @@ function syncWithAuth() {
   } else {
     state.targetId = null;
     state.isOwnerView = false;
+    state.mode = 'guest';
     dom.profileName.textContent = '我的提问箱';
     dom.profileAvatar.textContent = '?';
     dom.askArea.style.opacity = '1';
@@ -712,16 +733,13 @@ function updateShareLink() {
   dom.shareLink.textContent = getShareUrl();
 }
 
-// ── 访客视图 UI 控制 ──
-// 根据 owner / visitor 状态切换展示：
-//   owner view  → 完整功能（分享、导入记忆等）
-//   visitor view → 仅保留返回首页、提问输入、查看公开内容、创建引导
+// ── 访客/主人视图 UI 控制 ──
+// 依据 state.mode 统一切换展示：
+//   owner  → 完整管理功能（分享、导入记忆、收到提问 tab、统计、回复入口）
+//   visitor → 仅保留：返回首页、向箱主匿名提问、箱主公开问答、创建引导卡
+//   guest  → 未登录且无目标：登录引导
 function updateVisitorUI() {
-  var isVisitor = !!(state.targetId && !state.isOwnerView);
-  // 若 URL ?u= 指向当前登录用户自己（通过自己分享链接进入），视为自己的提问箱
-  if (isVisitor && Auth.isLoggedIn() && String(Auth.getUserId()) === String(state.targetId)) {
-    isVisitor = false;
-  }
+  var isVisitor = state.mode === 'visitor';
 
   // 箱主专属：分享入口（顶部导航 + 资料卡）
   var btnShareTop = Q('#btnShareTop');
@@ -733,9 +751,26 @@ function updateVisitorUI() {
   var btnImportMemory = Q('#btnImportMemory');
   if (btnImportMemory) btnImportMemory.style.display = isVisitor ? 'none' : '';
 
+  // 统计区（收到提问/已回答）仅主人可见
+  var stats = Q('.profile-stats');
+  if (stats) stats.style.display = isVisitor ? 'none' : '';
+
+  // Tab 区域：访客模式隐藏「收到的提问 / 问答广场」管理入口
+  var tabsEl = Q('.tabs');
+  if (tabsEl) tabsEl.style.display = isVisitor ? 'none' : '';
+
+  // 未回复数 badge 仅在主人模式可见
+  var badge = Q('#tabBadge');
+  if (badge) badge.style.display = isVisitor ? 'none' : badge.style.display;
+
   // 访客专属：创建提问箱引导卡（仅访客显示）
   var cta = Q('#createAskboxCta');
   if (cta) cta.style.display = isVisitor ? 'block' : 'none';
+
+  // 访客模式：tab 固定为 mine（targetId 已锁定），不展示管理 tab
+  if (isVisitor && state.tab !== 'mine') {
+    state.tab = 'mine';
+  }
 }
 
 function goCreateAskbox() {
@@ -812,8 +847,10 @@ function renderCard(q) {
       '</button>';
   }
 
+  // 访客模式：不渲染任何管理 UI（回复输入框/可见性切换/追问/箱主回复）
+  var isVisitorMode = state.mode === 'visitor';
   var replyHtml = '';
-  if (state.tab === 'mine' && !q.answer_content) {
+  if (!isVisitorMode && state.tab === 'mine' && !q.answer_content) {
     replyHtml =
       '<div class="card-reply">' +
         '<textarea class="card-reply-input" placeholder="写下你的回答..." maxlength="2000" rows="3"></textarea>' +
@@ -1404,23 +1441,15 @@ function init() {
 
   // 监听登录状态变化
   Auth.onAuthChange(function(user) {
-    // 分享链接目标提问箱（?u=xxx）优先级最高：登录/登出都不改变目标
+    // 分享链接目标提问箱（?u=xxx）优先级最高：登录/登出都不改变目标提问箱与访客/主人模式
     if (state.urlTargetId) {
       state.targetId = state.urlTargetId;
-      // 若当前登录用户就是该提问箱主人（通过自己分享链接进入），标记为箱主并隐藏创建引导卡
+      // 登录用户 == 目标主人 → Owner Mode；其余（含未登录）一律 Visitor Mode
       state.isOwnerView = !!(user && String(user.userId) === String(state.urlTargetId));
+      state.mode = state.isOwnerView ? 'owner' : 'visitor';
       updateVisitorUI();
-      return;
-    }
-
-    // 如果已经在访问别人的提问箱，不切换
-    var p = new URLSearchParams(location.search);
-    if (p.get('u')) {
-      // 若当前登录用户就是该提问箱主人（通过自己分享链接进入），标记为箱主并隐藏创建引导卡
-      if (user && String(user.userId) === String(state.targetId)) {
-        state.isOwnerView = true;
-      }
-      updateVisitorUI();
+      // 切换模式后重新加载（owner 可见全部，visitor 仅公开）
+      loadFeed(true);
       return;
     }
 
@@ -1429,16 +1458,11 @@ function init() {
     } else {
       state.targetId = null;
       state.isOwnerView = false;
+      state.mode = 'guest';
       dom.profileName.textContent = '我的提问箱';
       dom.profileAvatar.textContent = '?';
       dom.askArea.style.opacity = '1';
       dom.askArea.style.pointerEvents = 'auto';
-      if (state.tab === 'mine') {
-        state.tab = 'square';
-        QA('.tab-btn').forEach(function(b) {
-          b.classList.toggle('active', b.dataset.tab === 'square');
-        });
-      }
       updateVisitorUI();
       loadFeed(true);
     }
