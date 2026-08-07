@@ -238,19 +238,35 @@ export const onRequestPost = async ({ request, env }) => {
     const now = Date.now();
 
     // 0. 同来源防重复导入（仅 lightbox 平台生效，不影响其他平台）
-    //    规则：同一用户 + 同一 lightbox source_id 只允许成功导入一次
+    //    规则：同一用户 + 同一 lightbox source_id 只允许「成功导入(imported)」一次。
+    //    importing（上次写入中断）/ failed（上次写入失败）的记录允许清理后重新导入，
+    //    避免失败一次后留下脏记录导致永久无法重试。
     if (preview.platform === 'lightbox' && preview.sourceId) {
-      const existing = await env.DB.prepare(
+      const imported = await env.DB.prepare(
         `SELECT id FROM content_imports
-         WHERE user_id = ? AND platform = 'lightbox' AND source_id = ?
+         WHERE user_id = ? AND platform = 'lightbox' AND source_id = ? AND status = 'imported'
          LIMIT 1`
       ).bind(user.id, preview.sourceId).first();
-      if (existing) {
+      if (imported) {
         return jsonResponse({
           ok: false,
           code: 'already_imported',
           message: '该提问箱已经导入过',
         }, 400);
+      }
+
+      // 清理上次未完成（importing/failed）的旧批次：
+      // 级联删除其 imported_questions 明细，让本次以全新批次重新完整导入。
+      // （askbox_questions 侧由步骤 2 的逐条去重检测兜底，不会重复插入。）
+      const stale = await env.DB.prepare(
+        `SELECT id FROM content_imports
+         WHERE user_id = ? AND platform = 'lightbox' AND source_id = ? AND status IN ('importing', 'failed')
+         LIMIT 50`
+      ).bind(user.id, preview.sourceId).all();
+      for (const row of (stale.results || [])) {
+        await env.DB.prepare(
+          `DELETE FROM content_imports WHERE id = ?`
+        ).bind(row.id).run();
       }
     }
 
@@ -274,52 +290,80 @@ export const onRequestPost = async ({ request, env }) => {
 
     const importId = importResult.meta.last_row_id;
 
-    // 2. 写入问答明细（原子批量执行）
-    //    使用 D1 batch() 确保所有 INSERT 在同一事务内执行，
-    //    避免部分写入成功后断连导致脏数据（questions 条数与 total_count 不匹配）。
-    const stmts = [];
-    for (const q of preview.questions) {
-      stmts.push(
-        env.DB.prepare(
-          `INSERT OR IGNORE INTO imported_questions (import_id, source_question_id, question, answer, source_created_at, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`
-        ).bind(
-          importId,
-          q.sourceQuestionId || q.source_question_id || '',
-          q.question || '',
-          q.answer || '',
-          q.sourceCreatedAt || q.source_created_at || null,
-          now
-        )
-      );
-      // 同步写入站内提问箱：导入的问答全部展示在导入者自己的提问箱（匿名提问者）
-      const askboxAnswer = (q.answer || '').trim();
-      const askboxTime = q.sourceCreatedAt || q.source_created_at || now;
-      stmts.push(
-        env.DB.prepare(
-          `INSERT INTO askbox_questions (asker_id, target_id, content, is_anonymous, answer_content, answered_at, created_at)
-           SELECT NULL, ?, ?, 1, ?, ?, ?
-           WHERE NOT EXISTS (
-             SELECT 1 FROM askbox_questions
-             WHERE target_id = ? AND content = ? AND COALESCE(answer_content, '') = COALESCE(?, '')
-           )`
-        ).bind(
-          user.id,
-          q.question || '',
-          askboxAnswer || null,
-          askboxAnswer ? askboxTime : null,
-          askboxTime,
-          user.id,
-          q.question || '',
-          askboxAnswer || ''
-        )
-      );
+    // 2. 分批写入明细。
+    //    Cloudflare D1 batch() 单次最多 100 条 statements：
+    //    - 每条问答生成最多 2 条 stmt（imported_questions + 可能 1 条 askbox_questions）
+    //    - 每批最多 25 条问答（= 至多 50 stmts），循环执行，
+    //      避免公开问答 ≥51 条时一次 batch 超过 100 条上限导致整体回滚、导入失败。
+    //    askbox_questions 改为「逐条 SELECT 去重 + 普通 INSERT」：
+    //    - 替代原 INSERT...SELECT...WHERE NOT EXISTS 复合写法，规避 D1 batch 兼容性风险
+    //    - 去重条件保留 (target_id + content + answer_content + asker_id IS NULL匿名导入)
+    const BATCH_QUESTIONS = 25;
+    try {
+      for (let i = 0; i < preview.questions.length; i += BATCH_QUESTIONS) {
+        const slice = preview.questions.slice(i, i + BATCH_QUESTIONS);
+        const stmts = [];
+        for (const q of slice) {
+          stmts.push(
+            env.DB.prepare(
+              `INSERT OR IGNORE INTO imported_questions (import_id, source_question_id, question, answer, source_created_at, created_at)
+               VALUES (?, ?, ?, ?, ?, ?)`
+            ).bind(
+              importId,
+              q.sourceQuestionId || q.source_question_id || '',
+              q.question || '',
+              q.answer || '',
+              q.sourceCreatedAt || q.source_created_at || null,
+              now
+            )
+          );
+
+          // 同步写入站内提问箱：导入的问答全部展示在导入者自己的提问箱（匿名提问者）
+          const askboxAnswer = (q.answer || '').trim();
+          const askboxTime = q.sourceCreatedAt || q.source_created_at || now;
+          const questionText = q.question || '';
+          // 逐条去重检测：同一导入者(target_id=user.id) + 匿名导入(asker_id IS NULL)
+          //                  + 相同问题 + 相同回答
+          const dup = await env.DB.prepare(
+            `SELECT id FROM askbox_questions
+             WHERE target_id = ? AND content = ? AND asker_id IS NULL
+               AND COALESCE(answer_content, '') = COALESCE(?, '')
+             LIMIT 1`
+          ).bind(user.id, questionText, askboxAnswer || '').first();
+          if (!dup) {
+            stmts.push(
+              env.DB.prepare(
+                `INSERT INTO askbox_questions (asker_id, target_id, content, is_anonymous, answer_content, answered_at, created_at)
+                 VALUES (NULL, ?, ?, 1, ?, ?, ?)`
+              ).bind(
+                user.id,
+                questionText,
+                askboxAnswer || null,
+                askboxAnswer ? askboxTime : null,
+                askboxTime
+              )
+            );
+          }
+        }
+        if (stmts.length > 0) {
+          await env.DB.batch(stmts);
+        }
+      }
+    } catch (e) {
+      // 任一批写失败 → 标记 failed，允许用户重新导入（步骤0会清理历史脏记录）
+      console.error('import batch failed:', e.message);
+      try {
+        await env.DB.prepare(
+          `UPDATE content_imports SET status = 'failed' WHERE id = ?`
+        ).bind(importId).run();
+      } catch (e2) {
+        console.error('mark import failed:', e2.message);
+      }
+      return jsonResponse({ ok: false, error: 'import_failed', message: '导入失败：' + e.message }, 400);
     }
-    await env.DB.batch(stmts);
 
     // 3. 全部写入成功 → 更新状态为 imported
-    //    若第 2 步 batch 失败（抛出异常），此 UPDATE 不会执行，状态停留在 importing，
-    //    用户可重试 confirm 或通过管理端处理
+    //    若步骤 2 任一批失败（抛出异常被捕获），此 UPDATE 不执行，状态为 failed 可重试
     await env.DB.prepare(
       `UPDATE content_imports SET status = 'imported' WHERE id = ?`
     ).bind(importId).run();
