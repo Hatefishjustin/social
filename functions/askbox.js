@@ -111,55 +111,11 @@ export const onRequestGet = async ({ request, env }) => {
                   WHERE target_id = ? AND answered_at IS NOT NULL AND answer_visibility = 'public'`;
     }
   } else {
-    // 广场（公共 feed）
-    if (user) {
-      // 已登录用户 → 看到所有已回复的 public + 自己的已回复 private
-      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
-                    q.answer_visibility, q.visitor_token,
-                    p.nickname as asker_name, a.image_data as asker_avatar
-             FROM askbox_questions q
-             LEFT JOIN profiles p ON p.user_id = q.asker_id
-             LEFT JOIN avatars a ON a.user_id = q.asker_id
-             WHERE q.answered_at IS NOT NULL AND (
-               (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
-               OR (q.asker_id = ?)
-             )
-             ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
-      countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE answered_at IS NOT NULL AND (
-        (answer_visibility = 'public' OR answer_visibility IS NULL)
-        OR (asker_id = ?)
-      )`;
-      allParams.push(user.id);
-    } else if (visitorToken) {
-      // 未登录但有 visitor_token
-      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
-                    q.answer_visibility, q.visitor_token,
-                    p.nickname as asker_name, a.image_data as asker_avatar
-             FROM askbox_questions q
-             LEFT JOIN profiles p ON p.user_id = q.asker_id
-             LEFT JOIN avatars a ON a.user_id = q.asker_id
-             WHERE q.answered_at IS NOT NULL AND (
-               (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
-               OR (q.visitor_token = ?)
-             )
-             ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
-      countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE answered_at IS NOT NULL AND (
-        (answer_visibility = 'public' OR answer_visibility IS NULL)
-        OR (visitor_token = ?)
-      )`;
-      allParams.push(visitorToken);
-    } else {
-      // 纯游客 → 仅看到 public 已回复
-      sql = `SELECT q.id, q.asker_id, q.target_id, q.content, q.is_anonymous, q.created_at, q.answered_at, q.answer_content,
-                    q.answer_visibility, q.visitor_token,
-                    p.nickname as asker_name, a.image_data as asker_avatar
-             FROM askbox_questions q
-             LEFT JOIN profiles p ON p.user_id = q.asker_id
-             LEFT JOIN avatars a ON a.user_id = q.asker_id
-             WHERE q.answered_at IS NOT NULL AND (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
-             ORDER BY q.answered_at DESC LIMIT ? OFFSET ?`;
-      countSql = `SELECT COUNT(*) as total FROM askbox_questions WHERE answered_at IS NOT NULL AND (answer_visibility = 'public' OR answer_visibility IS NULL)`;
-    }
+    // 提问广场已下线：无 targetId 的请求不再返回任何公共问答数据
+    return jsonResponse({
+      questions: [],
+      pagination: { page, pageSize: PAGE_SIZE, total: 0 },
+    });
   }
 
   const { results } = await env.DB.prepare(sql).bind(...allParams, PAGE_SIZE, offset).all();
