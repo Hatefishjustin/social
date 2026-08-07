@@ -600,6 +600,53 @@ var dom = {
   quickChips: Q('#quickChips')
 };
 
+// ── 统一状态机：根据 state.mode 强制应用 UI ──
+// mode：'guest'（无目标+未登录）| 'owner'（管理视图）| 'visitor'（访客公开展示）
+// visitor 优先级最高：无论登录态，只要 ?u= 目标存在且不是当前用户，一律隐藏全部管理元素
+function applyModeUI() {
+  var isVisitor = state.mode === 'visitor';
+  var isOwner = state.mode === 'owner';
+
+  // ── 箱主专属（owner）：分享入口（顶部导航 + 资料卡）──
+  var btnShareTop = Q('#btnShareTop');
+  var btnShareProfile = Q('#btnShareProfile');
+  if (btnShareTop) btnShareTop.style.display = isOwner ? '' : 'none';
+  if (btnShareProfile) btnShareProfile.style.display = isOwner ? '' : 'none';
+
+  // ── 箱主专属：导入记忆 ──
+  var btnImportMemory = Q('#btnImportMemory');
+  if (btnImportMemory) btnImportMemory.style.display = isOwner ? '' : 'none';
+
+  // ── 统计区（收到提问/已回答）仅 owner 可见 ──
+  var stats = Q('.profile-stats');
+  if (stats) stats.style.display = isOwner ? '' : 'none';
+
+  // ── Tab 区（收到的提问）仅 owner 可见 ──
+  var tabsEl = Q('.tabs');
+  if (tabsEl) tabsEl.style.display = isOwner ? '' : 'none';
+
+  // ── 未回复数 badge 仅 owner 可见 ──
+  var badge = Q('#tabBadge');
+  if (badge) badge.style.display = isOwner ? badge.style.display : 'none';
+
+  // ── 创建自己的提问箱引导卡：guest 与 visitor 都显示 ──
+  //    owner 隐藏（已有自己的提问箱）
+  var cta = Q('#createAskboxCta');
+  if (cta) cta.style.display = isOwner ? 'none' : 'block';
+
+  // ── 匿名提问入口：owner 隐藏（主人不能问自己），visitor / guest 显示 ──
+  var askArea = Q('#askArea');
+  if (askArea) {
+    askArea.style.opacity = isOwner ? '0.35' : '1';
+    askArea.style.pointerEvents = isOwner ? 'none' : 'auto';
+  }
+
+  // visitor 模式：tab 固定 mine（targetId 已锁定，不展示管理 tab）
+  if (isVisitor && state.tab !== 'mine') {
+    state.tab = 'mine';
+  }
+}
+
 // ── Init from URL ──
 function initTarget() {
   var p = new URLSearchParams(location.search);
@@ -634,11 +681,12 @@ function initTarget() {
   } else {
     state.targetId = null;
     state.isOwnerView = false;
+    // 未设置 mode：保持初始 guest（无目标）
     dom.profileName.textContent = '我的提问箱';
     dom.profileAvatar.textContent = '?';
   }
   updateShareLink();
-  updateVisitorUI();
+  applyModeUI();
 }
 
 function setVisitorProfile(name, userId) {
@@ -675,14 +723,12 @@ function syncWithAuth() {
         dom.profileAvatar.textContent = (dName[0] || '?').toUpperCase();
       }
       dom.navTitle.textContent = dName + ' · 提问箱';
-      dom.askArea.style.opacity = '0.35';
-      dom.askArea.style.pointerEvents = 'none';
     } else {
       // 访客模式 → 目标提问箱公开展示，不动提问输入区（保留匿名提问能力）
       if (dom.tabBadge) dom.tabBadge.style.display = 'none';
     }
     updateShareLink();
-    updateVisitorUI();
+    applyModeUI();
     loadFeed(true);
     return;
   }
@@ -702,19 +748,15 @@ function syncWithAuth() {
       dom.profileAvatar.textContent = (userName[0] || '?').toUpperCase();
     }
     dom.navTitle.textContent = userName + ' · 提问箱';
-    dom.askArea.style.opacity = '0.35';
-    dom.askArea.style.pointerEvents = 'none';
   } else {
     state.targetId = null;
     state.isOwnerView = false;
     state.mode = 'guest';
     dom.profileName.textContent = '我的提问箱';
     dom.profileAvatar.textContent = '?';
-    dom.askArea.style.opacity = '1';
-    dom.askArea.style.pointerEvents = 'auto';
   }
   updateShareLink();
-  updateVisitorUI();
+  applyModeUI();
   loadFeed(true);
 }
 
@@ -730,46 +772,6 @@ function getShareUrl() {
 
 function updateShareLink() {
   dom.shareLink.textContent = getShareUrl();
-}
-
-// ── 访客/主人视图 UI 控制 ──
-// 依据 state.mode 统一切换展示：
-//   owner  → 完整管理功能（分享、导入记忆、收到提问 tab、统计、回复入口）
-//   visitor → 仅保留：返回首页、向箱主匿名提问、箱主公开问答、创建引导卡
-//   guest  → 未登录且无目标：登录引导
-function updateVisitorUI() {
-  var isVisitor = state.mode === 'visitor';
-
-  // 箱主专属：分享入口（顶部导航 + 资料卡）
-  var btnShareTop = Q('#btnShareTop');
-  var btnShareProfile = Q('#btnShareProfile');
-  if (btnShareTop) btnShareTop.style.display = isVisitor ? 'none' : '';
-  if (btnShareProfile) btnShareProfile.style.display = isVisitor ? 'none' : '';
-
-  // 箱主专属：导入记忆
-  var btnImportMemory = Q('#btnImportMemory');
-  if (btnImportMemory) btnImportMemory.style.display = isVisitor ? 'none' : '';
-
-  // 统计区（收到提问/已回答）仅主人可见
-  var stats = Q('.profile-stats');
-  if (stats) stats.style.display = isVisitor ? 'none' : '';
-
-  // Tab 区域：访客模式隐藏「收到的提问」管理入口
-  var tabsEl = Q('.tabs');
-  if (tabsEl) tabsEl.style.display = isVisitor ? 'none' : '';
-
-  // 未回复数 badge 仅在主人模式可见
-  var badge = Q('#tabBadge');
-  if (badge) badge.style.display = isVisitor ? 'none' : badge.style.display;
-
-  // 访客专属：创建提问箱引导卡（仅访客显示）
-  var cta = Q('#createAskboxCta');
-  if (cta) cta.style.display = isVisitor ? 'block' : 'none';
-
-  // 访客模式：tab 固定为 mine（targetId 已锁定），不展示管理 tab
-  if (isVisitor && state.tab !== 'mine') {
-    state.tab = 'mine';
-  }
 }
 
 function goCreateAskbox() {
@@ -1443,7 +1445,7 @@ function init() {
       // 登录用户 == 目标主人 → Owner Mode；其余（含未登录）一律 Visitor Mode
       state.isOwnerView = !!(user && String(user.userId) === String(state.urlTargetId));
       state.mode = state.isOwnerView ? 'owner' : 'visitor';
-      updateVisitorUI();
+      applyModeUI();
       // 切换模式后重新加载（owner 可见全部，visitor 仅公开）
       loadFeed(true);
       return;
@@ -1457,9 +1459,7 @@ function init() {
       state.mode = 'guest';
       dom.profileName.textContent = '我的提问箱';
       dom.profileAvatar.textContent = '?';
-      dom.askArea.style.opacity = '1';
-      dom.askArea.style.pointerEvents = 'auto';
-      updateVisitorUI();
+      applyModeUI();
       loadFeed(true);
     }
   });
