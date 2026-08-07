@@ -50,7 +50,9 @@ export const onRequestGet = async ({ request, env }) => {
         ? 'SoulMirror 心镜｜' + name + ' 的匿名提问箱，已收录 ' + answered + ' 条回答，来聊聊吧～'
         : 'SoulMirror 心镜｜' + name + ' 的匿名提问箱，有什么想说的都可以来问～')
     : 'SoulMirror 心镜 · 匿名提问，温柔回应。';
-  const image = origin + '/assets/share-card.png';
+  // 微信/主流平台分享封面：使用标准 OG 尺寸 1200×630 的 share-cover.png
+  // （share-card.png 为 440×435 小图，微信常无法渲染为分享卡片封面）
+  const image = origin + '/assets/share-cover.png';
 
   const html = `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -62,6 +64,9 @@ export const onRequestGet = async ({ request, env }) => {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(image)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
 <meta property="og:url" content="${esc(redirectUrl)}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SoulMirror 心镜">
@@ -85,9 +90,10 @@ export const onRequestGet = async ({ request, env }) => {
     status: 200,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
-      // 分享落地页包含 ?u= 目标参数，必须禁止缓存：
-      // 微信内置浏览器若命中缓存，可能丢失 u 参数导致串号（打开成自己的提问箱）
-      'Cache-Control': 'no-store, max-age=0',
+      // 分享落地页包含 ?u= 目标参数，禁止缓存（防微信命中缓存丢失 u 参数导致串号）：
+      // no-store 禁缓存 + private 仅允许私人存储 + max-age=0 立即过期，
+      // 同时不让响应被 CDN/共享代理缓存（不恢复 public,max-age=300，避免串号回归）
+      'Cache-Control': 'private, no-cache, no-store, max-age=0',
     },
   });
 };

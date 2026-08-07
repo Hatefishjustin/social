@@ -7,7 +7,7 @@
 <meta name="description" content="匿名提问，温柔回应。创建你的专属提问箱，收集真实想法。">
 <meta property="og:title" content="SoulMirror 心镜 - 提问箱">
 <meta property="og:description" content="有什么想问的吗？匿名提问，温柔回应…">
-<meta property="og:image" content="https://soulmirror.cc.cd/assets/share-card.png">
+<meta property="og:image" content="https://soulmirror.cc.cd/assets/share-cover.png">
 <meta property="og:url" content="https://soulmirror.cc.cd/qa.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SoulMirror 心镜">
@@ -482,10 +482,9 @@ body{
     </div>
   </div>
 
-  <!-- Tab 切换 -->
+  <!-- Tab 切换（提问广场已下线，仅保留「收到的提问」管理视图） -->
   <div class="tabs">
     <button class="tab-btn active" data-tab="mine">收到的提问<span class="tab-badge" id="tabBadge" style="display:none">0</span></button>
-    <button class="tab-btn" data-tab="square">问答广场</button>
   </div>
 
   <!-- 提问区域 -->
@@ -755,7 +754,7 @@ function updateVisitorUI() {
   var stats = Q('.profile-stats');
   if (stats) stats.style.display = isVisitor ? 'none' : '';
 
-  // Tab 区域：访客模式隐藏「收到的提问 / 问答广场」管理入口
+  // Tab 区域：访客模式隐藏「收到的提问」管理入口
   var tabsEl = Q('.tabs');
   if (tabsEl) tabsEl.style.display = isVisitor ? 'none' : '';
 
@@ -959,13 +958,13 @@ async function loadFeed(reset) {
     var url = '/askbox?page=' + state.page;
     // 分享链接目标提问箱（urlTargetId 锁定）优先级最高：
     // 无论当前 tab 如何，只要存在 URL 目标提问箱，请求一律绑定它，
-    // 防止 tab 切换或登录态变化导致请求退化为自己的提问箱 / 广场
+    // 防止 tab 切换或登录态变化导致请求退化为广场（广场已下线）
     if (state.urlTargetId) {
       url += '&targetId=' + encodeURIComponent(state.urlTargetId);
     } else if (state.tab === 'mine' && state.targetId) {
       url += '&targetId=' + encodeURIComponent(state.targetId);
     }
-    // 广场模式不带 targetId，后端只返回已回答
+    // 仅 mine 视图发起请求；无 targetId（游客未登录）由上方登录引导拦截
 
     var r = await fetch(url, { headers: { 'Accept': 'application/json; charset=utf-8' } });
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -983,8 +982,6 @@ async function loadFeed(reset) {
           var btn = Q('#emptyBtn');
           if (btn) btn.addEventListener('click', openShare);
         }, 50);
-      } else {
-        dom.feedList.innerHTML = renderEmpty('🌌', '广场暂无内容', '还没有公开的问答，成为第一个提问的人吧');
       }
     } else {
       var html = qs.map(renderCard).join('');
@@ -1143,6 +1140,8 @@ function updateCharCount() {
 
 // ── Tab switch ──
 function switchTab(tab) {
+  // 提问广场已下线：任何模式下都不允许切换到 square
+  if (tab === 'square') return;
   // 未登录且无 ?u= 时，mine tab 被拦截显示登录引导
   if (tab === 'mine' && !Auth.isLoggedIn() && !state.targetId) {
     Auth.showLoginModal();
@@ -1153,9 +1152,6 @@ function switchTab(tab) {
   QA('.tab-btn').forEach(function(b) {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
-  if (tab === 'square') {
-    dom.tabBadge.style.display = 'none';
-  }
   loadFeed(true);
 }
 
