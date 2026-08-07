@@ -138,6 +138,7 @@ async function fetchAllLightboxQuestions(env, userId) {
  * @returns {Promise<{ok:boolean, preview?:object, error?:string, code?:string}>}
  */
 async function buildLightboxPreview(env, parsed) {
+  const now = Date.now(); // 用于 sourceQuestionId 兜底生成稳定唯一值
   const urlCode = parsed.sourceId;
   if (!urlCode) {
     return { ok: false, code: 'invalid_url', error: '链接缺少 url_code' };
@@ -179,10 +180,12 @@ async function buildLightboxPreview(env, parsed) {
     title: box.box_description || `轻匿提问箱 ${urlCode}`,
     avatar: box.bg_img || '',
     totalCount: qres.questions.length,
-    questions: qres.questions.map((q) => {
+    questions: qres.questions.map((q, index) => {
       const parsedChat = parseChatList(q.question, q.chat_list);
       return {
-        sourceQuestionId: q._id,
+        // _id 为轻匿原始问题 ID（唯一，用于 imported_questions 去重）；
+        // 兜底：若上游未返回 _id，用 创建时间+序号 生成稳定唯一值，防止 UNIQUE(import_id,source_question_id) 冲突吞数据
+        sourceQuestionId: q._id || ('q_' + (q.create_time || now) + '_' + index),
         question: parsedChat.question,
         answer: parsedChat.answer,
         sourceCreatedAt: q.create_time || null,
@@ -274,21 +277,28 @@ export const onRequestPost = async ({ request, env }) => {
     //    使用 importing 中间状态：
     //    - 防止并发 confirm 重复写入（已存在的 importing/imported 记录都会被拦截）
     //    - 若后续步骤失败，状态停留在 importing，可被识别为「未完成」供后续重试
-    const importResult = await env.DB.prepare(
-      `INSERT INTO content_imports (user_id, platform, source_url, source_id, title, avatar, total_count, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'importing', ?)`
-    ).bind(
-      user.id,
-      preview.platform || '',
-      preview.sourceUrl || '',
-      preview.sourceId || '',
-      preview.title || '',
-      preview.avatar || '',
-      preview.questions.length,
-      now
-    ).run();
+    let importId = null;
+    try {
+      const importResult = await env.DB.prepare(
+        `INSERT INTO content_imports (user_id, platform, source_url, source_id, title, avatar, total_count, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'importing', ?)`
+      ).bind(
+        user.id,
+        preview.platform || '',
+        preview.sourceUrl || '',
+        preview.sourceId || '',
+        preview.title || '',
+        preview.avatar || '',
+        preview.questions.length,
+        now
+      ).run();
 
-    const importId = importResult.meta.last_row_id;
+      importId = importResult.meta.last_row_id;
+    } catch (e) {
+      // content_imports 表不存在（S03 未执行）等写库失败 → 返回真实错误，避免 Worker 500
+      console.error('content_imports insert failed:', e.message);
+      return jsonResponse({ ok: false, error: 'import_failed', message: '导入失败：' + e.message }, 400);
+    }
 
     // 2. 分批写入明细。
     //    Cloudflare D1 batch() 单次最多 100 条 statements：

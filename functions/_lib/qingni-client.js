@@ -390,7 +390,9 @@ export async function queryAskBoxQuestions(env, userId, options = {}) {
           "user_id=='" + userId + "'&&is_public_reply==true&&status==1&&create_time>" + timeThreshold,
         ],
       },
-      { $method: 'field', $param: ['question,create_time,chat_list,update_time'] },
+      // 必须请求 _id：作为 imported_questions.source_question_id 的唯一来源（去重/防 UNIQUE 冲突），
+      // 缺少 _id 时所有记录 source_question_id 都为空串，UNIQUE 索引会只保留第一条，其余被吞掉
+      { $method: 'field', $param: ['_id,question,create_time,chat_list,update_time'] },
       { $method: 'orderBy', $param: ['update_time desc'] },
       { $method: 'skip', $param: [skip] },
       { $method: 'limit', $param: [limit] },
