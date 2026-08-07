@@ -457,7 +457,7 @@ body{
   <!-- Profile -->
   <div class="profile-card" id="profileCard">
     <div class="profile-avatar" id="profileAvatar">?</div>
-    <div class="profile-name" id="profileName">我的提问箱</div>
+    <div class="profile-name" id="profileName">提问箱</div>
     <div class="profile-bio" id="profileBio"></div>
     <div class="profile-actions"></div>
     <div class="profile-actions" style="margin-top:8px;">
@@ -583,6 +583,8 @@ var state = {
   urlTargetId: null,
   // 当前目标提问箱（URL 锁定 > 登录用户）
   targetId: null,
+  // visitor 模式下目标用户（targetId）的昵称；无昵称时为 null → 显示「TA的提问箱」
+  visitorName: null,
   // 是否箱主视图（登录用户 == 目标提问箱主人，由 mode==='owner' 推导）
   isOwnerView: false
 };
@@ -647,6 +649,43 @@ function applyModeUI() {
   }
 }
 
+// ── 统一标题渲染：owner / visitor / guest 强制分流 ──
+// owner:   使用当前登录用户昵称（Auth.getDisplayName()）
+// visitor: 只允许使用目标用户（state.targetId）昵称（state.visitorName），严禁使用当前登录用户信息
+//          - 目标用户有昵称 → 「<昵称> 的提问箱」
+//          - 目标用户无昵称 → 「TA的提问箱」
+// guest:   未登录且无目标 → 「我的提问箱」
+function renderPageTitle() {
+  var name = null;
+
+  if (state.mode === 'owner') {
+    var email = Auth.getEmail();
+    name = Auth.getDisplayName() || (email ? email.split('@')[0] : '我');
+  } else if (state.mode === 'visitor') {
+    // visitor 模式：数据来源只能是 targetId 对应用户昵称
+    name = state.visitorName || null;
+  }
+  // guest 模式：name 保持 null
+
+  if (name) {
+    dom.profileName.textContent = name + ' 的提问箱';
+    dom.navTitle.textContent = name + ' · 提问箱';
+    if (!dom.profileAvatar.querySelector('img')) {
+      dom.profileAvatar.textContent = (name[0] || '?').toUpperCase();
+    }
+  } else if (state.mode === 'visitor') {
+    // 目标用户没有设置昵称 → 使用「TA的提问箱」，不 fallback 到「我的提问箱」
+    dom.profileName.textContent = 'TA的提问箱';
+    dom.navTitle.textContent = '提问箱';
+    dom.profileAvatar.textContent = '?';
+  } else {
+    // guest（未登录且无目标）
+    dom.profileName.textContent = '我的提问箱';
+    dom.navTitle.textContent = '提问箱';
+    dom.profileAvatar.textContent = '?';
+  }
+}
+
 // ── Init from URL ──
 function initTarget() {
   var p = new URLSearchParams(location.search);
@@ -662,10 +701,9 @@ function initTarget() {
     if (n) {
       setVisitorProfile(n, u);
     } else {
-      // 无 n 参数时先用占位，再异步获取真实名称
-      dom.profileName.textContent = '用户 ' + u.substring(0,4) + ' 的提问箱';
-      dom.profileAvatar.textContent = '?';
-      dom.navTitle.textContent = '提问箱';
+      // 无 n 参数时先按「TA的提问箱」占位，再异步获取真实名称
+      state.visitorName = null;
+      renderPageTitle();
       dom.tabBadge.style.display = 'none';
       fetch('/api/user-card?userId=' + u)
         .then(function(r) { return r.json(); })
@@ -673,26 +711,30 @@ function initTarget() {
           if (d.displayName) {
             setVisitorProfile(d.displayName, u);
           } else {
-            dom.profileName.textContent = '用户 ' + u.substring(0,4) + ' 的提问箱';
+            // 目标用户无昵称：保持「TA的提问箱」（visitorName 为 null）
+            state.visitorName = null;
+            renderPageTitle();
           }
         })
-        .catch(function(){});
+        .catch(function() {
+          state.visitorName = null;
+          renderPageTitle();
+        });
     }
   } else {
     state.targetId = null;
     state.isOwnerView = false;
+    state.visitorName = null;
     // 未设置 mode：保持初始 guest（无目标）
-    dom.profileName.textContent = '我的提问箱';
-    dom.profileAvatar.textContent = '?';
+    renderPageTitle();
   }
   updateShareLink();
   applyModeUI();
 }
 
 function setVisitorProfile(name, userId) {
-  dom.profileName.textContent = name + ' 的提问箱';
-  dom.profileAvatar.textContent = (name[0] || '?').toUpperCase();
-  dom.navTitle.textContent = name + ' · 提问箱';
+  state.visitorName = name || null;
+  renderPageTitle();
   dom.tabBadge.style.display = 'none';
   var visitorAvatar = document.createElement('img');
   visitorAvatar.src = '/api/avatar?userId=' + userId;
@@ -713,18 +755,16 @@ function syncWithAuth() {
     state.mode = state.isOwnerView ? 'owner' : 'visitor';
 
     if (state.isOwnerView) {
-      // 自己通过分享链接进入自己的提问箱 → 主人管理视图
-      var dName = Auth.getDisplayName() || (email ? email.split('@')[0] : '我');
-      dom.profileName.textContent = dName + ' 的提问箱';
+      // 自己通过分享链接进入自己的提问箱 → 主人管理视图（标题使用当前登录用户昵称）
+      state.visitorName = null;
+      renderPageTitle();
       var aUrl = Auth.getAvatarUrl();
       if (aUrl) {
         dom.profileAvatar.innerHTML = '<img src="' + aUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'">';
-      } else {
-        dom.profileAvatar.textContent = (dName[0] || '?').toUpperCase();
       }
-      dom.navTitle.textContent = dName + ' · 提问箱';
     } else {
-      // 访客模式 → 目标提问箱公开展示，不动提问输入区（保留匿名提问能力）
+      // 访客模式 → 强制显示目标用户（targetId）昵称，绝不允许使用当前登录用户信息
+      renderPageTitle();
       if (dom.tabBadge) dom.tabBadge.style.display = 'none';
     }
     updateShareLink();
@@ -733,27 +773,23 @@ function syncWithAuth() {
     return;
   }
 
-  // ── 无 URL 目标：登录 = Owner Mode（自己的提问箱），未登录 = Guest ──
+  // ── 无 URL 目标：登录 = Owner Mode（自己的提问箱，显示当前登录用户昵称），未登录 = Guest ──
   if (Auth.isLoggedIn()) {
     state.targetId = String(uid);
     state.isOwnerView = true;
     state.mode = 'owner';
-    var displayName = Auth.getDisplayName();
-    var userName = displayName || (email ? email.split('@')[0] : '我');
-    dom.profileName.textContent = userName + ' 的提问箱';
+    state.visitorName = null;
+    renderPageTitle();
     var avatarUrl = Auth.getAvatarUrl();
     if (avatarUrl) {
-      dom.profileAvatar.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + (userName[0] || '?').toUpperCase() + '\'">';
-    } else {
-      dom.profileAvatar.textContent = (userName[0] || '?').toUpperCase();
+      dom.profileAvatar.innerHTML = '<img src="' + avatarUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.textContent=\'' + (Auth.getDisplayName() || '?')[0].toUpperCase() + '\'">';
     }
-    dom.navTitle.textContent = userName + ' · 提问箱';
   } else {
     state.targetId = null;
     state.isOwnerView = false;
     state.mode = 'guest';
-    dom.profileName.textContent = '我的提问箱';
-    dom.profileAvatar.textContent = '?';
+    state.visitorName = null;
+    renderPageTitle();
   }
   updateShareLink();
   applyModeUI();
@@ -1445,6 +1481,10 @@ function init() {
       // 登录用户 == 目标主人 → Owner Mode；其余（含未登录）一律 Visitor Mode
       state.isOwnerView = !!(user && String(user.userId) === String(state.urlTargetId));
       state.mode = state.isOwnerView ? 'owner' : 'visitor';
+      // 重新渲染标题：
+      //   owner   → 当前登录用户昵称（Auth.getDisplayName()）
+      //   visitor → 目标用户（targetId）昵称（state.visitorName），严禁使用当前登录用户信息
+      renderPageTitle();
       applyModeUI();
       // 切换模式后重新加载（owner 可见全部，visitor 仅公开）
       loadFeed(true);
@@ -1457,8 +1497,8 @@ function init() {
       state.targetId = null;
       state.isOwnerView = false;
       state.mode = 'guest';
-      dom.profileName.textContent = '我的提问箱';
-      dom.profileAvatar.textContent = '?';
+      state.visitorName = null;
+      renderPageTitle();
       applyModeUI();
       loadFeed(true);
     }
