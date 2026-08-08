@@ -4,12 +4,16 @@
  * 方法: POST
  * S09 统一行为上报接口（用户活动中心）
  * 兼容迁移前/后状态（S09 未执行时基础字段写入，不报错）
+ *
+ * 修复: 2026-08-08 Phase 6-4 线上 405
+ *   原路径 functions/event.js → 路由为 /event，与 track.js 调用的 /api/event 不匹配。
+ *   移动至 functions/api/event.js → 路由匹配 /api/event。
  */
-import { getCurrentUser } from './_lib/auth.js';
-import { getRequestMeta } from './_lib/ip.js';
-import { parseUA } from './_lib/ua.js';
-import { getVisitorId } from './_lib/visitor.js';
-import { hasColumn } from './_lib/schema.js';
+import { getCurrentUser } from '../_lib/auth.js';
+import { getRequestMeta } from '../_lib/ip.js';
+import { parseUA } from '../_lib/ua.js';
+import { getVisitorId } from '../_lib/visitor.js';
+import { hasColumn } from '../_lib/schema.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
