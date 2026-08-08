@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -1145,6 +1145,7 @@ body.export-mode .result-screen{
 .share-btn-close:hover{background:rgba(255,255,255,0.14); color:var(--text-primary);}
 .share-modal-tip{font-size:12px; color:var(--text-tertiary); text-align:center; line-height:1.6;}
 </style>
+<script src="/track.js"></script>
 </head>
 <body>
 
@@ -1579,6 +1580,7 @@ const sectionNames = {M:'基础信息', A:'依恋模式', B:'人格偏好', C:'�
 const sectionNeutral = {M:'准备开始', A:'第一部分', B:'第二部分', C:'第三部分', D:'第四部分', E:'第五部分'};
 
 function startQuiz(){
+  try { if (window.trackEvent) window.trackEvent('quiz_start', { quiz_type: 'ideal_partner' }); } catch(e) {}
   current = 0;
   answers = [];
   pendingSelection = [];
@@ -2616,6 +2618,13 @@ async function trackCompletion(headline){
   }catch(e){
     // 统计上报失败不影响用户体验，静默忽略
   }
+  // S09: 测试完成统一业务事件（与 /track 互补，/api/event 记录完整行为轨迹）
+  try {
+    if (window.trackEvent) {
+      window.trackEvent('quiz_complete', { quiz_type: 'ideal_partner' });
+      window.trackEvent('quiz_view_result', { quiz_type: 'ideal_partner' });
+    }
+  } catch(e) {}
 }
 
 // 测评完成后，若已登录则自动保存这次记录（静默进行，不打断用户查看报告）

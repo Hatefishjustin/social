@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -388,6 +388,7 @@ button { font-family:inherit; }
 
 @media (max-width:360px) { .hero-title { font-size:31px; } }
 </style>
+<script src="/track.js"></script>
 </head>
 <body>
 
@@ -648,6 +649,9 @@ function buildSpread(){
 function startDraw(){
   if (!Auth.isLoggedIn()) { Auth.showLoginModal(); return; }
 
+  // S09: 塔罗开始分析埋点
+  try { if (window.trackEvent) window.trackEvent('tarot_start', { spread_type: state.spreadType || 'single' }); } catch(e) {}
+
   buildSpread();
   document.getElementById('setupScreen').style.display = 'none';
 
@@ -879,8 +883,12 @@ async function requestAnalysis(){
     }
 
     if (data.analysis) {
+      // S09: 塔罗完成分析埋点（AI 解读成功时）
+      try { if (window.trackEvent) window.trackEvent('tarot_complete', { spread_type: state.spreadType || 'single' }); } catch(e) {}
       renderAiSuccess(data.analysis);
     } else if (data.analysisRaw) {
+      // S09: 塔罗完成分析埋点（原始兜底也计入）
+      try { if (window.trackEvent) window.trackEvent('tarot_complete', { spread_type: state.spreadType || 'single' }); } catch(e) {}
       renderAiPlainFallback(data.analysisRaw);
     } else {
       showAiError('AI 未返回有效内容，请重试');

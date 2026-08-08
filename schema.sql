@@ -379,6 +379,8 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_visitor ON activity_log(visitor_id);
 
 -- 迁移备注: S-07 (2026-08-06) 为 activity_log 补充 visitor_id 字段
 -- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S07-visitor-tracking.sql
+-- 迁移备注: S09 (2026-08-08) 为 activity_log 补充 device/os/browser/referrer/page_path/detail_json 字段
+-- 线上 D1 执行（待执行）: wrangler d1 execute <DB_NAME> --file docs/migrations/2026-08-08-S09-analytics-upgrade.sql
 
 -- ── 页面访问统计 ──
 
@@ -390,6 +392,25 @@ CREATE TABLE IF NOT EXISTS page_views (
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+-- 迁移备注: S09 (2026-08-08) 为 page_views 补充 visitor_token/referrer/device/os/browser 字段
+-- 线上 D1 执行（待执行）: wrangler d1 execute <DB_NAME> --file docs/migrations/2026-08-08-S09-analytics-upgrade.sql
+
+-- ── 提问箱访问统计（S09 新增） ──
+-- 记录每次提问箱访问，供后台聚合访问次数/去重访客/来源渠道
+CREATE TABLE IF NOT EXISTS askbox_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    target_user_id INTEGER NOT NULL,          -- 提问箱主人（users.id）
+    visitor_id TEXT DEFAULT '',               -- 访客身份标识（visitor_id cookie / visitor_token，可空）
+    user_id INTEGER DEFAULT NULL,             -- 登录访客（users.id，可空）
+    referrer TEXT DEFAULT '',                 -- 来源渠道
+    created_at INTEGER NOT NULL,              -- 访问时间（Date.now() 毫秒）
+    FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_askbox_visits_target_time ON askbox_visits(target_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_askbox_visits_visitor ON askbox_visits(visitor_id, created_at DESC);
 
 -- ── 跨设备登录码 ──
 
