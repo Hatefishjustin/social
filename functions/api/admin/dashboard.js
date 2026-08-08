@@ -103,6 +103,29 @@ export const onRequestGet = async ({ request, env }) => {
     } catch (e) { askboxVisitTotal = 0; }
   }
 
+  // 热门页面 Top 10（pv = COUNT(*), lastVisit = MAX(created_at), 按 pv DESC）
+  const topPv = await db.prepare(
+    `SELECT page, COUNT(*) as pv, MAX(created_at) as last_visit
+     FROM page_views GROUP BY page ORDER BY pv DESC LIMIT 10`
+  ).all();
+
+  // UV（迁移后 visitor_token 存在时计算；否则降级 uv = pv）
+  let topUvMap = {};
+  if (hasVisitorToken) {
+    const uvRes = await db.prepare(
+      `SELECT page, COUNT(DISTINCT COALESCE(NULLIF(visitor_token, ''), 'anon:' || user_id)) as uv
+       FROM page_views GROUP BY page`
+    ).all();
+    (uvRes.results || []).forEach((r) => { topUvMap[r.page] = r.uv; });
+  }
+
+  const topPages = (topPv.results || []).map((r) => ({
+    page: r.page || '/',
+    pv: r.pv || 0,
+    uv: hasVisitorToken ? (topUvMap[r.page] || 0) : (r.pv || 0),
+    lastVisit: r.last_visit || null,
+  }));
+
   return jsonResponse({
     stats: {
       today: {
@@ -123,6 +146,7 @@ export const onRequestGet = async ({ request, env }) => {
         askboxVisits: askboxVisitTotal,
       },
     },
+    topPages,
     generatedAt: now,
   });
 };
