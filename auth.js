@@ -8,11 +8,24 @@
 
 var user = null;
 var listeners = [];
+var wasLoggedIn = false; // S09: 登录成功埋点状态追踪
 
 function emit() {
   var e = new CustomEvent('authchange', { detail: user });
   window.dispatchEvent(e);
   listeners.forEach(function(f){ f(user); });
+}
+
+// S09: 登录成功埋点（未登录 → 已登录状态变化时发送一次，不影响业务）
+function maybeTrackLogin() {
+  try {
+    if (user && !wasLoggedIn) {
+      wasLoggedIn = true;
+      if (window.trackEvent) {
+        window.trackEvent('login_success', { user_id: user.userId });
+      }
+    }
+  } catch(e) {}
 }
 
 async function refresh() {
@@ -25,6 +38,7 @@ async function refresh() {
   }
   updateNavUI();
   emit();
+  maybeTrackLogin();
   return user;
 }
 

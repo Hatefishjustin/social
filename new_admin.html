@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -226,6 +226,7 @@
     th, td { padding: 6px 8px; font-size: 11px; }
   }
 </style>
+<script src="/track.js"></script>
 </head>
 <body>
 <div class="container">
@@ -249,11 +250,69 @@
   <div id="mainContent" style="display:none">
 
     <div class="tabs">
-      <button class="tab-btn active" data-tab="activity">用户活动</button>
+      <button class="tab-btn" data-tab="dashboard">数据总览</button>
+      <button class="tab-btn" data-tab="activity">用户活动</button>
+      <button class="tab-btn" data-tab="askbox">提问箱管理</button>
+      <button class="tab-btn" data-tab="pages">页面分析</button>
+      <button class="tab-btn" data-tab="users">用户管理</button>
       <button class="tab-btn" data-tab="quiz">心理测评</button>
       <button class="tab-btn" data-tab="tarot">塔罗数据</button>
-      <button class="tab-btn" data-tab="users">用户管理</button>
-      <button class="tab-btn" data-tab="reports">举报管理</button>
+      <button class="tab-btn" data-tab="reports">内容审核</button>
+      <button class="tab-btn" data-tab="settings">系统设置</button>
+    </div>
+
+    <!-- ======== 数据总览 Dashboard Tab ======== -->
+    <div class="tab-content" id="tab-dashboard">
+      <div class="loading" id="dashboardLoading">正在加载数据总览...</div>
+      <div id="dashboardContent"></div>
+    </div>
+
+    <!-- ======== 提问箱管理 Tab ======== -->
+    <div class="tab-content" id="tab-askbox">
+      <div class="loading" id="askboxLoading">正在加载提问箱数据...</div>
+      <div id="askboxListContent"></div>
+      <div class="pagination" id="askboxPagination"></div>
+    </div>
+
+    <!-- 提问箱问题详情弹窗 -->
+    <div id="askboxDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAskboxDetail()">
+      <div style="background:#111;border:1px solid #333;border-radius:14px;max-width:720px;width:100%;max-height:85vh;overflow:auto;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <h2 style="font-size:16px;color:#fff;margin:0;">提问箱问题 #<span id="askboxDetailTarget"></span></h2>
+          <button class="filter-btn" onclick="closeAskboxDetail()">关闭</button>
+        </div>
+        <div id="askboxDetailBody" style="font-size:13px;color:#ccc;line-height:1.6;"></div>
+      </div>
+    </div>
+
+    <!-- ======== 页面分析 Tab ======== -->
+    <div class="tab-content" id="tab-pages">
+      <div class="filters" id="pageStatsFilters">
+        <button class="filter-btn active" data-days="30">近30天</button>
+        <button class="filter-btn" data-days="7">近7天</button>
+        <button class="filter-btn" data-days="1">今日</button>
+      </div>
+      <div class="loading" id="pageStatsLoading">正在加载页面分析...</div>
+      <div id="pageStatsContent"></div>
+    </div>
+
+    <!-- ======== 系统设置 Tab ======== -->
+    <div class="tab-content" id="tab-settings">
+      <div class="section">
+        <div class="section-title">系统设置</div>
+        <div class="activity-item">
+          <div style="font-size:13px;color:#ccc;line-height:1.8;">
+            <p>当前版本：S09 数据中心升级</p>
+            <p style="color:var(--muted);margin-top:6px;">以下能力为预留扩展，将在后续版本开放：</p>
+            <ul style="margin:8px 0 0 18px;color:var(--muted);font-size:12px;line-height:1.8;">
+              <li>管理员账号管理</li>
+              <li>内容违规记录（content_violations）</li>
+              <li>用户兴趣画像（user_interest_labels，二期）</li>
+              <li>数据导出</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ======== 活动监控 Tab ======== -->
@@ -515,6 +574,238 @@ async function loadPage(page, action) {
 }
 
 window.goPage = function(p) { loadPage(p, STATE.action); };
+
+// ==================== 数据总览 Dashboard (S09) ====================
+function renderDashboard(data) {
+  var el = document.getElementById('dashboardContent');
+  var s = (data && data.stats) || {};
+  var today = s.today || {};
+  var total = s.total || {};
+  var n = function(v){ return (v === undefined || v === null || isNaN(v)) ? 0 : v; };
+
+  var hasData = (total.pv > 0) || (total.users > 0) || (total.questions > 0) || (total.quiz > 0) || (total.tarot > 0);
+  el.innerHTML =
+    '<div class="stats">' +
+      '<div class="stat-card"><div class="num">' + n(today.pv) + '</div><div class="label">今日访问 PV</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(today.uv) + '</div><div class="label">今日访客 UV</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(total.users) + '</div><div class="label">累计用户</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(today.newUsers) + '</div><div class="label">今日注册</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(total.questions) + '</div><div class="label">累计提问</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(total.answers) + '</div><div class="label">累计回答</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(total.quiz) + '</div><div class="label">测试完成</div></div>' +
+      '<div class="stat-card"><div class="num">' + n(total.tarot) + '</div><div class="label">塔罗分析</div></div>' +
+    '</div>' +
+    (hasData
+      ? '<div class="section"><div class="section-title">热门口页 Top 10</div>' +
+          '<div class="table-scroll"><table><thead><tr><th>页面</th><th>PV</th><th>UV</th><th>最近访问</th></tr></thead><tbody>' +
+          renderDashboardTopPages(data) +
+          '</tbody></table></div></div>'
+      : '<div class="empty">暂无访问数据，请先浏览网站后再查看</div>') +
+    '<button class="refresh-btn" onclick="loadDashboard()">刷新数据</button>';
+}
+
+function renderDashboardTopPages(data) {
+  var pages = (data && data.topPages) || [];
+  if (!pages || pages.length === 0) return '<tr class="no-data"><td colspan="4" style="color:var(--muted);">暂无页面访问数据</td></tr>';
+  return pages.map(function(p){
+    return '<tr>' +
+      '<td class="mono">' + esc(p.page || '/') + '</td>' +
+      '<td>' + (p.pv || 0) + '</td>' +
+      '<td>' + (p.uv || 0) + '</td>' +
+      '<td class="mono">' + formatDate(p.last_visit || p.lastVisit || null) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function loadDashboard() {
+  var loading = document.getElementById('dashboardLoading');
+  var content = document.getElementById('dashboardContent');
+  loading.style.display = 'block';
+  content.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/dashboard', { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      content.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderDashboard(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    content.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+// ==================== 提问箱管理 (S09) ====================
+var askboxPage = 1;
+
+function renderAskboxPagination(pagination) {
+  var p = document.getElementById('askboxPagination');
+  if (!pagination || pagination.totalPages <= 1) { p.innerHTML = ''; return; }
+  p.innerHTML =
+    '<button ' + (pagination.page <= 1 ? 'disabled' : '') + ' onclick="askboxGoPage('+(pagination.page-1)+')">上一页</button>' +
+    '<span class="page-info">第 '+pagination.page+' / '+pagination.totalPages+' 页</span>' +
+    '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="askboxGoPage('+(pagination.page+1)+')">下一页</button>';
+}
+
+window.askboxGoPage = function(p) { loadAskboxList(p); };
+
+function renderAskboxList(data) {
+  var el = document.getElementById('askboxListContent');
+  var list = (data && data.askboxes) || [];
+  el.innerHTML =
+    (list.length === 0
+      ? '<div class="empty">暂无提问箱数据</div>'
+      : '<div class="table-scroll"><table><thead><tr>' +
+          '<th>用户</th><th>提问箱ID</th><th>访问量</th><th>收到问题</th><th>回答数量</th><th>回答率</th><th>操作</th>' +
+        '</tr></thead><tbody>' +
+        list.map(function(b){
+          var rate = (b.answer_rate === undefined || b.answer_rate === null || isNaN(b.answer_rate)) ? 0 : (Math.round(b.answer_rate * 100) + '%');
+          return '<tr>' +
+            '<td>' + esc(b.display_name || b.email || ('#' + b.user_id)) + '</td>' +
+            '<td class="mono">' + (b.user_id || '—') + '</td>' +
+            '<td>' + (b.visit_count || 0) + '</td>' +
+            '<td>' + (b.question_count || 0) + '</td>' +
+            '<td>' + (b.answer_count || 0) + '</td>' +
+            '<td>' + rate + '</td>' +
+            '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="showAskboxQuestions(' + (b.user_id || 0) + ')">查看问题</button></td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table></div>');
+}
+
+async function loadAskboxList(page) {
+  var loading = document.getElementById('askboxLoading');
+  var el = document.getElementById('askboxListContent');
+  askboxPage = page || 1;
+  loading.style.display = 'block';
+  el.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/askbox-list?page=' + askboxPage, { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      el.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderAskboxList(data);
+    renderAskboxPagination(data.pagination);
+  } catch (e) {
+    loading.style.display = 'none';
+    el.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
+// 查看某提问箱的问题详情
+window.showAskboxQuestions = async function(userId) {
+  var modal = document.getElementById('askboxDetailModal');
+  var body = document.getElementById('askboxDetailBody');
+  var targetEl = document.getElementById('askboxDetailTarget');
+  targetEl.textContent = userId || '';
+  body.innerHTML = '<div class="loading">加载中...</div>';
+  modal.style.display = 'flex';
+  try {
+    var r = await fetch('/api/admin/askbox-questions?target=' + userId, { credentials: 'include' });
+    var data = await r.json();
+    if (data.error) {
+      body.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    var qs = data.questions || [];
+    body.innerHTML = qs.length === 0
+      ? '<div class="empty">暂无问题</div>'
+      : '<div class="table-scroll"><table><thead><tr>' +
+          '<th>时间</th><th>提问者</th><th>内容</th><th>状态</th>' +
+        '</tr></thead><tbody>' +
+        qs.map(function(q){
+          var status = q.is_answered
+            ? (q.answer_visibility === 'private' ? '<span style="color:var(--orange);">已回答(私密)</span>' : '<span style="color:var(--green);">已回答</span>')
+            : '<span style="color:var(--muted);">未回答</span>';
+          return '<tr>' +
+            '<td class="mono">' + formatDate(q.created_at) + '</td>' +
+            '<td>' + esc(q.asker_name || '匿名') + '</td>' +
+            '<td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(q.content || '') + '">' + esc(q.content || '—') + '</td>' +
+            '<td>' + status + '</td>' +
+          '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+};
+
+window.closeAskboxDetail = function() {
+  document.getElementById('askboxDetailModal').style.display = 'none';
+};
+
+// ==================== 页面分析 (S09) ====================
+function renderPageStats(data) {
+  var el = document.getElementById('pageStatsContent');
+  var pages = (data && data.pages) || [];
+  var refs = (data && data.topReferrers) || [];
+  var empty = pages.length === 0;
+
+  var html = '<div class="section"><div class="section-title">热门页面 Top 10</div>';
+  html += empty
+    ? '<div class="empty">暂无访问数据</div>'
+    : '<div class="table-scroll"><table><thead><tr><th>页面</th><th>PV</th><th>UV</th><th>最近访问</th></tr></thead><tbody>' +
+      pages.slice(0, 10).map(function(p){
+        return '<tr>' +
+          '<td class="mono">' + esc(p.page || '/') + '</td>' +
+          '<td>' + (p.pv || 0) + '</td>' +
+          '<td>' + (p.uv || 0) + '</td>' +
+          '<td class="mono">' + formatDate(p.last_visit || null) + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  html += '</div>';
+
+  html += '<div class="section"><div class="section-title">来源渠道</div>';
+  html += (!refs || refs.length === 0)
+    ? '<div class="empty">暂无来源数据</div>'
+    : '<div class="breakdown-list">' + renderSourceBreakdown(refs) + '</div>';
+  html += '</div>';
+
+  html += '<button class="refresh-btn" onclick="loadPageStats()">刷新数据</button>';
+  el.innerHTML = html;
+}
+
+function renderSourceBreakdown(refs) {
+  var max = Math.max(1, refs.map(function(r){ return r.count; }).reduce(function(a,b){ return Math.max(a,b); }));
+  return refs.map(function(r){
+    return '<div class="breakdown-row">' +
+      '<div class="name" style="flex:0 0 120px;">' + esc(r.source || '未知') + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(r.count/max*100) + '%"></div></div>' +
+      '<div class="count">' + r.count + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+var pageStatsDays = 30;
+
+async function loadPageStats() {
+  var loading = document.getElementById('pageStatsLoading');
+  var content = document.getElementById('pageStatsContent');
+  loading.style.display = 'block';
+  content.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/page-stats?days=' + pageStatsDays, { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      content.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderPageStats(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    content.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
 
 // ==================== 心理测评 ====================
 var attachLabels = {
@@ -1189,6 +1480,9 @@ window.handleReport = async function(id, action) {
 };
 
 // ==================== Init ====================
+var dashboardLoaded = false;
+var askboxLoaded = false;
+var pageStatsLoaded = false;
 var quizLoaded = false;
 var quizSource = 'yourlover';
 var tarotLoaded = false;
@@ -1202,8 +1496,28 @@ function switchTab(tabName) {
   document.querySelector('.tab-btn[data-tab="' + tabName + '"]').classList.add('active');
   document.getElementById('tab-' + tabName).classList.add('active');
 
-  if (tabName === 'activity') {
+  if (tabName === 'dashboard') {
+    document.getElementById('headerSub').textContent = '数据总览';
+    if (!dashboardLoaded) {
+      dashboardLoaded = true;
+      loadDashboard();
+    }
+  } else if (tabName === 'activity') {
     document.getElementById('headerSub').textContent = '用户活动监控';
+  } else if (tabName === 'askbox') {
+    document.getElementById('headerSub').textContent = '提问箱管理';
+    if (!askboxLoaded) {
+      askboxLoaded = true;
+      loadAskboxList(1);
+    }
+  } else if (tabName === 'pages') {
+    document.getElementById('headerSub').textContent = '页面分析';
+    if (!pageStatsLoaded) {
+      pageStatsLoaded = true;
+      loadPageStats();
+    }
+  } else if (tabName === 'settings') {
+    document.getElementById('headerSub').textContent = '系统设置';
   } else if (tabName === 'quiz') {
     document.getElementById('headerSub').textContent = '心理测评统计';
     if (!quizLoaded) {
@@ -1239,7 +1553,8 @@ function init() {
   if (Auth.isLoggedIn()) {
     document.getElementById('mainContent').style.display = 'block';
     document.getElementById('loginPrompt').style.display = 'none';
-    loadPage(1, '');
+    // S09: 默认进入「数据总览」，用户活动通过 Tab 切换访问
+    switchTab('dashboard');
   } else {
     document.getElementById('loginPrompt').style.display = 'block';
   }
@@ -1294,6 +1609,16 @@ document.addEventListener('DOMContentLoaded', function(){
       tarotState.days = btn.dataset.days;
       tarotState.page = 1;
       loadTarotPage(1, tarotState.days);
+    });
+  });
+
+  // Page stats filter buttons (S09)
+  document.querySelectorAll('#pageStatsFilters .filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('#pageStatsFilters .filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      pageStatsDays = parseInt(btn.dataset.days || '30', 10);
+      loadPageStats();
     });
   });
 

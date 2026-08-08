@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -436,6 +436,7 @@ body{
   .quick-chips{margin-top:8px;}
 }
 </style>
+<script src="/track.js"></script>
 </head>
 <body>
 
@@ -970,6 +971,14 @@ function renderEmpty(icon, title, desc, btnText) {
 }
 
 // ── Load feed ──
+function trackAskboxView() {
+  try {
+    if (window.trackEvent && state && state.targetId) {
+      window.trackEvent('askbox_view', { target_user_id: state.targetId });
+    }
+  } catch(e) {}
+}
+
 async function loadFeed(reset) {
   if (state.isLoading) return;
 
@@ -1064,6 +1073,11 @@ async function loadFeed(reset) {
 
 // ── Submit question ──
 async function submitQuestion() {
+  try {
+    if (window.trackEvent && state && state.targetId) {
+      window.trackEvent('askbox_question_submit', { target_user_id: state.targetId });
+    }
+  } catch(e) {}
   var content = dom.askInput.value.trim();
   if (!content) { showErr('请输入问题'); dom.askInput.focus(); return; }
   if (content.length > 500) { showErr('问题不能超过500字'); return; }
@@ -1460,6 +1474,7 @@ window.addEventListener('scroll', function() {
 function init() {
   initTarget();
   updateCharCount();
+  trackAskboxView(); // S09: 打开提问箱上报
 
   // 访问别人提问箱（?u=xxx），直接加载，不受登录状态影响
   if (state.targetId && !state.isOwnerView) {
