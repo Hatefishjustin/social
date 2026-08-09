@@ -7,7 +7,7 @@
  * 该测试从心理学角度分析用户在亲密关系中的权力互动偏好，
  * 属于娱乐和自我探索性质，不代表专业心理诊断。
  */
-import { hasTable, hasColumn } from '../_lib/schema.js';
+import { hasTable } from '../_lib/schema.js';
 import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
@@ -50,18 +50,10 @@ export const onRequestPost = async ({ request, env }) => {
   // 4. 解析登录用户身份（从 session cookie 中获取）
   let userId = null;
   try {
-    // [TEMP-DEBUG] 验证用户绑定链路
-    const cookieHeader = request.headers.get('Cookie');
-    console.log('[sm-save.js][DEBUG] Cookie存在:', cookieHeader ? '存在' : '不存在');
-    if (cookieHeader) {
-      console.log('[sm-save.js][DEBUG] Cookie内容(前80字符):', cookieHeader.slice(0, 80));
-    }
     const user = await getCurrentUser(request, env);
-    console.log('[sm-save.js][DEBUG] getCurrentUser返回:', user ? JSON.stringify({ id: user.id, email: user.email }) : 'null');
     if (user && user.id) {
       userId = user.id;
     }
-    console.log('[sm-save.js][DEBUG] 最终userId:', userId || 'null');
   } catch (e) {
     console.warn('[sm-save.js] 解析用户身份失败:', e.message);
   }
@@ -74,44 +66,23 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ success: true, skipped: true });
   }
 
-  // 6. 检查 user_id 字段是否存在（S10 用户绑定迁移可能未执行）
-  const hasUserId = await hasColumn(env, 'sm_test_results', 'user_id');
-
-  // 7. 写入数据库（根据 user_id 字段是否存在决定是否写入）
+  // 6. 写入数据库
   try {
-    if (hasUserId) {
-      await env.DB.prepare(
-        `INSERT INTO sm_test_results
-           (visitor_token, user_id, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        visitorToken,
-        userId,
-        sScore,
-        mScore,
-        switchScore,
-        trustScore,
-        consentScore,
-        resultType,
-        Date.now()
-      ).run();
-    } else {
-      // 降级：无 user_id 字段，仅写入基础字段
-      await env.DB.prepare(
-        `INSERT INTO sm_test_results
-           (visitor_token, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        visitorToken,
-        sScore,
-        mScore,
-        switchScore,
-        trustScore,
-        consentScore,
-        resultType,
-        Date.now()
-      ).run();
-    }
+    await env.DB.prepare(
+      `INSERT INTO sm_test_results
+         (visitor_token, user_id, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      visitorToken,
+      userId,
+      sScore,
+      mScore,
+      switchScore,
+      trustScore,
+      consentScore,
+      resultType,
+      Date.now()
+    ).run();
 
     console.log(`[sm-save.js] 保存成功 result_type=${resultType} user_id=${userId || 'anonymous'}`);
     return jsonResponse({ success: true });
