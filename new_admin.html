@@ -613,18 +613,84 @@ function renderDashboard(data) {
     '<button class="refresh-btn" onclick="loadDashboard()">刷新数据</button>';
 }
 
+// 页面路径 → 中文名称映射（仅展示层，不修改数据库）
+var PAGE_NAME_MAP = {
+  '/': '首页',
+  '/index.html': '首页',
+  'index': '首页',
+  'index.html': '首页',
+  'match': '理想伴侣测试',
+  'match.html': '理想伴侣测试',
+  '/match': '理想伴侣测试',
+  '/match.html': '理想伴侣测试',
+  'qa': '提问箱',
+  'qa.html': '提问箱',
+  '/qa': '提问箱',
+  '/qa.html': '提问箱',
+  'campus': '校园问答',
+  '/campus': '校园问答',
+  'campus.html': '校园问答',
+  '/campus.html': '校园问答',
+  'tarot': '塔罗测试',
+  'tarot.html': '塔罗测试',
+  '/tarot': '塔罗测试',
+  '/tarot.html': '塔罗测试',
+  'sm-test': 'S/M互动测试',
+  'sm-test.html': 'S/M互动测试',
+  '/sm-test': 'S/M互动测试',
+  '/sm-test.html': 'S/M互动测试',
+  'new_admin': '管理后台',
+  'new_admin.html': '管理后台',
+  '/new_admin': '管理后台',
+  '/new_admin.html': '管理后台',
+  'memory': '记忆导入',
+  'memory.html': '记忆导入',
+  '/memory': '记忆导入',
+  '/memory.html': '记忆导入',
+  'profile': '个人主页',
+  'profile.html': '个人主页',
+  '/profile': '个人主页',
+  '/profile.html': '个人主页',
+  'user': '用户中心',
+  'user.html': '用户中心',
+  '/user': '用户中心',
+  '/user.html': '用户中心',
+  'chat': '聊天',
+  'chat.html': '聊天',
+  '/chat': '聊天',
+  '/chat.html': '聊天',
+  'login': '登录',
+  'login.html': '登录',
+  '/login': '登录',
+  '/login.html': '登录',
+};
+
+function pageDisplayName(path) {
+  if (!path) return '其他页面';
+  // 去掉查询参数和 hash
+  var clean = String(path).split('?')[0].split('#')[0];
+  // 去掉末尾斜杠
+  if (clean.length > 1 && clean.endsWith('/')) clean = clean.slice(0, -1);
+  // 去掉开头的斜杠
+  var key = clean.startsWith('/') ? clean.slice(1) : clean;
+  return PAGE_NAME_MAP[key] || PAGE_NAME_MAP[clean] || '其他页面';
+}
+
 function renderDashboardTopPages(data) {
   var pages = (data && data.topPages) || [];
   if (!pages || pages.length === 0) return '<tr class="no-data"><td colspan="4" style="color:var(--muted);">暂无页面访问数据</td></tr>';
   return pages.map(function(p){
+    var raw = p.page || '/';
+    var name = pageDisplayName(raw);
     return '<tr>' +
-      '<td class="mono">' + esc(p.page || '/') + '</td>' +
+      '<td>' + esc(name) + '<span class="page-path" style="color:var(--muted);font-size:11px;margin-left:6px;">' + esc(raw) + '</span></td>' +
       '<td>' + (p.pv || 0) + '</td>' +
       '<td>' + (p.uv || 0) + '</td>' +
       '<td class="mono">' + formatDate(p.last_visit || p.lastVisit || null) + '</td>' +
     '</tr>';
   }).join('');
 }
+
 
 async function loadDashboard() {
   var loading = document.getElementById('dashboardLoading');
@@ -762,13 +828,16 @@ function renderPageStats(data) {
     ? '<div class="empty">暂无访问数据</div>'
     : '<div class="table-scroll"><table><thead><tr><th>页面</th><th>PV</th><th>UV</th><th>最近访问</th></tr></thead><tbody>' +
       pages.slice(0, 10).map(function(p){
+        var raw = p.page || '/';
+        var name = pageDisplayName(raw);
         return '<tr>' +
-          '<td class="mono">' + esc(p.page || '/') + '</td>' +
+          '<td>' + esc(name) + '<span class="page-path" style="color:var(--muted);font-size:11px;margin-left:6px;">' + esc(raw) + '</span></td>' +
           '<td>' + (p.pv || 0) + '</td>' +
           '<td>' + (p.uv || 0) + '</td>' +
           '<td class="mono">' + formatDate(p.last_visit || null) + '</td>' +
         '</tr>';
       }).join('') +
+
       '</tbody></table></div>';
   html += '</div>';
 
