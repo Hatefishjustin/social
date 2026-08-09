@@ -62,8 +62,15 @@ export const onRequestGet = async ({ request, env }) => {
          FROM sm_test_results`
       ).first(),
       db.prepare(
-        `SELECT id, visitor_token, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at
-         FROM sm_test_results ORDER BY created_at DESC LIMIT 20`
+        `SELECT
+           r.id, r.visitor_token, r.user_id,
+           r.s_score, r.m_score, r.switch_score, r.trust_score, r.consent_score,
+           r.result_type, r.created_at,
+           u.display_name as user_display_name,
+           u.email as user_email
+         FROM sm_test_results r
+         LEFT JOIN users u ON r.user_id = u.id
+         ORDER BY r.created_at DESC LIMIT 20`
       ).all(),
     ]);
 
@@ -75,6 +82,9 @@ export const onRequestGet = async ({ request, env }) => {
     const recent = (recentRows.results || []).map(r => ({
       id: r.id,
       visitorToken: r.visitor_token || '',
+      userId: r.user_id || null,
+      userDisplayName: r.user_display_name || '',
+      userEmail: r.user_email || '',
       sScore: r.s_score,
       mScore: r.m_score,
       switchScore: r.switch_score,

@@ -1250,6 +1250,11 @@ async function saveResult(){
     if (window.SMTrack && window.SMTrack.getVisitorToken) {
       visitorToken = window.SMTrack.getVisitorToken();
     }
+    // 如果用户已登录，附带用户ID（后端也会从 session cookie 解析，双保险）
+    let userId = null;
+    if (window.Auth && window.Auth.isLoggedIn && window.Auth.isLoggedIn()) {
+      userId = window.Auth.getUserId();
+    }
     await fetch('/api/sm-save', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1261,6 +1266,7 @@ async function saveResult(){
         consentScore: resultData.consentScore,
         resultType: resultData.resultType,
         visitorToken,
+        userId,
       })
     });
   }catch(e){
@@ -1268,6 +1274,7 @@ async function saveResult(){
   }
   if (window.trackEvent) window.trackEvent('quiz_complete', { quiz_type: 'sm_interaction' });
 }
+
 
 function restartQuiz(){
   current = 0;

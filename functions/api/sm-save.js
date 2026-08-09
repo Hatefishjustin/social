@@ -8,6 +8,7 @@
  * 属于娱乐和自我探索性质，不代表专业心理诊断。
  */
 import { hasTable } from '../_lib/schema.js';
+import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -46,21 +47,33 @@ export const onRequestPost = async ({ request, env }) => {
   // 3. 获取访客标识（前端通过 SMTrack.getVisitorToken() 获取）
   const visitorToken = String(body.visitorToken || body.visitor_token || '').slice(0, 100);
 
-  // 4. 检查表是否存在（迁移前降级：不保存，仅返回成功）
+  // 4. 解析登录用户身份（从 session cookie 中获取）
+  let userId = null;
+  try {
+    const user = await getCurrentUser(request, env);
+    if (user && user.id) {
+      userId = user.id;
+    }
+  } catch (e) {
+    console.warn('[sm-save.js] 解析用户身份失败:', e.message);
+  }
+
+  // 5. 检查表是否存在（迁移前降级：不保存，仅返回成功）
   const tableExists = await hasTable(env, 'sm_test_results');
   if (!tableExists) {
     console.warn('[sm-save.js] sm_test_results 表不存在（迁移未执行），跳过保存');
     return jsonResponse({ success: true, skipped: true });
   }
 
-  // 5. 写入数据库
+  // 6. 写入数据库
   try {
     await env.DB.prepare(
       `INSERT INTO sm_test_results
-         (visitor_token, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+         (visitor_token, user_id, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       visitorToken,
+      userId,
       sScore,
       mScore,
       switchScore,
@@ -70,7 +83,7 @@ export const onRequestPost = async ({ request, env }) => {
       Date.now()
     ).run();
 
-    console.log(`[sm-save.js] 保存成功 result_type=${resultType}`);
+    console.log(`[sm-save.js] 保存成功 result_type=${resultType} user_id=${userId || 'anonymous'}`);
     return jsonResponse({ success: true });
   } catch (e) {
     console.error('[sm-save.js] 写入失败:', e.message);

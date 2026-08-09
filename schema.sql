@@ -558,13 +558,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_imported_questions_dedup ON imported_quest
 CREATE TABLE IF NOT EXISTS sm_test_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     visitor_token TEXT DEFAULT '',        -- 匿名访客标识（visitor_id cookie / visitor_token，可空）
+    user_id INTEGER DEFAULT NULL,         -- 登录用户ID（users.id，可空；未登录为 NULL）
     s_score REAL NOT NULL DEFAULT 0,      -- S 倾向（Dominance）平均分 1~5
     m_score REAL NOT NULL DEFAULT 0,      -- M 倾向（Submission）平均分 1~5
     switch_score REAL NOT NULL DEFAULT 0, -- Switch（双向适应）平均分 1~5
     trust_score REAL NOT NULL DEFAULT 0,  -- Trust（信任建立能力）平均分 1~5
     consent_score REAL NOT NULL DEFAULT 0,-- Consent（边界意识）平均分 1~5
     result_type TEXT NOT NULL DEFAULT '', -- 结果类型：S / M / Switch / Balanced
-    created_at INTEGER NOT NULL           -- 提交时间（Date.now() 毫秒）
+    created_at INTEGER NOT NULL,          -- 提交时间（Date.now() 毫秒）
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sm_test_results_created
@@ -572,6 +574,9 @@ CREATE INDEX IF NOT EXISTS idx_sm_test_results_created
 
 CREATE INDEX IF NOT EXISTS idx_sm_test_results_visitor
     ON sm_test_results(visitor_token, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_sm_test_results_user
+    ON sm_test_results(user_id, created_at DESC);
 
 
 

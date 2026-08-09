@@ -1157,12 +1157,24 @@ function renderSmStats(data) {
     '</div>';
   }).join('');
 
+  // 用户显示：登录用户显示昵称/邮箱，未登录显示"游客"
+  function smUserLabel(r) {
+    if (r.userId) {
+      var name = r.userDisplayName || '';
+      var email = r.userEmail || '';
+      if (name) return esc(name);
+      if (email) return esc(email.split('@')[0]);
+      return '用户#' + r.userId;
+    }
+    return '<span style="color:var(--muted);">游客</span>';
+  }
+
   var recentHtml = recent.length === 0
-    ? '<tr class="no-data"><td colspan="8" style="color:var(--muted);">暂无记录</td></tr>'
+    ? '<tr class="no-data"><td colspan="9" style="color:var(--muted);">暂无记录</td></tr>'
     : recent.map(function(r){
         return '<tr>' +
           '<td class="mono">' + r.id + '</td>' +
-          '<td class="mono">' + esc((r.visitorToken || '').slice(0, 8)) + '…</td>' +
+          '<td>' + smUserLabel(r) + '</td>' +
           '<td>' + esc(smTypeLabels[r.resultType] || r.resultType) + '</td>' +
           '<td>' + r.sScore + '</td>' +
           '<td>' + r.mScore + '</td>' +
@@ -1174,6 +1186,7 @@ function renderSmStats(data) {
       }).join('');
 
   el.innerHTML =
+
     '<div class="stats">' +
       '<div class="stat-card"><div class="num">' + (stats.total || 0) + '</div><div class="label">累计完成</div></div>' +
       '<div class="stat-card"><div class="num">' + (stats.today || 0) + '</div><div class="label">今日完成</div></div>' +
