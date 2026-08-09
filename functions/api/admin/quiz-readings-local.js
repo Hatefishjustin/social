@@ -15,6 +15,7 @@
  */
 
 import { getCurrentUser } from '../../_lib/auth.js';
+import { hasColumn } from '../../_lib/schema.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -41,6 +42,9 @@ export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const idParam = url.searchParams.get('id');
 
+  // S11: 检测 quiz_results 是否已含 visitor_token 列（迁移未执行时降级）
+  const hasVisitorCol = await hasColumn(env, 'quiz_results', 'visitor_token');
+
   // 单条详情模式：/api/admin/quiz-readings-local?id=X
   if (idParam) {
     const id = Number(idParam);
@@ -51,6 +55,7 @@ export const onRequestGet = async ({ request, env }) => {
     const row = await env.DB.prepare(
       `SELECT r.id, r.user_id, r.created_at, r.headline, r.scores_json, r.answers_json,
               r.ip, r.user_agent, r.country, r.city, r.device, r.os, r.browser,
+              ${hasVisitorCol ? 'r.visitor_token,' : ''}
               u.email as user_email, u.display_name as user_display_name
        FROM quiz_results r
        LEFT JOIN users u ON r.user_id = u.id
@@ -71,6 +76,7 @@ export const onRequestGet = async ({ request, env }) => {
       detail: {
         id: row.id,
         userId: row.user_id,
+        visitorToken: hasVisitorCol ? (row.visitor_token || '') : '',
         userEmail: row.user_email || '',
         userDisplayName: row.user_display_name || '',
         headline: row.headline || '',
@@ -118,6 +124,7 @@ export const onRequestGet = async ({ request, env }) => {
 
     const { results } = await env.DB.prepare(
       `SELECT r.id, r.user_id, r.created_at, r.headline,
+              ${hasVisitorCol ? 'r.visitor_token,' : ''}
               (r.scores_json IS NOT NULL) as has_scores,
               (r.answers_json IS NOT NULL) as has_answers,
               u.email as user_email, u.display_name as user_display_name
@@ -134,6 +141,7 @@ export const onRequestGet = async ({ request, env }) => {
       records: (results || []).map(r => ({
         id: r.id,
         userId: r.user_id,
+        visitorToken: hasVisitorCol ? (r.visitor_token || '') : '',
         userEmail: r.user_email || '',
         userDisplayName: r.user_display_name || '',
         headline: r.headline || '',

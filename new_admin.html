@@ -120,6 +120,28 @@
     padding: 1px 7px; border-radius: 3px; font-size: 10px;
   }
 
+  /* 同类行为折叠（需求2） */
+  .act-count {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    background: rgba(255,255,255,.06); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1px 8px; margin-left: 6px;
+  }
+  .fold-group { cursor: pointer; }
+  .fold-toggle {
+    margin-top: 8px; padding: 4px 12px; border-radius: 14px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--muted); font-size: 11px; cursor: pointer;
+  }
+  .fold-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .act-fold-detail {
+    margin-top: 8px; padding: 8px 10px; border-radius: 6px;
+    background: rgba(255,255,255,.03); border: 1px dashed var(--border);
+    font-size: 12px; color: var(--muted); line-height: 1.8;
+  }
+  .act-fold-item { display: flex; gap: 8px; }
+  .act-fold-item .ft-time { font-family: monospace; color: var(--accent); white-space: nowrap; }
+  .act-fold-item .ft-content { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
   /* Pagination */
   .pagination {
     display: flex; align-items: center; justify-content: center;
@@ -555,13 +577,141 @@ function renderPagination(pagination) {
     '<button ' + (pagination.page >= pagination.totalPages ? 'disabled' : '') + ' onclick="goPage('+(pagination.page+1)+')">下一页</button>';
 }
 
+// ==================== 同类行为折叠（需求2） ====================
+// 规则：相同用户 + 相同操作 + 连续时间范围内（相邻两条间隔不超过 FOLD_WINDOW_MS）
+//       → 自动折叠成一条，展示次数与时间范围，可展开查看明细。
+var FOLD_WINDOW_MS = 5 * 60 * 1000; // 5 分钟
+
+// 折叠分组 key（S11-P0 修复）：
+// - 登录用户：user_id + action + page_path + target_id + target_type
+// - 匿名用户：visitor_token / visitor_id + action + page_path + target_id + target_type
+// - 兜底：ip + action + page_path + target_id + target_type
+// 加入 page_path 避免不同页面访问被合并；加入 target_id/target_type 避免不同目标对象被合并。
+function foldKey(item) {
+  var userPart;
+  if (item.user_id) {
+    userPart = 'u:' + item.user_id;
+  } else if (item.visitor_token || item.visitor_id) {
+    userPart = 'v:' + (item.visitor_token || item.visitor_id);
+  } else {
+    userPart = 'ip:' + (item.ip || 'unknown');
+  }
+  return userPart +
+    '|' + (item.action || '') +
+    '|' + (item.page_path || '') +
+    '|' + (item.target_id === undefined || item.target_id === null ? '' : String(item.target_id)) +
+    '|' + (item.target_type || '');
+}
+
+// 对按时间倒序的原始记录做折叠，返回分组数组
+function foldActivities(activities) {
+  var groups = [];
+  for (var i = 0; i < activities.length; i++) {
+    var item = activities[i];
+    var last = groups.length > 0 ? groups[groups.length - 1] : null;
+    var key = foldKey(item);
+    if (last && last.key === key && (last._lastTs - item.created_at) <= FOLD_WINDOW_MS) {
+      last.items.push(item);
+      last._lastTs = item.created_at;
+      last.count += 1;
+      last.firstCreatedAt = item.created_at; // 不断前移，保持组内最早时间
+    } else {
+      groups.push({
+        key: key,
+        items: [item],
+        count: 1,
+        firstCreatedAt: item.created_at,
+        lastCreatedAt: item.created_at,
+        _lastTs: item.created_at
+      });
+    }
+  }
+  return groups;
+}
+
+// 折叠组 → 单条展示（含 ×N 次数徽标、时间范围、可展开明细）
+function renderFoldGroup(group) {
+  var latest = group.items[0]; // 最新的那条
+  var time = formatTime(latest.created_at);
+  var device = parseDevice(latest.user_agent);
+  var location = [latest.country, latest.city].filter(Boolean).join(' ') || '未知';
+
+  var userTag = '';
+  if (latest.is_anonymous) {
+    userTag = '<span class="anon-tag">匿名</span>';
+  } else if (latest.user_email) {
+    userTag = '<span class="user-tag">' + esc(latest.user_email) + '</span>';
+  } else {
+    userTag = '<span class="anon-tag">匿名(未登录)</span>';
+  }
+
+  var answerBlock = '';
+  if (latest.action === 'askbox_answer') {
+    answerBlock = '<div class="act-answer">' + esc(latest.content) + '</div>';
+  } else {
+    answerBlock = '<div class="act-content">' + esc(latest.content || '') + '</div>';
+  }
+
+  var timeLabel = group.count > 1
+    ? formatTime(group.firstCreatedAt) + ' ~ ' + formatTime(group.lastCreatedAt)
+    : time;
+
+  var detailHtml = '';
+  if (group.count > 1) {
+    detailHtml = group.items.map(function (it) {
+      return '<div class="act-fold-item">' +
+        '<span class="ft-time">' + formatTime(it.created_at) + '</span>' +
+        '<span class="ft-content" title="' + esc(it.content || '') + '">' + esc(it.content || '') + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  return '<div class="activity-item fold-group" onclick="toggleFoldDetail(this)">' +
+    '<div class="act-header">' +
+      '<span style="display:flex;align-items:center;">' +
+        '<span class="act-type ' + latest.action + '">' + actionLabel(latest.action) + '</span>' +
+        (group.count > 1 ? '<span class="act-count">×' + group.count + '</span>' : '') +
+      '</span>' +
+      '<span class="act-time">' + timeLabel + '</span>' +
+    '</div>' +
+    answerBlock +
+    '<div class="act-meta">' +
+      userTag +
+      '<span>IP: ' + esc(latest.ip || '未知') + '</span>' +
+      '<span>设备: ' + device + '</span>' +
+      '<span>地区: ' + esc(location) + '</span>' +
+      '<span title="' + esc(latest.user_agent || '') + '" style="cursor:help">UA: ' + esc(truncateUA(latest.user_agent)) + '</span>' +
+    '</div>' +
+    (group.count > 1
+      ? '<div class="act-fold-detail" style="display:none;">' + detailHtml + '</div>' +
+        '<button class="fold-toggle" onclick="event.stopPropagation();toggleFoldDetail(this)">展开 ' + group.count + ' 条明细</button>'
+      : '') +
+  '</div>';
+}
+
+window.toggleFoldDetail = function (el) {
+  var box = el.classList.contains('fold-group') ? el : el.parentNode;
+  var detail = box.querySelector('.act-fold-detail');
+  var btn = box.querySelector('.fold-toggle');
+  if (!detail) return;
+  var hidden = detail.style.display === 'none';
+  detail.style.display = hidden ? 'block' : 'none';
+  if (btn) btn.textContent = hidden ? '收起明细' : ('展开 ' + box.dataset.foldCount + ' 条明细');
+};
+
 function renderList(activities) {
   var el = document.getElementById('activityList');
   if (!activities || activities.length === 0) {
     el.innerHTML = '<div class="empty">暂无活动记录</div>';
     return;
   }
-  el.innerHTML = activities.map(renderActivity).join('');
+  // 需求2：相同用户 + 相同操作 + 连续时间范围内 → 折叠成一条
+  var groups = foldActivities(activities);
+  el.innerHTML = groups.map(function (g) {
+    var html = renderFoldGroup(g);
+    // 将次数挂到容器上，供"收起明细"按钮还原文案
+    return html.replace('<div class="activity-item fold-group"', '<div class="activity-item fold-group" data-fold-count="' + g.count + '"');
+  }).join('');
 }
 
 async function loadPage(page, action) {
@@ -1063,6 +1213,24 @@ async function loadQuizStats() {
 }
 
 // ==================== 心理测评（SoulMirror 社交站本地数据源） ====================
+
+// 测评记录用户显示（S11 需求1）：
+// - 登录用户：显示用户名/邮箱 + 用户ID
+// - 匿名用户：显示「匿名用户」 + visitor_token（用于后台追踪同一匿名用户）
+function quizUserLabel(r) {
+  if (r.userId) {
+    var name = r.userDisplayName || '';
+    var email = r.userEmail || '';
+    var label = name ? name : (email ? email.split('@')[0] : ('用户#' + r.userId));
+    return esc(label) + ' <span style="color:var(--muted);font-size:11px;">(ID: ' + r.userId + ')</span>';
+  }
+  var token = r.visitorToken || '';
+  var tokenHtml = token
+    ? '<div style="font-size:11px;color:var(--muted);font-family:monospace;max-width:170px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(token) + '">' + esc(token.slice(0, 8) + '…') + '</div>'
+    : '';
+  return '<span class="anon-tag">匿名用户</span>' + tokenHtml;
+}
+
 function renderQuizLocalDashboard(data) {
   var el = document.getElementById('quizDashboard');
 
@@ -1094,7 +1262,7 @@ function renderQuizLocalDashboard(data) {
           : data.recentRecords.map(function(r){
               return '<tr>' +
                 '<td class="mono">' + r.id + '</td>' +
-                '<td>' + (r.userEmail ? esc(r.userEmail) : ('#' + r.userId)) + '</td>' +
+                '<td>' + quizUserLabel(r) + '</td>' +
                 '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(r.headline || '') + '">' + (r.headline ? esc(r.headline) : '—') + '</td>' +
                 '<td class="mono">' + esc(r.ip || '—') + '</td>' +
                 '<td>' + esc(formatLocation(r.country, r.city)) + '</td>' +
@@ -1135,7 +1303,10 @@ function renderQuizDetailBody(d) {
   return '' +
     '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;margin-bottom:16px;">' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">' +
-        '<div><span style="color:var(--muted);">用户：</span>' + esc(d.userEmail || ('#' + d.userId)) + '</div>' +
+        '<div><span style="color:var(--muted);">用户：</span>' + (d.userId
+          ? esc((d.userDisplayName || (d.userEmail ? d.userEmail.split('@')[0] : ('用户#' + d.userId)))) + ' <span style="color:var(--muted);font-size:11px;">(ID: ' + d.userId + ')</span>'
+          : '<span class="anon-tag">匿名用户</span>') + '</div>' +
+        (d.userId ? '' : '<div><span style="color:var(--muted);">访客标识：</span><span class="mono" title="' + esc(d.visitorToken || '') + '">' + esc((d.visitorToken || '').slice(0, 16) || '—') + (d.visitorToken && d.visitorToken.length > 16 ? '…' : '') + '</span></div>') +
         '<div><span style="color:var(--muted);">时间：</span>' + formatDate(d.createdAt) + '</div>' +
         '<div><span style="color:var(--muted);">IP：</span>' + esc(d.ip || '—') + '</div>' +
         '<div><span style="color:var(--muted);">地区：</span>' + esc(formatLocation(d.country, d.city)) + '</div>' +
@@ -1226,16 +1397,21 @@ function renderSmStats(data) {
     '</div>';
   }).join('');
 
-  // 用户显示：登录用户显示昵称/邮箱，未登录显示"游客"
+  // 用户显示（S11 需求1）：
+  // - 登录用户：显示昵称/邮箱 + 用户ID
+  // - 匿名用户：显示「匿名用户」 + visitor_token（用于后台追踪同一匿名用户）
   function smUserLabel(r) {
     if (r.userId) {
       var name = r.userDisplayName || '';
       var email = r.userEmail || '';
-      if (name) return esc(name);
-      if (email) return esc(email.split('@')[0]);
-      return '用户#' + r.userId;
+      var label = name ? name : (email ? email.split('@')[0] : ('用户#' + r.userId));
+      return esc(label) + ' <span style="color:var(--muted);font-size:11px;">(ID: ' + r.userId + ')</span>';
     }
-    return '<span style="color:var(--muted);">游客</span>';
+    var token = r.visitorToken || '';
+    var tokenHtml = token
+      ? '<div style="font-size:11px;color:var(--muted);font-family:monospace;max-width:170px;overflow:hidden;text-overflow:ellipsis;" title="' + esc(token) + '">' + esc(token.slice(0, 8) + '…') + '</div>'
+      : '';
+    return '<span class="anon-tag">匿名用户</span>' + tokenHtml;
   }
 
   var recentHtml = recent.length === 0

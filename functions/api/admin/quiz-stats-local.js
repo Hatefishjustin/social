@@ -15,6 +15,7 @@
  */
 
 import { getCurrentUser } from '../../_lib/auth.js';
+import { hasColumn } from '../../_lib/schema.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -43,6 +44,28 @@ export const onRequestGet = async ({ request, env }) => {
   const todayStartMs = todayStart.getTime();
   const fourteenDaysAgoMs = now - 14 * DAY_MS;
 
+  // S11: 检测 quiz_results 是否已含 visitor_token 列（迁移未执行时降级，不报错）
+  const hasVisitorCol = await hasColumn(env, 'quiz_results', 'visitor_token');
+
+  // 最近记录查询：LEFT JOIN 保证匿名记录（user_id 为 NULL）也会返回
+  const recentSql = hasVisitorCol
+    ? `SELECT r.id, r.user_id, r.visitor_token, r.created_at, r.headline,
+              r.ip, r.country, r.city, r.device, r.os, r.browser,
+              (r.scores_json IS NOT NULL) as has_scores,
+              (r.ip IS NOT NULL AND r.ip != '') as has_meta,
+              u.email as user_email, u.display_name as user_display_name
+       FROM quiz_results r
+       LEFT JOIN users u ON r.user_id = u.id
+       ORDER BY r.created_at DESC LIMIT 50`
+    : `SELECT r.id, r.user_id, r.created_at, r.headline,
+              r.ip, r.country, r.city, r.device, r.os, r.browser,
+              (r.scores_json IS NOT NULL) as has_scores,
+              (r.ip IS NOT NULL AND r.ip != '') as has_meta,
+              u.email as user_email, u.display_name as user_display_name
+       FROM quiz_results r
+       LEFT JOIN users u ON r.user_id = u.id
+       ORDER BY r.created_at DESC LIMIT 50`;
+
   try {
     const [
       totalRow,
@@ -56,7 +79,7 @@ export const onRequestGet = async ({ request, env }) => {
     ] = await Promise.all([
       env.DB.prepare('SELECT COUNT(*) as cnt FROM quiz_results').first(),
       env.DB.prepare('SELECT COUNT(*) as cnt FROM quiz_results WHERE created_at >= ?').bind(todayStartMs).first(),
-      env.DB.prepare('SELECT COUNT(DISTINCT user_id) as cnt FROM quiz_results').first(),
+      env.DB.prepare('SELECT COUNT(DISTINCT user_id) as cnt FROM quiz_results WHERE user_id IS NOT NULL').first(),
       env.DB.prepare(
         `SELECT headline, COUNT(*) as cnt FROM quiz_results
          WHERE headline IS NOT NULL AND headline != ''
@@ -77,16 +100,7 @@ export const onRequestGet = async ({ request, env }) => {
          FROM quiz_results WHERE created_at >= ?
          GROUP BY day_bucket ORDER BY day_bucket ASC`
       ).bind(fourteenDaysAgoMs).all(),
-      env.DB.prepare(
-        `SELECT r.id, r.user_id, r.created_at, r.headline,
-                r.ip, r.country, r.city, r.device, r.os, r.browser,
-                (r.scores_json IS NOT NULL) as has_scores,
-                (r.ip IS NOT NULL AND r.ip != '') as has_meta,
-                u.email as user_email, u.display_name as user_display_name
-         FROM quiz_results r
-         LEFT JOIN users u ON r.user_id = u.id
-         ORDER BY r.created_at DESC LIMIT 50`
-      ).all(),
+      env.DB.prepare(recentSql).all(),
     ]);
 
     const trendMap = {};
@@ -124,6 +138,7 @@ export const onRequestGet = async ({ request, env }) => {
       recentRecords: (recentRecords.results || []).map(r => ({
         id: r.id,
         userId: r.user_id,
+        visitorToken: r.visitor_token || '',
         userEmail: r.user_email || '',
         userDisplayName: r.user_display_name || '',
         headline: r.headline || '',

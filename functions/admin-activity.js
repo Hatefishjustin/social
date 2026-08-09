@@ -2,7 +2,15 @@
  * 路径: /functions/admin-activity.js
  * 路由: /admin-activity
  * 后台活动日志查询 API
+ *
+ * S11-P0 修复:
+ *   - 返回完整字段供前台折叠分组：page_path / target_id / target_type / visitor_token / detail_json
+ *   - 字段兼容：activity_log 无 event 列 → NULL AS event；
+ *     S09 迁移未执行时 page_path/detail_json 不存在 → NULL AS 占位，不报错；
+ *     visitor_token 列不存在时 → NULL AS visitor_token
  */
+
+import { hasColumn } from './_lib/schema.js';
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
@@ -57,8 +65,20 @@ export const onRequestGet = async ({ request, env }) => {
     params.push(action);
   }
 
+  // S11-P0: 字段存在性检测（不存在的字段用 NULL 占位，保证接口稳定不报错）
+  const hasPageCol = await hasColumn(env, 'activity_log', 'page_path');
+  const hasVisitorTokenCol = await hasColumn(env, 'activity_log', 'visitor_token');
+
+  // activity_log 没有 event 列 → NULL AS event；S09 列缺失时同样 NULL 占位
+  const extraCols =
+    (hasPageCol ? 'page_path, detail_json, ' : 'NULL AS page_path, NULL AS detail_json, ') +
+    (hasVisitorTokenCol ? 'visitor_token, ' : 'NULL AS visitor_token, ') +
+    'NULL AS event, ';
+
   const sql = `SELECT id, user_id, user_email, action, target_type, target_id,
-                      content, ip, user_agent, country, city, is_anonymous, created_at
+                      content, ip, user_agent, country, city, is_anonymous, visitor_id,
+                      ${extraCols}
+                      created_at
                FROM activity_log${where}
                ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 

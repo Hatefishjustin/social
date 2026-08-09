@@ -2151,7 +2151,7 @@ function renderResult(scores, options){
   const headline = `${attachInfo[topAttach].name} · ${loveLabels[primaryLove]}`;
   if(!skipSave){
     trackCompletion(headline);
-    autoSaveRecordIfLoggedIn(scores, headline);
+    autoSaveRecord(scores, headline);
   }
 }
 
@@ -2638,14 +2638,26 @@ async function trackCompletion(headline){
   } catch(e) {}
 }
 
-// 测评完成后，若已登录则自动保存这次记录（静默进行，不打断用户查看报告）
-async function autoSaveRecordIfLoggedIn(scores, headline){
-  if(!currentUser) return;
+// 测评完成后自动保存这次记录（静默进行，不打断用户查看报告）。
+// S11（需求1）：匿名用户也会保存——user_id 为空，携带 visitorToken 匿名标识，
+// 使后台「心理测评」板块能看到匿名测评记录，并可通过 visitor_token 追踪同一匿名用户。
+// S11-P1：无论登录/匿名都发送 visitorToken，与 sm-test.html 行为一致；
+// 后端保持 user_id 优先（从 session cookie 解析），visitor_token 作为辅助标识。
+async function autoSaveRecord(scores, headline){
   try{
+    let visitorToken = '';
+    if (window.SMTrack && window.SMTrack.getVisitorToken) {
+      visitorToken = window.SMTrack.getVisitorToken();
+    }
+    const payload = {
+      headline,
+      data: { scores, answers },
+      visitorToken
+    };
     await fetch('/records', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ headline, data: { scores, answers } })
+      body: JSON.stringify(payload)
     });
   }catch(e){
     // 保存失败不影响用户当前查看报告的体验，静默忽略

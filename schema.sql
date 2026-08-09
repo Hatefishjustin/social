@@ -111,7 +111,8 @@ CREATE TABLE IF NOT EXISTS profile_visits (
 
 CREATE TABLE IF NOT EXISTS quiz_results (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+    user_id INTEGER DEFAULT NULL,     -- 登录用户ID（匿名测评时为 NULL，S11 起可空）
+    visitor_token TEXT DEFAULT '',    -- 匿名访客标识（匿名测评时记录，用于后台追踪同一匿名用户）（S11 新增）
     created_at INTEGER NOT NULL,
     headline TEXT NOT NULL,
     scores_json TEXT NOT NULL,
@@ -123,12 +124,14 @@ CREATE TABLE IF NOT EXISTS quiz_results (
     device TEXT DEFAULT '',           -- 设备类型：mobile/desktop/tablet（S-05 新增）
     os TEXT DEFAULT '',               -- 操作系统（S-05 新增）
     browser TEXT DEFAULT '',          -- 浏览器（S-05 新增）
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 迁移备注: S-05 (2026-08-06) 为 quiz_results 补充 ip/user_agent/country/city/device/os/browser 字段
 -- 线上 D1 执行: wrangler d1 execute db --remote --file docs/migrations/2026-08-06-S05-quiz-meta.sql
 -- 并补充索引: idx_quiz_results_created（见 docs/migrations/2026-08-06-S05-quiz-meta.sql）
+-- 迁移备注: S11 (2026-08-10) 重建 quiz_results 支持匿名记录：user_id 改为可空 + 新增 visitor_token
+-- 线上 D1 执行: wrangler d1 execute <DB_NAME> --remote --file docs/migrations/2026-08-10-S11-quiz-anonymous.sql
 
 CREATE TABLE IF NOT EXISTS matches (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

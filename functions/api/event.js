@@ -15,6 +15,20 @@ import { parseUA } from '../_lib/ua.js';
 import { getVisitorId } from '../_lib/visitor.js';
 import { hasColumn } from '../_lib/schema.js';
 
+// S11-P1: 读取匿名访客标识（统一为 sm_t_xxx 优先）
+// 优先级：sm_vt cookie（前端 track.js 生成 sm_t_xxx）
+//        → visitor_token cookie（askbox 等生成）
+//        → visitor_id cookie（/api/visitor 生成 sm_v_xxx）
+function getVisitorTokenFromCookie(request) {
+  const cookieHeader = request.headers.get('Cookie');
+  if (!cookieHeader) return '';
+  const read = (name) => {
+    const m = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  };
+  return read('sm_vt') || read('visitor_token') || read('visitor_id') || '';
+}
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -61,29 +75,54 @@ export const onRequestPost = async ({ request, env }) => {
 
   let user = null;
   try { user = await getCurrentUser(request, env); } catch (e) { user = null; }
+  // S11-P1: 匿名标识统一——优先 visitor_token（sm_t_xxx），回退 visitor_id（sm_v_xxx）
+  const visitorToken = getVisitorTokenFromCookie(request);
   const visitorId = getVisitorId(request);
+  // 写入用的统一匿名标识：token 优先；若 activity_log 无 visitor_token 列则写入现有 visitor_id 列
+  const identity = visitorToken || visitorId || null;
 
   if (!env || !env.DB) return jsonResponse({ ok: false, error: 'missing_db', message: '数据库未配置' }, 500);
 
   const hasNewColumns = await hasColumn(env, 'activity_log', 'device');
+  const hasVisitorTokenColumn = await hasColumn(env, 'activity_log', 'visitor_token');
   const now = Date.now();
 
   try {
     if (hasNewColumns) {
-      await env.DB.prepare(
-        `INSERT INTO activity_log
-           (user_id, user_email, action, target_type, target_id, content,
-            ip, user_agent, country, city, is_anonymous, visitor_id,
-            device, os, browser, referrer, page_path, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        user ? user.id : null, user ? user.email : null,
-        safeAction, targetType || null, targetId || null, detail,
-        meta.ip, meta.ua, meta.country, meta.city, user ? 0 : 1, visitorId || null,
-        parsedUA.device, parsedUA.os, parsedUA.browser,
-        String(body?.referrer || '').slice(0, 300), page || null, now
-      ).run();
+      if (hasVisitorTokenColumn) {
+        // S09 完整列 + visitor_token 列：token 写入 visitor_token，visitor_id 保留原值
+        await env.DB.prepare(
+          `INSERT INTO activity_log
+             (user_id, user_email, action, target_type, target_id, content,
+              ip, user_agent, country, city, is_anonymous, visitor_id, visitor_token,
+              device, os, browser, referrer, page_path, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          user ? user.id : null, user ? user.email : null,
+          safeAction, targetType || null, targetId || null, detail,
+          meta.ip, meta.ua, meta.country, meta.city, user ? 0 : 1,
+          visitorId || null, identity,
+          parsedUA.device, parsedUA.os, parsedUA.browser,
+          String(body?.referrer || '').slice(0, 300), page || null, now
+        ).run();
+      } else {
+        // S09 完整列但无 visitor_token 列：统一标识写入现有 visitor_id 列（不修改表结构）
+        await env.DB.prepare(
+          `INSERT INTO activity_log
+             (user_id, user_email, action, target_type, target_id, content,
+              ip, user_agent, country, city, is_anonymous, visitor_id,
+              device, os, browser, referrer, page_path, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          user ? user.id : null, user ? user.email : null,
+          safeAction, targetType || null, targetId || null, detail,
+          meta.ip, meta.ua, meta.country, meta.city, user ? 0 : 1, identity,
+          parsedUA.device, parsedUA.os, parsedUA.browser,
+          String(body?.referrer || '').slice(0, 300), page || null, now
+        ).run();
+      }
     } else {
+      // 迁移前基础列：统一标识写入现有 visitor_id 列
       await env.DB.prepare(
         `INSERT INTO activity_log
            (user_id, user_email, action, target_type, target_id, content,
@@ -92,7 +131,7 @@ export const onRequestPost = async ({ request, env }) => {
       ).bind(
         user ? user.id : null, user ? user.email : null,
         safeAction, targetType || null, targetId || null, detail,
-        meta.ip, meta.ua, meta.country, meta.city, user ? 0 : 1, visitorId || null, now
+        meta.ip, meta.ua, meta.country, meta.city, user ? 0 : 1, identity, now
       ).run();
     }
   } catch (e) {
