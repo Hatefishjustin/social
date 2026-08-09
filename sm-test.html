@@ -1257,6 +1257,7 @@ async function saveResult(){
     }
     await fetch('/api/sm-save', {
       method:'POST',
+      credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         sScore: resultData.sScore,
