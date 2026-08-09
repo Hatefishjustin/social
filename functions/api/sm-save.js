@@ -7,7 +7,7 @@
  * 该测试从心理学角度分析用户在亲密关系中的权力互动偏好，
  * 属于娱乐和自我探索性质，不代表专业心理诊断。
  */
-import { hasTable } from '../_lib/schema.js';
+import { hasTable, hasColumn } from '../_lib/schema.js';
 import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
@@ -65,28 +65,49 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ success: true, skipped: true });
   }
 
-  // 6. 写入数据库
+  // 6. 检查 user_id 字段是否存在（S10 用户绑定迁移可能未执行）
+  const hasUserId = await hasColumn(env, 'sm_test_results', 'user_id');
+
+  // 7. 写入数据库（根据 user_id 字段是否存在决定是否写入）
   try {
-    await env.DB.prepare(
-      `INSERT INTO sm_test_results
-         (visitor_token, user_id, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(
-      visitorToken,
-      userId,
-      sScore,
-      mScore,
-      switchScore,
-      trustScore,
-      consentScore,
-      resultType,
-      Date.now()
-    ).run();
+    if (hasUserId) {
+      await env.DB.prepare(
+        `INSERT INTO sm_test_results
+           (visitor_token, user_id, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        visitorToken,
+        userId,
+        sScore,
+        mScore,
+        switchScore,
+        trustScore,
+        consentScore,
+        resultType,
+        Date.now()
+      ).run();
+    } else {
+      // 降级：无 user_id 字段，仅写入基础字段
+      await env.DB.prepare(
+        `INSERT INTO sm_test_results
+           (visitor_token, s_score, m_score, switch_score, trust_score, consent_score, result_type, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        visitorToken,
+        sScore,
+        mScore,
+        switchScore,
+        trustScore,
+        consentScore,
+        resultType,
+        Date.now()
+      ).run();
+    }
 
     console.log(`[sm-save.js] 保存成功 result_type=${resultType} user_id=${userId || 'anonymous'}`);
     return jsonResponse({ success: true });
   } catch (e) {
     console.error('[sm-save.js] 写入失败:', e.message);
-    return jsonResponse({ error: 'db_error' }, 500);
+    return jsonResponse({ error: 'db_error', message: '写入失败: ' + e.message }, 500);
   }
 };

@@ -6,7 +6,7 @@
  * 返回: 总完成次数 / 各类型分布 / 各维度平均分 / 最近记录
  */
 import { getCurrentUser } from '../../_lib/auth.js';
-import { hasTable } from '../../_lib/schema.js';
+import { hasTable, hasColumn } from '../../_lib/schema.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -42,13 +42,17 @@ export const onRequestGet = async ({ request, env }) => {
     });
   }
 
+  // 检查 user_id 字段是否存在（S10 用户绑定迁移可能未执行）
+  const hasUserId = await hasColumn(env, 'sm_test_results', 'user_id');
+
   const now = Date.now();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayStartMs = todayStart.getTime();
 
   try {
-    const [totalRow, todayRow, typeRows, avgRow, recentRows] = await Promise.all([
+    // 基础统计查询（不依赖 user_id）
+    const [totalRow, todayRow, typeRows, avgRow] = await Promise.all([
       db.prepare('SELECT COUNT(*) as n FROM sm_test_results').first(),
       db.prepare('SELECT COUNT(*) as n FROM sm_test_results WHERE created_at >= ?').bind(todayStartMs).first(),
       db.prepare('SELECT result_type, COUNT(*) as n FROM sm_test_results GROUP BY result_type').all(),
@@ -61,7 +65,12 @@ export const onRequestGet = async ({ request, env }) => {
            AVG(consent_score) as avg_consent
          FROM sm_test_results`
       ).first(),
-      db.prepare(
+    ]);
+
+    // 最近记录查询：根据 user_id 字段是否存在决定是否 JOIN users
+    let recentRows;
+    if (hasUserId) {
+      recentRows = await db.prepare(
         `SELECT
            r.id, r.visitor_token, r.user_id,
            r.s_score, r.m_score, r.switch_score, r.trust_score, r.consent_score,
@@ -71,8 +80,18 @@ export const onRequestGet = async ({ request, env }) => {
          FROM sm_test_results r
          LEFT JOIN users u ON r.user_id = u.id
          ORDER BY r.created_at DESC LIMIT 20`
-      ).all(),
-    ]);
+      ).all();
+    } else {
+      // 降级：无 user_id 字段，仅查询基础字段
+      recentRows = await db.prepare(
+        `SELECT
+           id, visitor_token,
+           s_score, m_score, switch_score, trust_score, consent_score,
+           result_type, created_at
+         FROM sm_test_results
+         ORDER BY created_at DESC LIMIT 20`
+      ).all();
+    }
 
     const typeDistribution = {};
     (typeRows.results || []).forEach(r => {
@@ -107,9 +126,10 @@ export const onRequestGet = async ({ request, env }) => {
       },
       recent,
       generatedAt: now,
+      userBinding: hasUserId, // 标记是否已启用用户绑定
     });
   } catch (e) {
     console.error('[sm-stats.js] 查询失败:', e.message);
-    return jsonResponse({ error: 'db_error', message: '查询失败' }, 500);
+    return jsonResponse({ error: 'db_error', message: '查询失败: ' + e.message }, 500);
   }
 };
