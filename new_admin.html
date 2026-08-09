@@ -256,10 +256,12 @@
       <button class="tab-btn" data-tab="pages">页面分析</button>
       <button class="tab-btn" data-tab="users">用户管理</button>
       <button class="tab-btn" data-tab="quiz">心理测评</button>
+      <button class="tab-btn" data-tab="smtest">S/M测试</button>
       <button class="tab-btn" data-tab="tarot">塔罗数据</button>
       <button class="tab-btn" data-tab="reports">内容审核</button>
       <button class="tab-btn" data-tab="settings">系统设置</button>
     </div>
+
 
     <!-- ======== 数据总览 Dashboard Tab ======== -->
     <div class="tab-content" id="tab-dashboard">
@@ -341,8 +343,15 @@
       <div id="quizDashboard"></div>
     </div>
 
+    <!-- ======== S/M 互动倾向测试 Tab ======== -->
+    <div class="tab-content" id="tab-smtest">
+      <div class="loading" id="smStatsLoading">正在加载 S/M 测试数据...</div>
+      <div id="smStatsContent"></div>
+    </div>
+
     <!-- ======== 塔罗数据 Tab ======== -->
     <div class="tab-content" id="tab-tarot">
+
       <div class="stats" id="tarotStats"></div>
 
       <div class="filters">
@@ -1105,8 +1114,118 @@ window.closeQuizDetail = function() {
   document.getElementById('quizDetailModal').style.display = 'none';
 };
 
+// ==================== S/M 互动倾向测试统计 ====================
+var smTypeLabels = {
+  S: '偏S型（主导）',
+  M: '偏M型（接受）',
+  Switch: 'Switch型（双向适应）',
+  Balanced: '平衡型'
+};
+
+function renderSmStats(data) {
+  var el = document.getElementById('smStatsContent');
+  var stats = (data && data.stats) || {};
+  var recent = (data && data.recent) || [];
+
+  var typeDist = stats.typeDistribution || {};
+  var typeTotal = Object.keys(typeDist).reduce(function(a, k){ return a + (typeDist[k] || 0); }, 0);
+  var typeMax = Math.max(1, typeTotal);
+
+  var typeBreakdownHtml = Object.keys(smTypeLabels).map(function(key){
+    var count = typeDist[key] || 0;
+    var pct = typeTotal > 0 ? Math.round(count / typeTotal * 100) : 0;
+    return '<div class="breakdown-row">' +
+      '<div class="name">' + smTypeLabels[key] + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="count">' + count + ' (' + pct + '%)</div>' +
+    '</div>';
+  }).join('');
+
+  var avgRows = [
+    { label: 'S 倾向（主导）', val: stats.avgS || 0 },
+    { label: 'M 倾向（接受）', val: stats.avgM || 0 },
+    { label: 'Switch（双向适应）', val: stats.avgSwitch || 0 },
+    { label: '信任建立', val: stats.avgTrust || 0 },
+    { label: '边界意识', val: stats.avgConsent || 0 },
+  ];
+  var avgHtml = avgRows.map(function(r){
+    var pct = Math.round(r.val / 5 * 100);
+    return '<div class="breakdown-row">' +
+      '<div class="name">' + r.label + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="count">' + r.val + ' / 5</div>' +
+    '</div>';
+  }).join('');
+
+  var recentHtml = recent.length === 0
+    ? '<tr class="no-data"><td colspan="8" style="color:var(--muted);">暂无记录</td></tr>'
+    : recent.map(function(r){
+        return '<tr>' +
+          '<td class="mono">' + r.id + '</td>' +
+          '<td class="mono">' + esc((r.visitorToken || '').slice(0, 8)) + '…</td>' +
+          '<td>' + esc(smTypeLabels[r.resultType] || r.resultType) + '</td>' +
+          '<td>' + r.sScore + '</td>' +
+          '<td>' + r.mScore + '</td>' +
+          '<td>' + r.switchScore + '</td>' +
+          '<td>' + r.trustScore + '</td>' +
+          '<td>' + r.consentScore + '</td>' +
+          '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+        '</tr>';
+      }).join('');
+
+  el.innerHTML =
+    '<div class="stats">' +
+      '<div class="stat-card"><div class="num">' + (stats.total || 0) + '</div><div class="label">累计完成</div></div>' +
+      '<div class="stat-card"><div class="num">' + (stats.today || 0) + '</div><div class="label">今日完成</div></div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">结果类型分布</div>' +
+      '<div class="breakdown-list">' + typeBreakdownHtml + '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">各维度平均分（满分5分）</div>' +
+      '<div class="breakdown-list">' + avgHtml + '</div>' +
+    '</div>' +
+
+    '<div class="section">' +
+      '<div class="section-title">最近记录</div>' +
+      '<div class="table-scroll"><table>' +
+        '<thead><tr>' +
+          '<th>ID</th><th>访客</th><th>类型</th><th>S</th><th>M</th><th>Switch</th><th>信任</th><th>边界</th><th>时间</th>' +
+        '</tr></thead><tbody>' +
+        recentHtml +
+        '</tbody></table></div>' +
+    '</div>' +
+
+    '<button class="refresh-btn" onclick="loadSmStats()">刷新数据</button>';
+}
+
+async function loadSmStats() {
+  var loading = document.getElementById('smStatsLoading');
+  var content = document.getElementById('smStatsContent');
+  loading.style.display = 'block';
+  content.innerHTML = '';
+  try {
+    var r = await fetch('/api/admin/sm-stats', { credentials: 'include' });
+    if (r.status === 401) throw new Error('unauthorized');
+    var data = await r.json();
+    loading.style.display = 'none';
+    if (data.error) {
+      content.innerHTML = '<div class="error-msg">' + esc(data.message || data.error) + '</div>';
+      return;
+    }
+    renderSmStats(data);
+  } catch (e) {
+    loading.style.display = 'none';
+    content.innerHTML = '<div class="error-msg">加载失败: ' + esc(e.message) + '</div>';
+  }
+}
+
 // ==================== 塔罗数据 ====================
 var tarotState = { page: 1, days: '' };
+
 var spreadTypeLabels = { single: '单张牌', three: '三张牌阵' };
 
 function renderTarotTrend(trend) {
@@ -1489,6 +1608,8 @@ var tarotLoaded = false;
 var usersLoaded = false;
 var reportsLoaded = false;
 var reportsStatus = 'pending';
+var smStatsLoaded = false;
+
 
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -1528,7 +1649,14 @@ function switchTab(tabName) {
         loadQuizStats();
       }
     }
+  } else if (tabName === 'smtest') {
+    document.getElementById('headerSub').textContent = 'S/M 互动倾向测试统计';
+    if (!smStatsLoaded) {
+      smStatsLoaded = true;
+      loadSmStats();
+    }
   } else if (tabName === 'tarot') {
+
     document.getElementById('headerSub').textContent = '塔罗数据统计';
     if (!tarotLoaded) {
       tarotLoaded = true;

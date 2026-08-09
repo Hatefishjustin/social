@@ -333,7 +333,20 @@ body{
   background:#fff;
   transform:translate(-50%,-50%);
 }
+.option.pulse{
+  animation:optionPulse .3s cubic-bezier(.16,1,.3,1);
+}
+.option.dimmed{
+  opacity:0.45;
+  transform:scale(0.98);
+}
+@keyframes optionPulse{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.03);}
+  100%{transform:scale(1);}
+}
 .option .txt{
+
   font-size:15px;
   line-height:1.5;
   color:var(--text-primary);
@@ -779,12 +792,13 @@ function renderQuestion(){
     const val = i + 1;
     const isSel = selected === val;
     optionsHtml += `
-      <div class="option ${isSel ? 'selected' : ''}" onclick="selectAnswer(${val})">
+      <div class="option ${isSel ? 'selected' : ''}" data-val="${val}" onclick="selectAnswer(${val})">
         <div class="mark"></div>
         <div class="txt">${label}</div>
         <div class="val">${val}</div>
       </div>
     `;
+
   });
 
   qCard.innerHTML = `
@@ -804,10 +818,37 @@ function renderQuestion(){
   progressDim.textContent = dim.short;
 }
 
+let isAdvancing = false;
+
 function selectAnswer(val){
+  if (isAdvancing) return; // 防止重复点击导致跳题错误
   answers[current] = val;
-  renderQuestion();
+
+  // 选中动画反馈
+  const options = document.querySelectorAll('.option');
+  options.forEach(opt => {
+    const optVal = parseInt(opt.getAttribute('data-val') || opt.querySelector('.val')?.textContent || '0', 10);
+    if (optVal === val) {
+      opt.classList.add('selected');
+      opt.classList.add('pulse');
+    } else {
+      opt.classList.add('dimmed');
+    }
+  });
+
+  // 轻微延迟后自动进入下一题
+  isAdvancing = true;
+  setTimeout(() => {
+    if (current < QUESTIONS.length - 1) {
+      current++;
+      renderQuestion();
+    } else {
+      computeResult();
+    }
+    isAdvancing = false;
+  }, 280);
 }
+
 
 function prevQuestion(){
   if (current > 0) {
@@ -1077,13 +1118,120 @@ function renderAiSuccessPlainFallback(text){
 function renderAiError(message){
   const container = document.getElementById('aiContent');
   if(!container) return;
-  container.innerHTML = `
-    <div style="text-align:center;padding:50px 20px;">
-      <p style="font-size:14px;color:var(--text-tertiary);margin-bottom:20px;line-height:1.8;">${escapeHtml(message)}</p>
-      <button class="btn-secondary" style="padding:10px 26px;font-size:13.5px;" onclick="fetchAiAnalysis()">重试</button>
-    </div>
-  `;
+  // AI 失败时使用本地备用分析，保证页面始终有结果
+  renderLocalFallback();
 }
+
+function renderLocalFallback(){
+  const container = document.getElementById('aiContent');
+  if(!container || !resultData) return;
+
+  const { sScore, mScore, switchScore, consentScore, trustScore, resultType } = resultData;
+  const typeInfo = TYPE_INFO[resultType];
+
+  // 根据分数差异生成针对性描述
+  let coreDesc = '';
+  let strengthDesc = '';
+  let attentionDesc = '';
+  let adviceDesc = '';
+
+  const diff = Math.abs(sScore - mScore);
+  const sHigh = sScore > mScore + 0.5;
+  const mHigh = mScore > sScore + 0.5;
+  const bothHigh = sScore >= 3.5 && mScore >= 3.5;
+  const balanced = diff < 0.5;
+
+  if (sHigh) {
+    coreDesc = '你的主导倾向较为明显。你在关系中倾向于主动规划、引导节奏，愿意承担决策责任，享受掌控感和方向感。这种特质让你在关系中常常成为"推动者"的角色。';
+    strengthDesc = '你的优势在于清晰的决策力和方向感。你能够为关系提供稳定的框架和节奏，在对方需要时给予明确的引导和支持。';
+    attentionDesc = '需要注意的是，主导倾向较强时，可能会无意中忽略对方的节奏和需求。建议在主动引导的同时，多留出空间倾听对方的想法，确保双方在关系中都有参与感。';
+    adviceDesc = '在关系中，可以尝试"引导+确认"的模式：主动提出方案的同时，也主动询问对方的感受和偏好，让主导成为一种协作而非单方面的安排。';
+  } else if (mHigh) {
+    coreDesc = '你的接受倾向较为明显。你在信任的基础上更愿意接受对方的引导，重视安全感和连接。你享受被支持和照顾的感觉，愿意让对方承担部分主动权。';
+    strengthDesc = '你的优势在于信任建立能力和情感连接能力。你能够为关系带来温暖和安全感，让对方感受到被需要和被信任。';
+    attentionDesc = '需要注意的是，接受倾向较强时，可能会过度依赖对方的决定。建议在信任对方的同时，也保持自己的独立判断和表达需求的能力。';
+    adviceDesc = '在关系中，可以尝试"信任+表达"的模式：在信任对方的同时，也主动表达自己的需求和边界，让接受成为一种主动选择而非被动跟随。';
+  } else if (bothHigh) {
+    coreDesc = '你的 S 和 M 倾向都较为明显，说明你具备较强的双向适应能力。你既能在需要时主动引导，也能在信任的基础上安心接受安排，能够根据关系状态灵活切换角色。';
+    strengthDesc = '你的优势在于灵活性和适应能力。你能够理解关系中不同角色的价值，在主动和接受之间找到平衡，让关系互动更加丰富多元。';
+    attentionDesc = '需要注意的是，双向适应能力强也可能带来角色定位的模糊感。建议在切换角色时，与对方保持清晰的沟通，确保双方对当前互动模式有共识。';
+    adviceDesc = '在关系中，可以尝试"灵活+沟通"的模式：根据情境自然调整角色，同时通过沟通确认彼此的期待，让灵活切换成为关系的优势而非困惑。';
+  } else if (balanced) {
+    coreDesc = '你的主动和接受倾向较为接近，说明你在关系中更关注互动的整体质量而非单一角色。你能够在不同情境中找到适合自己的位置，既不过度主导也不过度依赖。';
+    strengthDesc = '你的优势在于平衡感和关系洞察力。你能够理解关系中双方的需求，在互动中保持灵活和开放，让关系更加和谐稳定。';
+    attentionDesc = '需要注意的是，平衡型特质有时可能让你在需要明确立场时显得犹豫。建议在关键时刻能够果断表达自己的偏好，让平衡成为优势而非模糊。';
+    adviceDesc = '在关系中，可以尝试"平衡+觉察"的模式：保持灵活适应的同时，也时刻觉察自己的真实需求，在需要时坚定地表达立场。';
+  }
+
+  // 边界意识和信任的补充描述
+  let consentNote = '';
+  if (consentScore >= 4) {
+    consentNote = '你的边界意识较强，重视双方同意和明确沟通，这是健康关系的重要基础。';
+  } else if (consentScore >= 3) {
+    consentNote = '你的边界意识处于中等水平，建议在关系中更主动地沟通需求和边界。';
+  } else {
+    consentNote = '你的边界意识有待加强，建议在关系中更重视双方同意和明确沟通。';
+  }
+
+  let trustNote = '';
+  if (trustScore >= 4) {
+    trustNote = '你倾向于在建立足够信任后才完全开放自己，这种谨慎有助于保护自己，但也可能让关系建立需要更多时间。';
+  } else if (trustScore >= 3) {
+    trustNote = '你在信任建立方面处于中等水平，能够在安全感和开放之间找到平衡。';
+  } else {
+    trustNote = '你相对容易建立信任，这有助于快速建立连接，但也需要注意保护自己的边界。';
+  }
+
+  const html = `
+    <div class="ai-source-tag">本地分析 · 娱乐与自我探索性质</div>
+    <div class="ai-headline">你的互动倾向：${typeInfo.name}</div>
+
+    <div class="ai-section-card">
+      <div class="ai-section-head">
+        <div class="ai-icon">${AI_ICONS.compass}</div>
+        <div class="ai-section-title">核心特点</div>
+      </div>
+      <div class="ai-section-body">${coreDesc}</div>
+    </div>
+
+    <div class="ai-section-card">
+      <div class="ai-section-head">
+        <div class="ai-icon">${AI_ICONS.spark}</div>
+        <div class="ai-section-title">优势</div>
+      </div>
+      <div class="ai-section-body">${strengthDesc}</div>
+    </div>
+
+    <div class="ai-section-card">
+      <div class="ai-section-head">
+        <div class="ai-icon">${AI_ICONS.shield}</div>
+        <div class="ai-section-title">可能需要注意的地方</div>
+      </div>
+      <div class="ai-section-body">${attentionDesc}</div>
+    </div>
+
+    <div class="ai-section-card">
+      <div class="ai-section-head">
+        <div class="ai-icon">${AI_ICONS.heart}</div>
+        <div class="ai-section-title">关系建议</div>
+      </div>
+      <div class="ai-section-body">${adviceDesc}</div>
+    </div>
+
+    <div class="ai-section-card">
+      <div class="ai-section-head">
+        <div class="ai-icon">${AI_ICONS.brain}</div>
+        <div class="ai-section-title">边界与信任</div>
+      </div>
+      <div class="ai-section-body">${consentNote} ${trustNote}</div>
+    </div>
+
+    <div class="ai-closing">本分析基于你的测试结果生成，属于娱乐与自我探索性质，不代表专业心理诊断。若你在亲密关系中长期感到困扰，建议寻求专业心理咨询师的帮助。</div>
+  `;
+
+  container.innerHTML = html;
+}
+
 
 function escapeHtml(str){
   return String(str).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
