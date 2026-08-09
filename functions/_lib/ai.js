@@ -32,10 +32,12 @@ const DEFAULT_OPTIONS = {
 export async function callDashScope(prompt, options = {}, env = {}) {
   const apiKey = env.DASHSCOPE_API_KEY;
   if (!apiKey) {
+    console.error('[ai.js] DASHSCOPE_API_KEY 未配置（env 中读取不到）');
     return { ok: false, error: 'DASHSCOPE_API_KEY 未配置' };
   }
 
   if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    console.error('[ai.js] prompt 不能为空');
     return { ok: false, error: 'prompt 不能为空' };
   }
 
@@ -79,6 +81,7 @@ export async function callDashScope(prompt, options = {}, env = {}) {
       if (!resp.ok) {
         const errText = await resp.text().catch(() => '');
         lastError = `API 返回 ${resp.status}: ${errText.slice(0, 200)}`;
+        console.error(`[ai.js] DashScope 请求失败 attempt=${attempt + 1}: ${lastError}`);
         // 仅 5xx 重试，4xx 不重试
         if (resp.status < 500) break;
         continue;
@@ -87,9 +90,11 @@ export async function callDashScope(prompt, options = {}, env = {}) {
       const data = await resp.json();
       const content = data?.choices?.[0]?.message?.content;
       if (content) {
+        console.log(`[ai.js] DashScope 调用成功 model=${model} contentLength=${content.length}`);
         return { ok: true, content };
       }
       lastError = 'API 返回格式异常，无 choices[0].message.content';
+      console.error(`[ai.js] DashScope 返回格式异常: ${JSON.stringify(data).slice(0, 300)}`);
       break; // 格式异常不重试
     } catch (e) {
       if (e.name === 'AbortError') {
@@ -97,9 +102,11 @@ export async function callDashScope(prompt, options = {}, env = {}) {
       } else {
         lastError = `网络错误: ${e.message}`;
       }
+      console.error(`[ai.js] DashScope 请求异常 attempt=${attempt + 1}: ${lastError}`);
       // 网络错误继续重试
     }
   }
 
+  console.error(`[ai.js] DashScope 最终失败: ${lastError || '未知错误'}`);
   return { ok: false, error: lastError || '未知错误' };
 }

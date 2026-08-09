@@ -3,7 +3,10 @@
  * 路径: /functions/wall.js
  * 路由: /wall
  * v2: 增加活动日志，记录 IP / 设备 / 地区
+ * v3: 统一使用 _lib/ip.js 获取请求元数据
  */
+
+import { getRequestMeta } from './_lib/ip.js';
 
 function parseCookie(cookieHeader, name) {
   if (!cookieHeader) return null;
@@ -34,15 +37,6 @@ function jsonResponse(body, status = 200) {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
-}
-
-function getRequestMeta(request) {
-  return {
-    ip: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
-    ua: (request.headers.get('User-Agent') || '').slice(0, 500),
-    country: (request.cf || {}).country || '',
-    city: (request.cf || {}).city || '',
-  };
 }
 
 async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous) {

@@ -1,0 +1,45 @@
+# S09 Dashboard topPages 字段修复报告
+
+版本: v1.0 | 日期: 2026-08-08 | 状态: 已修复（未部署、未执行 migration）
+
+## 一、修改文件
+| 文件 | 变更 |
+|---|---|
+| `functions/api/admin/dashboard.js` | 新增 topPages 查询 + UV 降级逻辑 |
+
+（仅改此 1 个文件，未动 track.js / view.js / page-stats.js / new_admin.html）
+
+## 二、根因
+后端 `/api/admin/dashboard` 响应缺少 `topPages` 字段，前端 `renderDashboardTopPages(data.topPages)` 读到 undefined → 显示「暂无访问数据」。数据库 page_views 实际有数据。
+
+## 三、API 返回变化
+修复后响应新增：
+```json
+{
+  "stats": { "today": {...}, "total": {...} },
+  "topPages": [
+    { "page": "/index.html", "pv": 10, "uv": 5, "lastVisit": 1783xxx }
+  ],
+  "generatedAt": ...
+}
+```
+
+字段逻辑：
+- **page**: 按 page 分组
+- **pv**: COUNT(*)
+- **uv**: COUNT(DISTINCT visitor_token)（hasVisitorToken=true 时）；否则 **降级 uv = pv**
+- **lastVisit**: MAX(created_at)
+- 排序: pv DESC, LIMIT 10
+
+## 四、保留项
+- ✅ 原 stats / generatedAt 结构不变
+- ✅ auth 逻辑（getCurrentUser + isAdmin）不变
+- ✅ migration 兼容逻辑（hasColumn 检测）不变
+
+## 五、测试结果
+- `node --check functions/api/admin/dashboard.js` → ✅ DASHBOARD_SYNTAX_OK
+- 未执行 migration ✅
+- 未修改其他文件 ✅
+
+## 六、结论
+修复完成，等待确认后部署验证。

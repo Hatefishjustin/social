@@ -1,0 +1,53 @@
+# S09 热门页面排行为空诊断报告
+
+版本: v1.0 | 日期: 2026-08-08 | 状态: 根因已定位（未修改代码，未执行 migration）
+
+## 一、数据库是否有 page_views 数据
+✅ **有数据**。只读查询 page_views 最新 10 条成功：
+- Rows read: 1（当前有 1 条 page_views 记录）
+- 库大小从 0.62MB → 0.63MB，确认产生新写入
+- 该记录由浏览器访问产生（含新字段结构）
+
+## 二、page 字段是否正常
+✅ page 字段正常。新记录写入完整路径（如 /index.html），visitor_token 由 track.js 生成，created_at 正常。
+
+## 三、API 返回内容（根因所在）
+
+### /api/admin/dashboard 返回结构（问题根源）
+对照代码 `functions/api/admin/dashboard.js`，返回仅包含：
+```json
+{
+  "stats": { "today": {...}, "total": {...} },
+  "generatedAt": ...
+}
+```
+**❌ 缺少 `topPages` 字段**
+
+### 前端期望
+`new_admin.html` 中 `renderDashboard()` 读取：
+```js
+renderDashboardTopPages(data)  // 期望 data.topPages
+```
+`data.topPages` = undefined → 显示「暂无访问数据」
+
+### /api/admin/page-stats 返回（对照正常）
+该接口正确返回 `pages` 字段，能正常分组统计。
+
+## 四、根因判断
+**前后端字段不一致**：
+- 后端 `/api/admin/dashboard` 未实现热门页面查询（Phase 2 开发时遗漏了 topPages 逻辑）
+- 前端 `new_admin.html` 已实现 `renderDashboardTopPages(data.topPages)` 渲染
+- 数据库实际有 page_views 数据，非数据问题，纯接口字段缺失
+
+## 五、修复建议（待确认后实施）
+在 `functions/api/admin/dashboard.js` 的响应中加入 `topPages`：
+```sql
+SELECT page, COUNT(*) as pv, MAX(created_at) as last_visit
+FROM page_views GROUP BY page ORDER BY pv DESC LIMIT 10
+```
+（配合 hasVisitorToken 时补充 UV 计算，与 page-stats.js 一致）
+
+## 六、状态
+- 未修改任何代码 ✅
+- 未执行 migration ✅
+- 等待确认后修复

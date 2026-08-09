@@ -5,6 +5,7 @@
  */
 
 import { parseCookie, getCurrentUser } from '../_lib/auth.js';
+import { getRequestMeta } from '../_lib/ip.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -16,15 +17,6 @@ function jsonResponse(body, status = 200) {
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
-}
-
-function getRequestMeta(request) {
-  return {
-    ip: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
-    ua: (request.headers.get('User-Agent') || '').slice(0, 500),
-    country: (request.cf || {}).country || '',
-    city: (request.cf || {}).city || '',
-  };
 }
 
 async function logActivity(env, meta, user, action, targetType, targetId, content, isAnonymous) {

@@ -50,19 +50,24 @@ export const onRequestPost = async ({ request, env }) => {
   try {
     const body = await request.json();
     rawText = (body && body.rawText) ? String(body.rawText).trim() : '';
+    console.log(`[analyze.js] 收到请求 rawText.length=${rawText.length}`);
   } catch {
+    console.error('[analyze.js] 请求格式错误（JSON 解析失败）');
     return jsonResponse({ message: '请求格式错误' }, 400);
   }
 
   if (!rawText) {
+    console.error('[analyze.js] 缺少 rawText 参数');
     return jsonResponse({ message: '缺少 rawText 参数' }, 400);
   }
 
   if (rawText.length > 12000) {
+    console.error(`[analyze.js] rawText 超过长度限制: ${rawText.length}`);
     return jsonResponse({ message: 'rawText 超过长度限制' }, 400);
   }
 
   // 2. 调用 AI
+  console.log('[analyze.js] 开始调用 callDashScope...');
   const result = await callDashScope(rawText, {
     systemPrompt: SYSTEM_PROMPT,
     model: 'qwen-plus',
@@ -73,10 +78,12 @@ export const onRequestPost = async ({ request, env }) => {
 
   // 3. AI 调用失败
   if (!result.ok) {
+    console.error(`[analyze.js] AI 调用失败: ${result.error || 'AI 服务暂不可用'}`);
     return jsonResponse({ message: result.error || 'AI 服务暂不可用' }, 502);
   }
 
   const content = result.content || '';
+  console.log(`[analyze.js] AI 调用成功 content.length=${content.length}`);
 
   // 4. 尝试 JSON 解析
   try {
@@ -100,13 +107,16 @@ export const onRequestPost = async ({ request, env }) => {
         })).slice(0, 5) : [],
         closing: String(parsed.closing || '').slice(0, 160),
       };
+      console.log('[analyze.js] JSON 解析成功，返回 analysis');
       return jsonResponse({ analysis });
     }
 
     // JSON 解析成功但格式不对
+    console.warn('[analyze.js] JSON 解析成功但格式不对，返回 analysisRaw 兜底');
     return jsonResponse({ analysisRaw: content });
   } catch {
     // 5. JSON 解析失败 → 兜底
+    console.warn('[analyze.js] JSON 解析失败，返回 analysisRaw 兜底');
     return jsonResponse({ analysisRaw: content });
   }
 };

@@ -1,0 +1,36 @@
+# S09 Phase 6-4 event API 修复验证报告
+
+版本: v1.0 | 日期: 2026-08-08 | 状态: 修复已推送，待浏览器确认
+
+## 一、根因
+Cloudflare Pages Functions 路由由文件路径决定：
+- `functions/event.js` → 路由 `/event`（与 track.js 调用的 `/api/event` 不匹配 → 405）
+- `functions/api/event.js` → 路由 `/api/event`（正确）
+
+## 二、修改文件
+| 文件 | 操作 |
+|---|---|
+| `functions/api/event.js` | 新增（import 改为 `../_lib/`） |
+| `functions/event.js` | 删除（旧路由移除） |
+
+## 三、Commit
+
+- hash: **0cb9ceb**
+- message: `fix: correct event api route for cloudflare functions`
+- 变更: 1 file changed（Git 识别为 rename event.js → api/event.js，90% 相似）
+
+## 四、部署状态
+- 已推送至 `origin/main`（`main...origin/main` 同步）
+- Cloudflare Pages 已自动触发重新构建
+- 部署完成状态：⬜ 待浏览器确认
+
+## 五、API 验证（浏览器 Network 面板待确认）
+
+| API | 预期 | 状态 |
+|---|---|---|
+| `/api/event` | POST 200, response `{ok:true}` | ⬜ |
+| `/api/view` | POST 200 正常 | ⬜ |
+| `/api/admin/dashboard` | GET 200 正常 | ⬜ |
+
+## 六、结论
+修复已推送并触发部署。等待浏览器确认 `/api/event` 返回 200 后，进入 Phase 6-5。
