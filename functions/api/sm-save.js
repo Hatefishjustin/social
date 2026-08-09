@@ -50,13 +50,22 @@ export const onRequestPost = async ({ request, env }) => {
   // 4. 解析登录用户身份（从 session cookie 中获取）
   let userId = null;
   try {
+    // [TEMP-DEBUG] 验证用户绑定链路
+    const cookieHeader = request.headers.get('Cookie');
+    console.log('[sm-save.js][DEBUG] Cookie存在:', cookieHeader ? '存在' : '不存在');
+    if (cookieHeader) {
+      console.log('[sm-save.js][DEBUG] Cookie内容(前80字符):', cookieHeader.slice(0, 80));
+    }
     const user = await getCurrentUser(request, env);
+    console.log('[sm-save.js][DEBUG] getCurrentUser返回:', user ? JSON.stringify({ id: user.id, email: user.email }) : 'null');
     if (user && user.id) {
       userId = user.id;
     }
+    console.log('[sm-save.js][DEBUG] 最终userId:', userId || 'null');
   } catch (e) {
     console.warn('[sm-save.js] 解析用户身份失败:', e.message);
   }
+
 
   // 5. 检查表是否存在（迁移前降级：不保存，仅返回成功）
   const tableExists = await hasTable(env, 'sm_test_results');
