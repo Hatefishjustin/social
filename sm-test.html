@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoulMirror 心镜 - S/M 互动倾向测试</title>
+<meta name="description" content="从心理学角度探索你在亲密关系中的权力互动偏好。娱乐与自我探索性质测试。">
+<meta property="og:title" content="SoulMirror 心镜 - S/M 互动倾向测试">
+<meta property="og:description" content="从心理学角度探索你在亲密关系中的权力互动偏好。娱乐与自我探索性质测试。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SoulMirror 心镜">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
+<script src="/auth.js"></script>
+<script src="/track.js"></script>
+<style>
+:root{
+  --font-serif: -apple-system, 'PingFang SC', 'Songti SC', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+               'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+
+  --bg: #0d0710;
+  --bg-elevated: #150c1c;
+  --surface: #1a1122;
+  --surface-hover: #22162c;
+  --hairline: rgba(255,255,255,0.08);
+  --hairline-strong: rgba(255,255,255,0.14);
+
+  --text-primary: #f7ede8;
+  --text-secondary: #b3a3ae;
+  --text-tertiary: #7c6c78;
+
+  --accent: #dfb6b2;
+  --accent-dim: #c9908c;
+  --accent-glow: rgba(82,43,91,0.32);
+  --accent-soft: rgba(223,182,178,0.09);
+
+  --ink: var(--bg);
+  --ink-deep: var(--bg-elevated);
+  --parchment: var(--text-primary);
+  --parchment-dim: var(--text-secondary);
+  --rouge: var(--accent);
+  --rouge-dim: var(--accent-dim);
+  --gold: var(--accent);
+  --line: var(--hairline);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+.hidden{display:none !important;}
+html,body{
+
+  background:var(--bg);
+  color:var(--text-primary);
+  font-family:var(--font-sans);
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body{
+  background-image:
+    radial-gradient(ellipse 1000px 600px at 20% -10%, var(--accent-soft), transparent),
+    radial-gradient(ellipse 800px 500px at 100% 100%, rgba(255,255,255,0.03), transparent);
+}
+::selection{background:var(--rouge);color:var(--parchment);}
+
+.stage{
+  max-width:640px;
+  margin:0 auto;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding:0 24px;
+}
+
+/* ---------- Progress ---------- */
+.progress-wrap{
+  position:sticky;
+  top:0;
+  padding:18px 0 12px;
+  background:linear-gradient(var(--ink) 80%, transparent);
+  z-index:10;
+}
+.progress-track{
+  height:1px;
+  background:var(--line);
+  position:relative;
+  overflow:visible;
+}
+.progress-fill{
+  height:1px;
+  background:var(--rouge);
+  width:0%;
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.progress-fill::after{
+  content:'';
+  position:absolute;
+  right:-3px; top:50%;
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--rouge);
+  transform:translateY(-50%);
+  box-shadow:0 0 8px var(--rouge);
+}
+.progress-meta{
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  letter-spacing:0.08em;
+  color:var(--parchment-dim);
+  margin-top:10px;
+  font-family:var(--font-sans);
+}
+.progress-meta .section-tag{color:var(--gold);}
+
+/* ---------- Landing ---------- */
+.landing{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:60px 0 80px;
+  animation:fadeUp .8s cubic-bezier(.16,1,.3,1) both;
+}
+.glyph-mark{
+  width:52px;height:52px;
+  margin-bottom:32px;
+}
+.glyph-mark svg{width:100%;height:100%;}
+.hero-title{
+  font-family:var(--font-sans);
+  font-size:52px;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  line-height:1.08;
+  margin-bottom:12px;
+  color:var(--text-primary);
+}
+.hero-subtitle{
+  font-size:18px;
+  font-weight:500;
+  color:var(--text-secondary);
+  letter-spacing:-0.01em;
+  margin-bottom:22px;
+}
+.landing p.lede{
+  font-size:14.5px;
+  line-height:1.85;
+  color:var(--text-tertiary);
+  max-width:460px;
+  margin-bottom:8px;
+}
+.landing .frameworks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:28px 0 36px;
+}
+.fw-chip{
+  font-size:12.5px;
+  padding:7px 15px;
+  border:1px solid var(--hairline-strong);
+  border-radius:100px;
+  color:var(--text-secondary);
+  letter-spacing:0.01em;
+  background:var(--surface);
+}
+.meta-row{
+  display:flex;
+  gap:32px;
+  margin-bottom:40px;
+  font-size:13px;
+  color:var(--text-tertiary);
+}
+.meta-row strong{
+  display:block;
+  font-family:var(--font-sans);
+  font-size:20px;
+  color:var(--text-primary);
+  font-weight:700;
+  letter-spacing:-0.01em;
+}
+.btn-primary{
+  align-self:flex-start;
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:16px 34px;
+  font-size:16px;
+  font-weight:600;
+  font-family:var(--font-sans);
+  letter-spacing:-0.01em;
+  cursor:pointer;
+  border-radius:100px;
+  transition:all .25s cubic-bezier(.16,1,.3,1);
+  position:relative;
+  overflow:hidden;
+}
+.btn-primary:hover{
+  background:var(--accent-dim);
+  transform:translateY(-1px) scale(1.01);
+  box-shadow:0 12px 32px var(--accent-glow);
+}
+.btn-primary:active{
+  transform:translateY(0) scale(0.98);
+}
+.btn-primary:disabled{
+  opacity:0.3;
+  cursor:default;
+  transform:none;
+  box-shadow:none;
+}
+.btn-secondary{
+  background:var(--surface);
+  color:var(--text-primary);
+  border:1px solid var(--hairline-strong);
+  padding:15px 30px;
+  font-size:14.5px;
+  font-weight:500;
+  font-family:var(--font-sans);
+  cursor:pointer;
+  border-radius:100px;
+  transition:all .2s cubic-bezier(.16,1,.3,1);
+}
+.btn-secondary:hover{
+  background:var(--surface-hover);
+  border-color:rgba(255,255,255,0.24);
+}
+.btn-secondary:active{
+  transform:scale(0.98);
+}
+.privacy-note{
+  margin-top:20px;
+  font-size:12px;
+  color:var(--text-tertiary);
+  max-width:440px;
+  line-height:1.7;
+}
+
+/* ---------- Question ---------- */
+.question-screen{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:40px 0 60px;
+  min-height:70vh;
+}
+.q-card{
+  animation:fadeUp .45s cubic-bezier(.16,1,.3,1) both;
+}
+.q-eyebrow{
+  font-size:12px;
+  letter-spacing:0.08em;
+  color:var(--text-tertiary);
+  margin-bottom:16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+}
+.q-eyebrow::before{
+  content:'';
+  width:16px;height:1px;
+  background:var(--hairline-strong);
+}
+.q-text{
+  font-family:var(--font-serif);
+  font-size:24px;
+  font-weight:600;
+  line-height:1.55;
+  margin-bottom:8px;
+}
+.q-sub{
+  font-size:13px;
+  color:var(--parchment-dim);
+  margin-bottom:14px;
+  line-height:1.7;
+}
+.q-dim-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  color:var(--rouge);
+  border:1px solid rgba(223,182,178,0.3);
+  padding:5px 12px;
+  border-radius:100px;
+  margin-bottom:24px;
+}
+.options{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:28px;
+}
+.option{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:16px 20px;
+  border:1px solid transparent;
+  border-radius:16px;
+  cursor:pointer;
+  transition:all .2s cubic-bezier(.16,1,.3,1);
+  background:var(--surface);
+}
+.option:hover{
+  background:var(--surface-hover);
+}
+.option.selected{
+  border-color:var(--accent);
+  background:var(--accent-soft);
+}
+.option .mark{
+  flex-shrink:0;
+  width:20px;height:20px;
+  border:1.5px solid rgba(255,255,255,0.28);
+  border-radius:50%;
+  position:relative;
+  transition:all .2s cubic-bezier(.16,1,.3,1);
+}
+.option.selected .mark{
+  border-color:var(--accent);
+  background:var(--accent);
+}
+.option.selected .mark::after{
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  width:7px;height:7px;
+  border-radius:50%;
+  background:#fff;
+  transform:translate(-50%,-50%);
+}
+.option .txt{
+  font-size:15px;
+  line-height:1.5;
+  color:var(--text-primary);
+  font-weight:450;
+}
+.option .val{
+  margin-left:auto;
+  font-size:12px;
+  color:var(--text-tertiary);
+  white-space:nowrap;
+}
+.q-nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+}
+.nav-back{
+  font-size:13.5px;
+  color:var(--text-tertiary);
+  cursor:pointer;
+  background:none;
+  border:none;
+  font-family:var(--font-sans);
+  font-weight:500;
+  transition:color .2s;
+  white-space:nowrap;
+}
+.nav-back:hover{color:var(--text-primary);}
+.nav-back:disabled{opacity:0.3;cursor:default;}
+.nav-back:disabled:hover{color:var(--text-tertiary);}
+.nav-next{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+  padding:13px 30px;
+  font-size:14.5px;
+  font-weight:600;
+  font-family:var(--font-sans);
+  letter-spacing:-0.01em;
+  cursor:pointer;
+  border-radius:100px;
+  transition:all .2s cubic-bezier(.16,1,.3,1);
+  flex-shrink:0;
+}
+.nav-next:hover{background:var(--rouge-dim);}
+.nav-next:disabled{
+  opacity:0.3;
+  cursor:default;
+  background:var(--line);
+  color:var(--parchment-dim);
+}
+
+/* ---------- Result ---------- */
+.result-screen{
+  flex:1;
+  padding:40px 0 80px;
+  animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+}
+.result-screen.hidden{display:none;}
+.result-head{
+  text-align:center;
+  margin-bottom:40px;
+}
+.result-eyebrow{
+  font-size:12px;
+  letter-spacing:0.12em;
+  color:var(--text-tertiary);
+  margin-bottom:16px;
+  font-weight:600;
+}
+.result-title{
+  font-family:var(--font-serif);
+  font-size:34px;
+  font-weight:700;
+  letter-spacing:-0.02em;
+  line-height:1.3;
+  margin-bottom:10px;
+}
+.result-sub{
+  font-size:14px;
+  color:var(--text-secondary);
+  line-height:1.7;
+  max-width:480px;
+  margin:0 auto;
+}
+.type-badge{
+  display:inline-block;
+  margin-top:20px;
+  padding:10px 26px;
+  border:1px solid var(--accent);
+  border-radius:100px;
+  color:var(--accent);
+  font-size:15px;
+  font-weight:600;
+  letter-spacing:0.04em;
+  background:var(--accent-soft);
+}
+.type-desc{
+  margin-top:16px;
+  font-size:14px;
+  color:var(--text-secondary);
+  line-height:1.8;
+  max-width:480px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+/* ---------- Score bars ---------- */
+.score-section{
+  margin-top:36px;
+}
+.score-section-title{
+  font-size:13px;
+  letter-spacing:0.08em;
+  color:var(--text-tertiary);
+  margin-bottom:20px;
+  font-weight:600;
+}
+.score-row{
+  margin-bottom:18px;
+}
+.score-row-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  margin-bottom:8px;
+}
+.score-row-name{
+  font-size:14px;
+  color:var(--text-primary);
+  font-weight:500;
+}
+.score-row-pct{
+  font-size:13px;
+  color:var(--accent);
+  font-weight:600;
+}
+.score-bar-track{
+  height:6px;
+  border-radius:100px;
+  background:var(--surface);
+  overflow:hidden;
+}
+.score-bar-fill{
+  height:100%;
+  border-radius:100px;
+  background:linear-gradient(90deg, var(--accent-dim), var(--accent));
+  width:0%;
+  transition:width 1s cubic-bezier(.16,1,.3,1);
+}
+
+/* ---------- AI analysis ---------- */
+.ai-section{
+  margin-top:44px;
+}
+.ai-source-tag{
+  font-size:11.5px;
+  letter-spacing:0.06em;
+  color:var(--text-tertiary);
+  margin-bottom:20px;
+  text-align:center;
+}
+.ai-headline{
+  font-family:var(--font-serif);
+  font-size:22px;
+  font-weight:600;
+  line-height:1.5;
+  margin-bottom:24px;
+  color:var(--text-primary);
+}
+.ai-section-card{
+  background:var(--surface);
+  border:1px solid var(--hairline);
+  border-radius:16px;
+  padding:22px 24px;
+  margin-bottom:14px;
+}
+.ai-section-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+.ai-icon{
+  width:34px;height:34px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:10px;
+  background:var(--accent-soft);
+  color:var(--accent);
+}
+.ai-icon svg{width:18px;height:18px;}
+.ai-section-title{
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-primary);
+}
+.ai-section-body{
+  font-size:14px;
+  line-height:1.85;
+  color:var(--text-secondary);
+}
+.ai-closing{
+  margin-top:20px;
+  padding:20px 24px;
+  border-left:2px solid var(--accent);
+  background:var(--accent-soft);
+  border-radius:0 12px 12px 0;
+  font-size:14px;
+  line-height:1.85;
+  color:var(--text-secondary);
+}
+.ai-spinner{
+  width:28px;height:28px;
+  border:2px solid var(--hairline-strong);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  margin:0 auto;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ---------- Disclaimer ---------- */
+.disclaimer{
+  margin-top:40px;
+  padding:18px 20px;
+  border:1px dashed var(--hairline-strong);
+  border-radius:12px;
+  font-size:12px;
+  line-height:1.8;
+  color:var(--text-tertiary);
+}
+
+/* ---------- Result actions ---------- */
+.result-actions{
+  display:flex;
+  gap:12px;
+  margin-top:32px;
+  flex-wrap:wrap;
+}
+
+/* ---------- Hidden entry ---------- */
+.hidden-entry{
+  text-align:center;
+  margin-top:40px;
+  padding-top:28px;
+  border-top:1px solid var(--hairline);
+}
+.hidden-entry .entry-label{
+  font-size:11px;
+  letter-spacing:0.1em;
+  color:var(--text-tertiary);
+  margin-bottom:12px;
+}
+.hidden-entry .entry-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background:none;
+  border:1px solid var(--hairline-strong);
+  color:var(--text-secondary);
+  padding:12px 26px;
+  border-radius:100px;
+  font-size:13.5px;
+  font-weight:500;
+  font-family:var(--font-sans);
+  cursor:pointer;
+  transition:all .2s cubic-bezier(.16,1,.3,1);
+  letter-spacing:0.02em;
+}
+.hidden-entry .entry-btn:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+  background:var(--accent-soft);
+}
+.hidden-entry .entry-btn svg{width:15px;height:15px;}
+
+/* ---------- Animations ---------- */
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width:480px){
+  .stage{padding:0 18px;}
+  .hero-title{font-size:40px;}
+  .hero-subtitle{font-size:16px;}
+  .q-text{font-size:21px;}
+  .option{padding:14px 16px;}
+  .option .txt{font-size:14px;}
+  .result-title{font-size:28px;}
+  .meta-row{gap:20px;}
+  .result-actions{flex-direction:column;}
+  .result-actions .btn-primary,
+  .result-actions .btn-secondary{width:100%;text-align:center;}
+}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- 进度条 -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-meta">
+      <span id="progressCount">0 / 30</span>
+      <span class="section-tag" id="progressDim">S/M 互动倾向</span>
+    </div>
+  </div>
+
+  <!-- 首页 -->
+  <div class="landing" id="landing">
+    <div class="glyph-mark">
+      <svg viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="24" stroke="#dfb6b2" stroke-width="1.5" opacity="0.4"/>
+        <circle cx="26" cy="26" r="16" stroke="#dfb6b2" stroke-width="1.5"/>
+        <circle cx="26" cy="26" r="5" fill="#dfb6b2"/>
+      </svg>
+    </div>
+    <h1 class="hero-title">S/M 互动<br>倾向测试</h1>
+    <p class="hero-subtitle">探索你在亲密关系中的权力互动偏好</p>
+    <p class="lede">这是一份从心理学角度设计的自我探索问卷，帮助你理解自己在亲密关系中更倾向于主导、接受，还是灵活切换角色。</p>
+    <p class="lede">请根据你的真实感受作答，没有对错之分。</p>
+    <div class="frameworks">
+      <span class="fw-chip">权力动态</span>
+      <span class="fw-chip">边界意识</span>
+      <span class="fw-chip">信任建立</span>
+      <span class="fw-chip">双向适应</span>
+    </div>
+    <div class="meta-row">
+      <div><strong>30</strong>道题</div>
+      <div><strong>5</strong>个维度</div>
+      <div><strong>约3</strong>分钟</div>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">开始探索</button>
+    <p class="privacy-note">本测试为娱乐与自我探索性质，不代表专业心理诊断。所有作答仅在本地浏览器计算，结果可匿名保存用于统计。</p>
+  </div>
+
+  <!-- 答题页 -->
+  <div class="question-screen hidden" id="questionScreen">
+    <div class="q-card" id="qCard"></div>
+  </div>
+
+  <!-- 结果页 -->
+  <div class="result-screen hidden" id="resultScreen"></div>
+
+</div>
+
+<script>
+/* =========================================================
+   S/M 互动倾向测试
+   30 道题，5 个维度（每维度 6 题）
+   五级评分：1 完全不同意 ~ 5 完全同意
+   ========================================================= */
+
+const DIMENSIONS = {
+  dominance: { label: 'Dominance · 主导倾向', short: 'S 倾向' },
+  submission: { label: 'Submission · 接受倾向', short: 'M 倾向' },
+  switch: { label: 'Switch · 双向适应', short: 'Switch' },
+  consent: { label: 'Consent · 边界意识', short: '边界意识' },
+  trust: { label: 'Trust · 信任建立', short: '信任建立' },
+};
+
+const QUESTIONS = [
+  // ---- Dominance (S) ----
+  { dim: 'dominance', text: '在亲密关系中，我喜欢承担更多决策和规划责任。' },
+  { dim: 'dominance', text: '当需要做重要决定时，我倾向于主动提出方案并推动执行。' },
+  { dim: 'dominance', text: '我享受在关系中引导对方、安排节奏的感觉。' },
+  { dim: 'dominance', text: '我更愿意成为关系中"拿主意"的那个人。' },
+  { dim: 'dominance', text: '当对方犹豫不决时，我会自然地站出来做决定。' },
+  { dim: 'dominance', text: '我喜欢为关系设定一些共同的规则或习惯。' },
+
+  // ---- Submission (M) ----
+  { dim: 'submission', text: '当我非常信任一个人时，我愿意接受对方的引导。' },
+  { dim: 'submission', text: '在亲密关系中，我享受被对方照顾和安排的感觉。' },
+  { dim: 'submission', text: '比起自己做决定，我更希望对方能主动为我考虑。' },
+  { dim: 'submission', text: '当对方提出建议时，我通常愿意配合和跟随。' },
+  { dim: 'submission', text: '我更喜欢对方在关系中承担更多主动权。' },
+  { dim: 'submission', text: '在信任的人面前，我乐于放下防备、接受安排。' },
+
+  // ---- Switch ----
+  { dim: 'switch', text: '我认为关系中的角色并不固定，可以根据情况变化。' },
+  { dim: 'switch', text: '我既能主动引导，也能安心接受对方的安排。' },
+  { dim: 'switch', text: '根据不同的对象和情境，我会自然地调整自己在关系中的角色。' },
+  { dim: 'switch', text: '我可以在主导和接受之间灵活切换，而不觉得矛盾。' },
+  { dim: 'switch', text: '关系状态变化时，我愿意重新协商彼此的互动方式。' },
+  { dim: 'switch', text: '我既享受掌控感，也享受被照顾的感觉，取决于当下需要。' },
+
+  // ---- Consent Awareness ----
+  { dim: 'consent', text: '无论关系多亲密，我都认为双方明确沟通很重要。' },
+  { dim: 'consent', text: '在尝试新的互动方式前，我会先确认对方的意愿。' },
+  { dim: 'consent', text: '我重视在关系中表达自己的需求，也尊重对方的边界。' },
+  { dim: 'consent', text: '当对方表示不适时，我会立即停止并认真倾听。' },
+  { dim: 'consent', text: '我认为"同意"应该是明确且持续的，而不是默认的。' },
+  { dim: 'consent', text: '我会主动和伴侣讨论彼此的舒适区与界限。' },
+
+  // ---- Trust Level ----
+  { dim: 'trust', text: '我需要建立足够信任后，才愿意完全放松自己。' },
+  { dim: 'trust', text: '只有在感到安全的关系里，我才会展现真实的自己。' },
+  { dim: 'trust', text: '信任对我来说是逐步建立的，不会轻易交付。' },
+  { dim: 'trust', text: '当对方让我感到可靠时，我才会愿意开放内心。' },
+  { dim: 'trust', text: '我倾向于先观察和了解，再决定是否深入这段关系。' },
+  { dim: 'trust', text: '安全感是我愿意在关系中投入的前提。' },
+];
+
+const SCALE_LABELS = ['完全不同意', '比较不同意', '不确定', '比较同意', '完全同意'];
+
+let current = 0;
+let answers = new Array(QUESTIONS.length).fill(null);
+let resultData = null;
+
+const landing = document.getElementById('landing');
+const questionScreen = document.getElementById('questionScreen');
+const resultScreen = document.getElementById('resultScreen');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressCount = document.getElementById('progressCount');
+const progressDim = document.getElementById('progressDim');
+const qCard = document.getElementById('qCard');
+
+function startQuiz(){
+  landing.classList.add('hidden');
+  questionScreen.classList.remove('hidden');
+  progressWrap.classList.remove('hidden');
+  current = 0;
+  answers = new Array(QUESTIONS.length).fill(null);
+  renderQuestion();
+  window.scrollTo({top:0});
+  if (window.trackEvent) window.trackEvent('quiz_start', { quiz_type: 'sm_interaction' });
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[current];
+  const dim = DIMENSIONS[q.dim];
+  const selected = answers[current];
+
+  let optionsHtml = '';
+  SCALE_LABELS.forEach((label, i) => {
+    const val = i + 1;
+    const isSel = selected === val;
+    optionsHtml += `
+      <div class="option ${isSel ? 'selected' : ''}" onclick="selectAnswer(${val})">
+        <div class="mark"></div>
+        <div class="txt">${label}</div>
+        <div class="val">${val}</div>
+      </div>
+    `;
+  });
+
+  qCard.innerHTML = `
+    <div class="q-eyebrow">第 ${current + 1} 题 / 共 ${QUESTIONS.length} 题</div>
+    <div class="q-text">${q.text}</div>
+    <div class="q-sub">请根据你的真实感受选择最符合的一项</div>
+    <div class="q-dim-tag">${dim.label}</div>
+    <div class="options">${optionsHtml}</div>
+    <div class="q-nav">
+      <button class="nav-back" onclick="prevQuestion()" ${current === 0 ? 'disabled' : ''}>← 上一题</button>
+      <button class="nav-next" onclick="nextQuestion()" ${selected === null ? 'disabled' : ''}>${current === QUESTIONS.length - 1 ? '查看结果' : '下一题 →'}</button>
+    </div>
+  `;
+
+  progressFill.style.width = ((current + 1) / QUESTIONS.length * 100) + '%';
+  progressCount.textContent = `${current + 1} / ${QUESTIONS.length}`;
+  progressDim.textContent = dim.short;
+}
+
+function selectAnswer(val){
+  answers[current] = val;
+  renderQuestion();
+}
+
+function prevQuestion(){
+  if (current > 0) {
+    current--;
+    renderQuestion();
+  }
+}
+
+function nextQuestion(){
+  if (answers[current] === null) return;
+  if (current < QUESTIONS.length - 1) {
+    current++;
+    renderQuestion();
+  } else {
+    computeResult();
+  }
+}
+
+/* =========================================================
+   评分算法
+   ========================================================= */
+function computeResult(){
+  // 计算各维度平均分
+  const dimScores = {};
+  Object.keys(DIMENSIONS).forEach(dim => {
+    const items = QUESTIONS.map((q, i) => ({ q, i })).filter(x => x.q.dim === dim);
+    const sum = items.reduce((acc, x) => acc + (answers[x.i] || 0), 0);
+    dimScores[dim] = sum / items.length;
+  });
+
+  const sScore = dimScores.dominance;
+  const mScore = dimScores.submission;
+  const switchScore = dimScores.switch;
+  const consentScore = dimScores.consent;
+  const trustScore = dimScores.trust;
+
+  // 判定结果类型
+  let resultType;
+  const sPct = sScore / 5 * 100;
+  const mPct = mScore / 5 * 100;
+  const switchPct = switchScore / 5 * 100;
+
+  // Switch 高分优先（双向适应能力强）
+  if (switchScore >= 4.0) {
+    resultType = 'Switch';
+  } else if (Math.abs(sScore - mScore) < 0.5) {
+    resultType = 'Balanced';
+  } else if (sScore > mScore) {
+    resultType = 'S';
+  } else {
+    resultType = 'M';
+  }
+
+  resultData = {
+    sScore, mScore, switchScore, consentScore, trustScore,
+    sPct: Math.round(sPct), mPct: Math.round(mPct), switchPct: Math.round(switchPct),
+    resultType,
+  };
+
+  renderResult();
+  saveResult();
+}
+
+/* =========================================================
+   结果页
+   ========================================================= */
+const TYPE_INFO = {
+  S: {
+    name: '偏S型',
+    desc: '你倾向于在关系中主动引导、承担决策责任，享受掌控感和责任感。你重视关系的方向感，愿意为双方规划节奏。',
+  },
+  M: {
+    name: '偏M型',
+    desc: '你倾向于在信任的基础上接受对方的引导，更重视安全感和连接。你享受被支持和照顾的感觉，愿意让对方承担部分主动权。',
+  },
+  Switch: {
+    name: 'Switch型',
+    desc: '你具备较强的双向适应能力，可以根据对象、环境和关系状态灵活切换角色。你既能在需要时主动引导，也能安心接受安排。',
+  },
+  Balanced: {
+    name: '平衡型',
+    desc: '你的主动和接受倾向较为接近，更关注关系互动的整体质量。你能够在不同情境中找到适合自己的位置。',
+  },
+};
+
+function renderResult(){
+  questionScreen.classList.add('hidden');
+  resultScreen.classList.remove('hidden');
+  progressWrap.classList.add('hidden');
+
+  const info = TYPE_INFO[resultData.resultType];
+
+  let html = `
+    <div class="result-head">
+      <div class="result-eyebrow">你的 S/M 互动心理画像</div>
+      <div class="result-title">《你的S/M互动心理画像》</div>
+      <div class="type-badge">${info.name}</div>
+      <p class="type-desc">${info.desc}</p>
+    </div>
+
+    <div class="score-section">
+      <div class="score-section-title">倾向分布</div>
+      <div class="score-row">
+        <div class="score-row-head">
+          <span class="score-row-name">S 倾向（主导）</span>
+          <span class="score-row-pct">${resultData.sPct}%</span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill" data-w="${resultData.sPct}"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-row-head">
+          <span class="score-row-name">M 倾向（接受）</span>
+          <span class="score-row-pct">${resultData.mPct}%</span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill" data-w="${resultData.mPct}"></div></div>
+      </div>
+      <div class="score-row">
+        <div class="score-row-head">
+          <span class="score-row-name">Switch（双向适应）</span>
+          <span class="score-row-pct">${resultData.switchPct}%</span>
+        </div>
+        <div class="score-bar-track"><div class="score-bar-fill" data-w="${resultData.switchPct}"></div></div>
+      </div>
+    </div>
+
+    <div class="ai-section">
+      <div id="aiContent">
+        <div style="text-align:center;padding:50px 20px;">
+          <div class="ai-spinner"></div>
+          <p style="margin-top:20px;font-size:13.5px;color:var(--text-tertiary);line-height:1.8;">正在请 AI 结合心理学理论为你做深度解读…<br>通常需要 10–30 秒</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      本测试从心理学角度分析你在亲密关系中的权力互动偏好，属于娱乐与自我探索性质，不代表专业心理诊断。若你在亲密关系中长期感到困扰，建议寻求专业心理咨询师的帮助。所有作答仅在本地浏览器计算，结果可匿名保存用于统计。
+    </div>
+
+    <div class="result-actions">
+      <button class="btn-primary" onclick="restartQuiz()">重新测一次</button>
+      <button class="btn-secondary" onclick="window.location.href='/match.html'">返回心理测评</button>
+    </div>
+  `;
+
+  resultScreen.innerHTML = html;
+
+  // 动画：进度条填充
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-fill').forEach(el => {
+      el.style.width = el.getAttribute('data-w') + '%';
+    });
+  }, 100);
+
+  fetchAiAnalysis();
+  window.scrollTo({top:0});
+}
+
+/* =========================================================
+   AI 深度解读
+   ========================================================= */
+const AI_ICONS = {
+  heart: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+  brain: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2a2.5 2.5 0 0 1 2.5 2.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08A3 3 0 0 1 3 13.5a3 3 0 0 1 1.5-2.6A2.5 2.5 0 0 1 6 6.5a2.5 2.5 0 0 1 1.13-4.44A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2a2.5 2.5 0 0 0-2.5 2.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08A3 3 0 0 0 21 13.5a3 3 0 0 0-1.5-2.6A2.5 2.5 0 0 0 18 6.5a2.5 2.5 0 0 0-1.13-4.44A2.5 2.5 0 0 0 14.5 2z"/></svg>',
+  puzzle: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02z"/></svg>',
+  compass: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.8 10.7 8 12 4.2-1.3 8-6.5 8-12V5l-8-3z"/></svg>',
+  spark: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8"/></svg>',
+};
+
+async function fetchAiAnalysis(){
+  const container = document.getElementById('aiContent');
+  if(!container || !resultData) return;
+
+  container.innerHTML = `
+    <div style="text-align:center;padding:50px 20px;">
+      <div class="ai-spinner"></div>
+      <p style="margin-top:20px;font-size:13.5px;color:var(--text-tertiary);line-height:1.8;">正在请 AI 结合心理学理论为你做深度解读…<br>通常需要 10–30 秒</p>
+    </div>
+  `;
+
+  try{
+    const resp = await fetch('/api/sm-analyze', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        payload: {
+          sScore: resultData.sScore,
+          mScore: resultData.mScore,
+          switchScore: resultData.switchScore,
+          trustScore: resultData.trustScore,
+          consentScore: resultData.consentScore,
+          resultType: resultData.resultType,
+        }
+      })
+    });
+
+    const data = await resp.json().catch(()=>({}));
+
+    if(!resp.ok){
+      renderAiError(data.message || '请求失败，请稍后重试');
+      return;
+    }
+
+    if(data.analysis){
+      renderAiSuccess(data.analysis);
+    }else if(data.analysisRaw){
+      renderAiSuccessPlainFallback(data.analysisRaw);
+    }else{
+      renderAiError('AI 未返回有效内容，请重试');
+    }
+  }catch(e){
+    renderAiError('网络连接失败，请检查网络后重试');
+  }
+}
+
+function renderAiSuccess(analysis){
+  const container = document.getElementById('aiContent');
+  if(!container) return;
+
+  const headline = analysis.headline || '';
+  const sections = Array.isArray(analysis.sections) ? analysis.sections : [];
+  const closing = analysis.closing || '';
+
+  let html = `<div class="ai-source-tag">由 AI 结合心理学理论生成 · 娱乐与自我探索性质</div>`;
+
+  if(headline){
+    html += `<div class="ai-headline">${escapeHtml(headline)}</div>`;
+  }
+
+  sections.forEach(sec=>{
+    const iconSvg = AI_ICONS[sec.icon] || AI_ICONS.spark;
+    html += `
+      <div class="ai-section-card">
+        <div class="ai-section-head">
+          <div class="ai-icon">${iconSvg}</div>
+          <div class="ai-section-title">${escapeHtml(sec.title || '')}</div>
+        </div>
+        <div class="ai-section-body">${escapeHtml(sec.body || '')}</div>
+      </div>
+    `;
+  });
+
+  if(closing){
+    html += `<div class="ai-closing">${escapeHtml(closing)}</div>`;
+  }
+
+  html += `
+    <div class="result-actions" style="margin-top:8px;">
+      <button class="btn-secondary" style="padding:10px 22px;font-size:13px;" onclick="fetchAiAnalysis()">重新生成一次</button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderAiSuccessPlainFallback(text){
+  const container = document.getElementById('aiContent');
+  if(!container) return;
+  const paras = text.split(/\n{1,}/).filter(p=>p.trim());
+  const html = paras.map(p=>`<div class="ai-section-card"><div class="ai-section-body">${escapeHtml(p)}</div></div>`).join('');
+  container.innerHTML = `
+    <div class="ai-source-tag">由 AI 结合心理学理论生成</div>
+    ${html}
+  `;
+}
+
+function renderAiError(message){
+  const container = document.getElementById('aiContent');
+  if(!container) return;
+  container.innerHTML = `
+    <div style="text-align:center;padding:50px 20px;">
+      <p style="font-size:14px;color:var(--text-tertiary);margin-bottom:20px;line-height:1.8;">${escapeHtml(message)}</p>
+      <button class="btn-secondary" style="padding:10px 26px;font-size:13.5px;" onclick="fetchAiAnalysis()">重试</button>
+    </div>
+  `;
+}
+
+function escapeHtml(str){
+  return String(str).replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>');
+}
+
+
+
+
+/* =========================================================
+   结果保存（匿名）
+   ========================================================= */
+async function saveResult(){
+  if(!resultData) return;
+  try{
+    let visitorToken = '';
+    if (window.SMTrack && window.SMTrack.getVisitorToken) {
+      visitorToken = window.SMTrack.getVisitorToken();
+    }
+    await fetch('/api/sm-save', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sScore: resultData.sScore,
+        mScore: resultData.mScore,
+        switchScore: resultData.switchScore,
+        trustScore: resultData.trustScore,
+        consentScore: resultData.consentScore,
+        resultType: resultData.resultType,
+        visitorToken,
+      })
+    });
+  }catch(e){
+    // 保存失败不影响用户体验
+  }
+  if (window.trackEvent) window.trackEvent('quiz_complete', { quiz_type: 'sm_interaction' });
+}
+
+function restartQuiz(){
+  current = 0;
+  answers = new Array(QUESTIONS.length).fill(null);
+  resultData = null;
+  resultScreen.classList.add('hidden');
+  landing.classList.remove('hidden');
+  progressWrap.classList.add('hidden');
+  window.scrollTo({top:0});
+}
+
+// 页面访问统计
+fetch('/api/view',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({page:'sm-test'})}).catch(function(){});
+</script>
+</body>
+</html>
+
+
