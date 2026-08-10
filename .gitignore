@@ -1,0 +1,23 @@
+# S12 Security Cleanup - .gitignore
+
+# Backup & dump files
+*.sql
+*.sql.bak
+backup*
+*.bak
+*.bak-*
+
+# Environment files
+.env
+.env.*
+
+# Wrangler local state
+.wrangler/
+
+# Node dependencies
+node_modules/
+
+# === Whitelist (must be tracked) ===
+!schema.sql
+!docs/migrations/*.sql
+!docs/test-data/*.sql
