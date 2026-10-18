@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心镜 SoulMirror · 变现路线全景分析</title>
+<style>
+:root{
+  --ink:#1f1c24; --ink2:#4d4757; --ink3:#857e91;
+  --line:#e4e0ea; --line2:#efeceF3;
+  --bg:#ffffff; --surface:#f8f7fa;
+  --accent:#5b4a72; --accent-soft:#f0ecf5;
+  --good:#2f6b4f; --good-soft:#eaf3ee;
+  --warn:#8a6d1f; --warn-soft:#faf3e2;
+  --bad:#9c3a33; --bad-soft:#f9ecea;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.65}
+.page{max-width:860px;margin:0 auto;padding:36px 32px 48px}
+h1{font-size:22px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--ink3);font-size:12px;margin-top:4px}
+h2{font-size:15px;font-weight:600;margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:8px}
+h2 .no{color:var(--accent);font-variant-numeric:tabular-nums}
+h3{font-size:13px;font-weight:600;margin:14px 0 6px}
+p{margin:6px 0}
+.lead{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:14px}
+.lead b{color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+th{background:var(--surface);text-align:left;font-weight:600;padding:6px 8px;border:1px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:#fcfcfd}
+.stars{color:var(--accent);letter-spacing:1px;white-space:nowrap}
+.tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;white-space:nowrap}
+.tag.now{background:var(--good-soft);color:var(--good)}
+.tag.later{background:var(--warn-soft);color:var(--warn)}
+.tag.no{background:var(--bad-soft);color:var(--bad)}
+.tag.hold{background:var(--accent-soft);color:var(--accent)}
+.route{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;page-break-inside:avoid}
+.route .rh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.route .rh .name{font-size:14px;font-weight:600}
+.route .rh .meta{color:var(--ink3);font-size:11.5px;margin-left:auto}
+.route p{font-size:12.5px;color:var(--ink2);margin:3px 0}
+.route .risk{font-size:12px;color:var(--bad)}
+.route .fit{font-size:12px;color:var(--good)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:720px){.grid2{grid-template-columns:1fr}}
+.phase{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin:10px 0;page-break-inside:avoid}
+.phase .ph{font-size:13.5px;font-weight:600}
+.phase .cond{color:var(--ink3);font-size:11.5px;margin-bottom:4px}
+.phase ul{margin:4px 0 4px 18px;font-size:12.5px;color:var(--ink2)}
+.phase li{margin:2px 0}
+.phase .money{font-size:12.5px;font-weight:600;color:var(--good);margin-top:4px}
+.note{font-size:11.5px;color:var(--ink3);margin-top:4px}
+ul.tight{margin:4px 0 4px 18px}
+ul.tight li{margin:3px 0;font-size:12.5px}
+.check{list-style:none;margin-left:0}
+.check li{padding-left:22px;position:relative;margin:5px 0;font-size:12.5px}
+.check li::before{content:"";position:absolute;left:2px;top:4px;width:10px;height:10px;border:1.5px solid var(--accent);border-radius:2px}
+.when{display:inline-block;min-width:52px;font-weight:600;color:var(--accent)}
+.chart{margin:10px 0;page-break-inside:avoid}
+.footer{margin-top:28px;padding-top:10px;border-top:1px solid var(--line);font-size:11px;color:var(--ink3);display:flex;justify-content:space-between}
+@page{size:A4;margin:11mm}
+@media print{
+  body{font-size:12.4px}
+  .page{padding:0;max-width:none}
+  table{page-break-inside:auto}
+  tr,th,td{page-break-inside:avoid}
+  thead{display:table-header-group}
+  h2{page-break-after:avoid}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>心镜 SoulMirror · 变现路线全景分析</h1>
+<div class="sub">基于 2026-10-17 本地代码、交接文档与线上站点静态分析 · 覆盖 9 条候选路线 · 含成本测算与三阶段路线图</div>
+
+<div class="lead">
+<p><b>结论一：</b>现阶段唯一"当周能见到钱、零资质门槛、不碰未成年人付费"的两条路是 <b>CPS 内容带货</b> 与 <b>校园本地商家赞助</b>——前者零成本挂联盟分佣链接，后者你是学生、有地缘优势，微信转账即可收款。</p>
+<p><b>结论二：</b>会员订阅是终局形态，但站内自动收费需要个体工商户/公司主体开通支付，且未成年用户付费存在退款与监管风险，应放到主体与合规地基完成之后。</p>
+<p><b>结论三：</b>展示广告是兜底而非主线（未成年流量 eCPM 低、域名无备案，详见上一轮分析）。当前真实成本近乎为零（单次 AI 调用约 0.004 元），变现前唯一必做项是给 AI 接口加限额防刷。</p>
+</div>
+
+<h2><span class="no">01</span>资产盘点：你手里有什么</h2>
+<table>
+<thead><tr><th style="width:88px">维度</th><th>内容</th><th style="width:210px">变现相关判断</th></tr></thead>
+<tbody>
+<tr><td>核心产品</td><td>41 题四维度心理测评匹配（依恋/大五/爱之语/价值观）</td><td>差异化资产，适合做"自我探索"向付费与内容</td></tr>
+<tr><td>社交功能</td><td>私信与匹配对话、校园表白墙、匿名提问箱</td><td>网络效应资产，基础能力必须免费，否则毁掉留存</td></tr>
+<tr><td>内容功能</td><td>塔罗 AI 解读（结合测评结果）、S/M 测试、今日之问</td><td>天然适合挂 CPS 导购与轻量付费点</td></tr>
+<tr><td>用户结构</td><td>中学生/大学生为主（未成年人占比高）、邮箱注册 + 匿名访客双轨</td><td>付费能力弱、付费合规风险高，C 端收费需谨慎</td></tr>
+<tr><td>数据资产</td><td>quiz_results 四维度结果、tarot_readings、S09 埋点（PV/UV/来源/留存）+ 后台数据中心</td><td>支撑 B 端报告与内容选题，<b>不可直接出售</b>（见路线 09）</td></tr>
+<tr><td>技术底盘</td><td>Cloudflare Pages + D1 + DashScope（qwen-plus）+ Resend</td><td>全部在免费额度内，边际成本极低</td></tr>
+<tr><td>缺失项</td><td>支付/会员体系、内容审核闭环、隐私政策与年龄提示、三个 P0 安全漏洞（S-02/S-03/S-04）</td><td>均为任何收费行为的前置条件</td></tr>
+</tbody>
+</table>
+
+<h3>成本结构测算（月）</h3>
+<table>
+<thead><tr><th>项目</th><th>计费方式</th><th>日活 500</th><th>日活 1,000</th><th>日活 10,000</th></tr></thead>
+<tbody>
+<tr><td>Cloudflare Pages</td><td>免费额度 10 万请求/天</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Cloudflare D1</td><td>免费额度 5GB 存储 / 每日 500 万行读</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>DashScope qwen-plus</td><td>输入 0.8 元 / 输出 2 元每百万 token（0–128K 档，以官网实时价为准）；按 20% 日活用户调用、单次约 0.004 元估算</td><td>约 12 元</td><td>约 24 元</td><td>约 240 元</td></tr>
+<tr><td>Resend 邮件</td><td>免费 3,000 封/月，超量按量</td><td>0</td><td>0</td><td>约 0–30 元</td></tr>
+<tr><td>域名</td><td>.cc.cd 免费域名</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td><b>合计</b></td><td></td><td><b>≈ 12 元</b></td><td><b>≈ 24 元</b></td><td><b>≈ 270 元</b></td></tr>
+</tbody>
+</table>
+<p class="note">含义：哪怕日活一万，服务器与 AI 月成本也不到三百元。当前不存在"成本逼你变现"的压力，变现节奏应由流量与合规成熟度决定，而不是由成本决定。</p>
+
+<h2><span class="no">02</span>九条变现路线全景评估</h2>
+<table>
+<thead><tr><th style="width:120px">路线</th><th>收入模型</th><th style="width:86px">启动成本</th><th style="width:96px">资质/主体门槛</th><th style="width:92px">未成年合规风险</th><th style="width:86px">现阶段适配</th><th style="width:64px">建议</th></tr></thead>
+<tbody>
+<tr><td>CPS 内容带货</td><td>导购成交分佣 1%–30%</td><td>零</td><td>无（个人可做）</td><td>无</td><td class="stars">★★★★★</td><td><span class="tag now">立即做</span></td></tr>
+<tr><td>本地商家赞助</td><td>冠名/赞助位 300–2,000 元/月</td><td>零（时间成本）</td><td>无（个人收款）</td><td>低</td><td class="stars">★★★★★</td><td><span class="tag now">立即做</span></td></tr>
+<tr><td>内容 IP / 私域</td><td>流量杠杆，后端接上述路线</td><td>低</td><td>无</td><td>低</td><td class="stars">★★★☆</td><td><span class="tag now">30 天起</span></td></tr>
+<tr><td>会员订阅</td><td>9.9–29.9 元/月订阅</td><td>中（开发）</td><td>个体户/公司</td><td>中高（退款）</td><td class="stars">★★★☆</td><td><span class="tag later">阶段 2</span></td></tr>
+<tr><td>展示广告</td><td>CPM/CPC 分成</td><td>低</td><td>AdSense 无需备案</td><td>中（儿童内容政策）</td><td class="stars">★★</td><td><span class="tag hold">兜底</span></td></tr>
+<tr><td>B2B 校园心理工具</td><td>工具采购 500–5,000 元/校/学期</td><td>高</td><td>公司为佳</td><td>低（B 端授权链）</td><td class="stars">★★★</td><td><span class="tag later">阶段 3</span></td></tr>
+<tr><td>打赏 / 捐赠</td><td>小额自愿</td><td>零</td><td>无</td><td>无</td><td class="stars">★★</td><td><span class="tag hold">顺手做</span></td></tr>
+<tr><td>虚拟道具内购</td><td>道具/曝光卡/超级喜欢</td><td>中高</td><td>个体户/公司</td><td>高（监管敏感）</td><td class="stars">★★</td><td><span class="tag no">不推荐</span></td></tr>
+<tr><td>数据变现</td><td>聚合洞察报告售卖</td><td>低</td><td>—</td><td>高（信任崩塌）</td><td class="stars">★</td><td><span class="tag no">不要做</span></td></tr>
+</tbody>
+</table>
+
+<h3>路线 01 · CPS 内容带货 <span class="tag now">立即做</span></h3>
+<div class="route">
+<div class="rh"><span class="name">测评与场景内容挂分佣链接</span><span class="meta">淘宝客/京东联盟/当当合作 —— 个人可注册，成交抽佣</span></div>
+<p><b>怎么落地：</b>测评结果页挂"适合你的心理学书单"（当当/京东图书，佣金 5%–20%）；表白墙做"表白季礼物指南"（文创/饰品，佣金 10%–30%）；开学季做宿舍好物清单。你已有测评结果这个天然内容场景，只需要在结果渲染后加一个推荐位。</p>
+<p class="fit">契合点：不向用户收一分钱，合规风险趋近于零；验证"内容→点击→成交"闭环，为后续所有路线攒运营经验。</p>
+<p class="risk">注意：导购内容要有真实推荐逻辑，不能变成纯广告页；塔罗相关品类（水晶等）在部分联盟有类目限制，先查规则再挂。</p>
+</div>
+
+<h3>路线 02 · 校园本地商家赞助 <span class="tag now">立即做</span></h3>
+<div class="route">
+<div class="rh"><span class="name">按校区向周边商家卖精准曝光</span><span class="meta">你的流量天然按校区分布 —— 这是全国性平台给不了广告主的东西</span></div>
+<p><b>怎么落地：</b>产品化三个标准赞助位：表白墙周冠名（"本周表白墙由 XX 自习室赞助"，约 500 元/周）、测评页校区赞助位（约 300 元/校区/月）、校园配对交友活动冠名（约 1,000 元+/场）。微信/支付宝个人码收款，当月可结算。</p>
+<p class="fit">契合点：你是学生，能线下陌拜驾校、考研机构、自习室、剧本杀、摄影工作室——这些商家的目标客群与你的用户完全重合，且他们没有比校园社群更准的渠道。</p>
+<p class="risk">注意：赞助内容要明确标注"赞助/合作"，避免与站内匿名内容混淆引发信任问题；单校区月收入天花板在 2,000–4,000 元，适合当第一桶金而非长期主食。</p>
+</div>
+
+<h3>路线 03 · 内容 IP / 私域引流 <span class="tag now">30 天起</span></h3>
+<div class="route">
+<div class="rh"><span class="name">把测评内容做成账号，给全站引流</span><span class="meta">小红书/抖音/视频号 —— "依恋类型测试"类内容是常青流量题材</span></div>
+<p><b>怎么落地：</b>把 41 题测评的四维度拆成系列轻内容（"焦虑型依恋的 5 个信号"），文末引导"完整测评在心镜"；把塔罗解读做成"今日一牌"日更栏目。内容引流到站内，再接路线 01/02 变现。</p>
+<p class="risk">注意：命理/塔罗类内容在小红书、抖音有限流风险，建议用"心理象征解读"框架而非算命框架；起号周期 1–3 个月，需要持续产能，适合作为阶段 1 的并行任务而非主线。</p>
+</div>
+
+<h3>路线 04 · 会员订阅 <span class="tag later">阶段 2</span></h3>
+<div class="route">
+<div class="rh"><span class="name">卖"自我探索"，永远不卖"社交刚需"</span><span class="meta">终局形态 —— 但前置条件是个体户主体 + 合规地基</span></div>
+<p><b>设计原则：</b>匹配、私信基础次数、表白墙、提问箱永远免费（这是网络效应的命根子）；会员只卖增量：测评深度报告与历史趋势、塔罗不限次解读、匹配优先曝光、隐身访客查看。定价 9.9–19.9 元/月。</p>
+<p class="risk">注意：①站内自动扣费需要个体户/公司主体开通微信支付商户号，个人主体已无法开通虚拟商品类目；②未成年用户充值，家长可依据《民法典》主张返还，支付协议与年龄门槛页必须前置；③心理测评付费报告不得出现任何诊断性、医疗性表述，只能停留在"自我了解"层。</p>
+</div>
+
+<h3>路线 05 · 展示广告 <span class="tag hold">兜底</span></h3>
+<div class="route">
+<div class="rh"><span class="name">Google AdSense 非个性化模式</span><span class="meta">收益兜底，不是主线</span></div>
+<p>承接上一轮结论：未成年流量 eCPM 显著低于均值、.cc.cd 域名无备案、UGC 页面内容不可控。流量稳定到日活数千后再申请，开 <b>requestNonPersonalizedAds=1</b> 只按上下文匹配，广告位仅放首页底部与测评结果页之间，绝不进聊天页，不做弹窗插屏。按当前量级估算月收入几十到一两百元——它的真正价值是验证"站内有商业库存"这件事，而不是金额。</p>
+</div>
+
+<h3>路线 06 · B2B 校园心理工具 <span class="tag later">阶段 3</span></h3>
+<div class="route">
+<div class="rh"><span class="name">把测评系统包装成班级心理普查工具</span><span class="meta">天花板最高，但离个人能力最远</span></div>
+<p>你的 41 题四维度测评 + 班级聚合报告，恰好是学校心理老师/辅导员的刚需场景。客单价 500–5,000 元/校/学期。由学校统一采购时，未成年人个人信息通过学校授权链处理，C 端合规难题反而消解。但销售周期长、需要公司化运作与持续交付，适合规模做大后的第二曲线，现在只需保留数据聚合能力即可。</p>
+</div>
+
+<h3>路线 07 · 打赏 / 捐赠 <span class="tag hold">顺手做</span></h3>
+<div class="route">
+<div class="rh"><span class="name">爱发电/微信赞赏入口</span><span class="meta">零成本零风险，收益极小</span></div>
+<p>放一个"支持服务器"入口即可，不投入运营精力。它的意义在于识别出最认可你的那批用户（潜在商家资源与内容合伙人），而不是收入本身。</p>
+</div>
+
+<h3>路线 08 · 虚拟道具内购 <span class="tag no">不推荐</span></h3>
+<div class="route">
+<div class="rh"><span class="name">道具/曝光卡/超级喜欢</span><span class="meta">变现效率最高，风险同样最高</span></div>
+<p>这是探探、Soul 验证过的现金流机器，但三点决定学生个人不要碰：①面向未成年人的情感付费功能是近两年监管重点，诱导性消费的认定标准趋严；②个人主体开不了虚拟商品支付；③一旦引入付费影响匹配权重，匿名社区的公平感知会迅速崩塌，反噬核心留存。</p>
+</div>
+
+<h3>路线 09 · 数据变现 <span class="tag no">不要做</span></h3>
+<div class="route">
+<div class="rh"><span class="name">出售测评数据/聚合洞察报告</span><span class="meta">收益与风险完全不成比例</span></div>
+<p>《个人信息保护法》下对未成年人敏感个人信息的处理要求极高，"匿名化"标准严格，UGC 数据质量也不可控。更致命的是社交信任：一个匿名校园社区一旦被发现靠卖用户数据赚钱，传播速度远超你的想象，产品直接死亡。</p>
+</div>
+
+<h2><span class="no">03</span>优先级四象限</h2>
+<div class="chart">
+<svg viewBox="0 0 680 430" width="100%" role="img">
+<title>变现路线优先级四象限</title>
+<desc>横轴为资质与合规门槛，纵轴为收益潜力；左上为现在就能做，右上为做大后再做，左下为顺手做，右下为不要做</desc>
+<rect x="80" y="40" width="280" height="160" rx="10" fill="#eaf3ee" stroke="#2f6b4f" stroke-width="0.5"/>
+<rect x="360" y="40" width="280" height="160" rx="10" fill="#faf3e2" stroke="#8a6d1f" stroke-width="0.5"/>
+<rect x="80" y="200" width="280" height="160" rx="10" fill="#f4f3f6" stroke="#857e91" stroke-width="0.5"/>
+<rect x="360" y="200" width="280" height="160" rx="10" fill="#f9ecea" stroke="#9c3a33" stroke-width="0.5"/>
+<text x="220" y="62" text-anchor="middle" font-size="13" font-weight="600" fill="#2f6b4f">现在就能做</text>
+<text x="500" y="62" text-anchor="middle" font-size="13" font-weight="600" fill="#8a6d1f">做大后再做</text>
+<text x="220" y="222" text-anchor="middle" font-size="13" font-weight="600" fill="#857e91">顺手做</text>
+<text x="500" y="222" text-anchor="middle" font-size="13" font-weight="600" fill="#9c3a33">不要做</text>
+<line x1="360" y1="40" x2="360" y2="360" stroke="#c9c4d2" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="80" y1="200" x2="640" y2="200" stroke="#c9c4d2" stroke-width="0.5" stroke-dasharray="4 4"/>
+<line x1="80" y1="360" x2="640" y2="360" stroke="#4d4757" stroke-width="1"/>
+<line x1="80" y1="40" x2="80" y2="360" stroke="#4d4757" stroke-width="1"/>
+<text x="360" y="382" text-anchor="middle" font-size="12" fill="#857e91">资质 / 合规门槛 →</text>
+<text x="68" y="52" text-anchor="end" font-size="12" fill="#857e91">收益</text>
+<text x="68" y="68" text-anchor="end" font-size="12" fill="#857e91">↑</text>
+<text x="68" y="348" text-anchor="end" font-size="12" fill="#857e91">低</text>
+<text x="92" y="378" text-anchor="middle" font-size="12" fill="#857e91">低</text>
+<text x="628" y="378" text-anchor="middle" font-size="12" fill="#857e91">高</text>
+<g font-size="12" fill="#1f1c24">
+<circle cx="150" cy="105" r="5" fill="#2f6b4f"/><text x="162" y="109">本地商家赞助</text>
+<circle cx="235" cy="150" r="5" fill="#2f6b4f"/><text x="247" y="154">CPS 内容带货</text>
+<circle cx="268" cy="185" r="4" fill="#2f6b4f"/><text x="278" y="189">内容 IP / 私域</text>
+<circle cx="150" cy="318" r="4" fill="#857e91"/><text x="162" y="322">打赏 / 捐赠</text>
+<circle cx="330" cy="258" r="4" fill="#8a6d1f"/><text x="340" y="262">展示广告</text>
+<circle cx="455" cy="100" r="5" fill="#8a6d1f"/><text x="467" y="104">B2B 校园心理工具</text>
+<circle cx="500" cy="152" r="5" fill="#8a6d1f"/><text x="512" y="156">会员订阅</text>
+<circle cx="548" cy="196" r="4" fill="#9c3a33"/><text x="556" y="200" text-anchor="end">虚拟道具</text>
+<circle cx="545" cy="300" r="4" fill="#9c3a33"/><text x="553" y="304" text-anchor="end">数据变现</text>
+</g>
+</svg>
+</div>
+<p class="note">左上象限的共同特征：不需要资质、不需要备案、不向未成年用户直接收费、本周就能启动。右上象限收益更高，但每一扇门都需要"主体 + 合规"钥匙，钥匙本身几百元、一两周就能办好——所以正确顺序是先拿左上角的钱，同时把右上角的钥匙配好。</p>
+
+<h2><span class="no">04</span>三阶段路线图</h2>
+
+<div class="phase">
+<div class="ph">阶段 0 · 合规地基 + 零成本变现试点</div>
+<div class="cond">适用：当前 → 日活 500 · 目标：不亏、跑通第一个闭环</div>
+<ul>
+<li>修 S-02 / S-03 / S-04，<b>优先给 /analyze 与 /tarot 加频率限制</b>（成本保护，比安全更紧急）</li>
+<li>补隐私政策、用户协议、年龄提示三页（之后所有商业行为的地基）</li>
+<li>注册个体工商户（线上约 0 元，为支付与赞助合同铺路）</li>
+<li>挂 CPS：测评结果页书单位、表白季礼物指南、开学季宿舍清单</li>
+<li>整理一份 20 家校园周边商家陌拜清单（驾校/考研/自习室/剧本杀/摄影）</li>
+</ul>
+<div class="money">收入预期：0 – 500 元/月 · 成本约 12 元/月</div>
+</div>
+
+<div class="phase">
+<div class="ph">阶段 1 · 打透 1–3 个校区，本地 B 端为主</div>
+<div class="cond">适用：日活 500 – 5,000 · 目标：单校区模型跑通，覆盖成本并有盈余</div>
+<ul>
+<li>赞助位产品化：表白墙周冠名 500 元 / 测评页校区赞助 300 元/月 / 配对活动冠名 1,000 元+</li>
+<li>每周固定 3–5 家商家陌拜，做一张标准化赞助价目单</li>
+<li>小红书/抖音测评向内容起号（每周 2–3 条），给站内引流</li>
+<li>CPS 根据点击数据选品扩位，观察转化率决定加码或砍掉</li>
+</ul>
+<div class="money">收入预期：1,000 – 4,000 元/月 · 成本约 24 元/月</div>
+</div>
+
+<div class="phase">
+<div class="ph">阶段 2 · 会员订阅 + 广告兜底</div>
+<div class="cond">适用：日活 5,000+ 且个体户/公司主体就绪 · 目标：第一份可持续被动收入</div>
+<ul>
+<li>微信支付商户号上线；会员只卖"自我探索"（深度报告/历史趋势/塔罗不限次/隐身访客），社交基础能力永久免费</li>
+<li>申请 Google AdSense 非个性化模式（requestNonPersonalizedAds=1），仅非核心路径兜底</li>
+<li>建立未成年人退款处理流程与年龄门槛校验，把合规成本计入定价</li>
+</ul>
+<div class="money">收入预期：5,000 – 15,000 元/月 · 成本约 270 元/月</div>
+</div>
+
+<div class="phase">
+<div class="ph">阶段 3 · B2B 工具化（第二曲线）</div>
+<div class="cond">适用：多校区规模化、团队化运作 · 目标：打开天花板</div>
+<ul>
+<li>将测评系统 + 班级聚合报告包装为"班级心理普查工具"，面向学校心理中心/辅导员销售</li>
+<li>公司主体运作，与 C 端业务做数据与品牌隔离</li>
+<li>沉淀 SOP 与交付文档，把单校交付成本压到客单价的 20% 以内</li>
+</ul>
+<div class="money">收入预期：单校 500 – 5,000 元/学期，B 端毛利远高于 C 端</div>
+</div>
+
+<h2><span class="no">05</span>行动清单</h2>
+<ul class="check">
+<li><span class="when">本周</span>给 /analyze、/tarot/analyze 加频率限制（防刷，成本保护优先于安全修复）</li>
+<li><span class="when">本周</span>上线隐私政策 / 用户协议 / 年龄提示三个静态页</li>
+<li><span class="when">本周</span>线上注册个体工商户，同步确认微信支付商户号准入类目</li>
+<li><span class="when">30 天</span>测评结果页接入第一个 CPS 联盟（图书类目起步），记录点击与成交数据</li>
+<li><span class="when">30 天</span>完成 20 家商家清单 + 赞助价目单，跑完前 10 家陌拜</li>
+<li><span class="when">90 天</span>拿到第一个付费赞助单；小红书账号发布 20 条；复盘决定阶段 1 加码方向</li>
+<li><span class="when">持续</span>不动虚拟道具、不动数据变现；不向未成年用户推任何自动续费</li>
+</ul>
+
+<div class="footer"><span>心镜 SoulMirror · 变现路线全景分析</span><span>2026-10-17</span></div>
+</div>
+</body>
+</html>
