@@ -39,8 +39,8 @@ export const onRequestPost = async ({ request, env }) => {
   ).bind(Date.now(), matchId).run();
 
   await env.DB.prepare(
-    `INSERT INTO messages (match_id, sender_id, content, created_at)
-     VALUES (?, 0, ?, ?)`
+    `INSERT INTO messages (match_id, sender_id, content, is_system, created_at)
+     VALUES (?, NULL, ?, 1, ?)`
   ).bind(matchId, '【系统】对方已结束对话。你可以随时开始新的匹配。', Date.now()).run();
 
   return jsonResponse({ ok: true });
