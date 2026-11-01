@@ -686,7 +686,7 @@ body{
       <div><strong>约3</strong>分钟</div>
     </div>
     <button class="btn-primary" onclick="startQuiz()">开始探索</button>
-    <p class="privacy-note">本测试为娱乐与自我探索性质，不代表专业心理诊断。所有作答仅在本地浏览器计算，结果可匿名保存用于统计。</p>
+    <p class="privacy-note">本测试为娱乐与自我探索性质，不代表专业心理诊断，仅面向已满 18 周岁的用户。作答在本地浏览器计算，评分可匿名保存用于统计；AI 解读会将评分发送至第三方 AI 服务。</p>
   </div>
 
   <!-- 答题页 -->
@@ -772,6 +772,11 @@ const progressDim = document.getElementById('progressDim');
 const qCard = document.getElementById('qCard');
 
 function startQuiz(){
+  if (localStorage.getItem('sm_age_ok') !== '1') {
+    var ok = window.confirm('本测试仅面向已满 18 周岁的用户，内容涉及亲密关系中的权力互动倾向。\n\n点击「确定」表示你已满 18 周岁并自愿继续；点击「取消」将返回首页。');
+    if (!ok) { location.href = '/index.html'; return; }
+    localStorage.setItem('sm_age_ok', '1');
+  }
   landing.classList.add('hidden');
   questionScreen.classList.remove('hidden');
   progressWrap.classList.remove('hidden');
@@ -1034,6 +1039,8 @@ async function fetchAiAnalysis(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
+        visitorToken: (window.SMTrack && window.SMTrack.getVisitorToken) ? window.SMTrack.getVisitorToken() : '',
+        ageConfirmed: localStorage.getItem('sm_age_ok') === '1',
         payload: {
           sScore: resultData.sScore,
           mScore: resultData.mScore,

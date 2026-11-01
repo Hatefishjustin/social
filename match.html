@@ -1228,7 +1228,7 @@ body.export-mode .result-screen{
     </div>
 
     <button class="btn-primary" onclick="startQuiz()">开始测评 →</button>
-    <p class="privacy-note">本测评基于公开心理学理论构建，用于自我探索与娱乐参考，结果由本地浏览器即时计算，不上传、不存储任何回答。作答进度会自动保存在本机浏览器中，即使误触刷新也可以继续上次的进度。它不能替代专业心理咨询或婚恋评估。</p>
+    <p class="privacy-note">本测评基于公开心理学理论框架自主设计，用于自我探索与娱乐参考，不构成心理诊断、婚恋评估或专业咨询意见。评分在本地浏览器计算；匿名作答记录会保存用于历史记录与后台统计，AI 深度解读会将作答摘要发送至第三方 AI 服务。作答进度同时保存在本机浏览器中，误触刷新可继续上次进度。</p>
     <p class="easter-egg-trigger" style="margin-top:16px;font-size:11.5px;letter-spacing:0.08em;color:var(--parchment-dim);opacity:0.55;" onclick="openEggPanel()">Powered by Justin</p>
   </div>
 
@@ -2082,7 +2082,7 @@ function renderResult(scores, options){
 
   html += `
     <div class="disclaimer">
-      本测评参考依恋理论（Bowlby, Ainsworth）、大五人格模型（Big Five / OCEAN）、盖瑞·查普曼"五种爱的语言"理论及关系价值观研究框架自主设计，供自我认知与娱乐参考之用，不构成心理诊断、婚恋评估或专业咨询意见。若你在亲密关系中长期感到困扰，建议寻求专业心理咨询师的帮助。所有作答与结果仅在本地浏览器计算，不会被收集或上传。
+      本测评参考依恋理论（Bowlby, Ainsworth）、大五人格模型（Big Five / OCEAN）、盖瑞·查普曼"五种爱的语言"理论及关系价值观研究框架自主设计，供自我认知与娱乐参考之用，不构成心理诊断、婚恋评估或专业咨询意见。若你在亲密关系中长期感到困扰，建议寻求专业心理咨询师的帮助。评分在本地浏览器计算；匿名作答记录会保存用于历史记录与统计，AI 解读会将作答摘要发送至第三方 AI 服务，你可以选择不生成 AI 解读。
     </div>
     <div class="easter-egg-trigger" style="text-align:center;margin-top:28px;font-size:11.5px;letter-spacing:0.08em;color:var(--parchment-dim);opacity:0.6;" onclick="openEggPanel()">
       Powered by Justin
@@ -2255,7 +2255,10 @@ async function fetchAiAnalysis(rawText){
     const resp = await fetch('/analyze', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ rawText })
+      body: JSON.stringify({
+        rawText,
+        visitorToken: (window.SMTrack && window.SMTrack.getVisitorToken) ? window.SMTrack.getVisitorToken() : ''
+      })
     });
 
     const data = await resp.json().catch(()=>({}));

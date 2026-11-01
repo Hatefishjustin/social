@@ -6,6 +6,7 @@
  */
 
 import { getCurrentUser } from '../_lib/auth.js';
+import { checkRateLimit, getRateLimitIdentity } from '../_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -16,8 +17,13 @@ function jsonResponse(body, status = 200) {
 
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
-  const userId = url.searchParams.get('userId');
-  if (!userId) return jsonResponse({ error: 'missing_userId' }, 400);
+  const userId = parseInt(url.searchParams.get('userId'), 10);
+  if (!userId || userId <= 0) return jsonResponse({ error: 'invalid_userId' }, 400);
+
+  // 防止批量枚举/拉取头像
+  const rl = getRateLimitIdentity(request);
+  const limit = await checkRateLimit(env, `avatar:ip:${rl.ip}`, 120, 60000);
+  if (!limit.allowed) return jsonResponse({ error: 'rate_limited' }, 429);
 
   const row = await env.DB.prepare(
     `SELECT image_data FROM avatars WHERE user_id = ?`
@@ -48,6 +54,11 @@ export const onRequestGet = async ({ request, env }) => {
     catch(e) { return new Response(null, { status: 404 }); }
   }
 
+  // 历史数据可能含 SVG 等可执行 MIME，统一降级为二进制流
+  if (!/^image\/(?:png|jpe?g|webp|gif)$/i.test(contentType)) {
+    contentType = 'application/octet-stream';
+  }
+
   return new Response(binary, {
     status: 200,
     headers: {
@@ -72,6 +83,10 @@ export const onRequestPost = async ({ request, env }) => {
   }
   if (!image.startsWith('data:image/')) {
     return jsonResponse({ error: 'invalid_format', message: '请提供base64图片数据' }, 400);
+  }
+  // 仅允许常见位图格式，避免 SVG 等可执行内容
+  if (!/^data:image\/(?:png|jpe?g|webp|gif);base64,/i.test(image)) {
+    return jsonResponse({ error: 'invalid_format', message: '仅支持 PNG/JPEG/WebP/GIF 图片' }, 400);
   }
 
   // 150KB limit

@@ -2,26 +2,9 @@
  * Cloudflare Pages Function
  * 路径: /chat/start
  * 方法: POST
- * 功能: 定向私信开聊，复用已有会话，is_shadow=0
+ * 功能: 定向发起对话请求（需对方接受后才建立会话），is_shadow=0
  */
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
-
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!sessionToken) return null;
-  const row = await env.DB.prepare(
-    `SELECT sessions.expires_at as expires_at, users.id as user_id, users.email as email
-     FROM sessions JOIN users ON sessions.user_id = users.id
-     WHERE sessions.token = ?`
-  ).bind(sessionToken).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.user_id, email: row.email };
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -52,7 +35,7 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'not_found', message: '目标用户不存在' }, 404);
   }
 
-  // 查已有 accepted 会话
+  // 已有 accepted 会话则直接复用
   const existing = await env.DB.prepare(
     `SELECT id FROM matches
      WHERE ((user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?))
@@ -64,25 +47,31 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ ok: true, matchId: existing.id, reused: true });
   }
 
-  // 新建会话
+  // 已有待处理请求：不重复插入，告知前端等待对方回应
+  const pending = await env.DB.prepare(
+    `SELECT id FROM matches
+     WHERE ((user_a = ? AND user_b = ?) OR (user_a = ? AND user_b = ?))
+     AND status = 'pending'
+     LIMIT 1`
+  ).bind(user.id, targetUserId, targetUserId, user.id).first();
+
+  if (pending) {
+    return jsonResponse({ ok: true, matchId: pending.id, pending: true, reused: true });
+  }
+
+  // 新建对话请求：必须由对方接受后才可聊天
   const result = await env.DB.prepare(
     `INSERT INTO matches (user_a, user_b, match_score, match_reason, status, is_shadow, created_at)
-     VALUES (?, ?, 85, '对方通过个人主页向你发起了对话', 'accepted', 0, ?)`
+     VALUES (?, ?, 85, '对方通过个人主页向你发起了对话请求', 'pending', 0, ?)`
   ).bind(user.id, targetUserId, Date.now()).run();
 
   const matchId = result.meta.last_row_id;
 
-  // 系统消息
-  await env.DB.prepare(
-    `INSERT INTO messages (match_id, sender_id, content, is_system, created_at)
-     VALUES (?, NULL, '对方通过个人主页向你发起了对话。平台提示：请保持友善交流。', 1, ?)`
-  ).bind(matchId, Date.now()).run();
-
-  // 通知对方
+  // 通知对方（不写系统消息，接受后再写）
   await env.DB.prepare(
     `INSERT INTO notifications (user_id, type, target_type, target_id, actor_email, content_preview, is_read, created_at)
-     VALUES (?, 'chat_message', 'chat', ?, ?, '对方发起了对话', 0, ?)`
+     VALUES (?, 'chat_request', 'chat', ?, ?, '对方请求与你开始对话', 0, ?)`
   ).bind(targetUserId, String(matchId), user.email, Date.now()).run();
 
-  return jsonResponse({ ok: true, matchId, reused: false });
+  return jsonResponse({ ok: true, matchId, pending: true, reused: false });
 };

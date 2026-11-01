@@ -3,29 +3,14 @@
  * 路径: /api/contact-request
  * POST: {postId, message} - 提交"我想认识TA"请求
  */
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
-
-async function getUser(request, env) {
-  if (!env.DB) return null;
-  const token = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!token) return null;
-  const row = await env.DB.prepare(
-    `SELECT s.expires_at, u.id, u.email FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?`
-  ).bind(token).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.id, email: row.email };
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 }
 
 export const onRequestPost = async ({ request, env }) => {
-  const user = await getUser(request, env);
+  const user = await getCurrentUser(request, env);
   if (!user) return json({ error: 'not_logged_in', message: '请先登录' }, 401);
 
   let body;

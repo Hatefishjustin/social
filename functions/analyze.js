@@ -7,6 +7,7 @@
  * 严格 JSON 输出；解析失败时返回 analysisRaw 兜底。
  */
 import { callDashScope } from './_lib/ai.js';
+import { checkRateLimit, getRateLimitIdentity } from './_lib/ratelimit.js';
 
 const SYSTEM_PROMPT = `你是一位专业的心理学解读助手。用户会提供一份心理测评的原始作答数据，请基于这些数据做深度分析。
 
@@ -34,21 +35,21 @@ sections 数量：3-5个
 每个 body 控制在 120 字以内
 不要输出 JSON 之外的任何内容`;
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  });
+function jsonResponse(body, status = 200, retryAfter = 0) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  };
+  if (retryAfter > 0) headers['Retry-After'] = String(retryAfter);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 export const onRequestPost = async ({ request, env }) => {
   // 1. 解析请求
+  let body;
   let rawText;
   try {
-    const body = await request.json();
+    body = await request.json();
     rawText = (body && body.rawText) ? String(body.rawText).trim() : '';
     console.log(`[analyze.js] 收到请求 rawText.length=${rawText.length}`);
   } catch {
@@ -61,9 +62,24 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ message: '缺少 rawText 参数' }, 400);
   }
 
-  if (rawText.length > 12000) {
+  if (rawText.length > 8000) {
     console.error(`[analyze.js] rawText 超过长度限制: ${rawText.length}`);
     return jsonResponse({ message: 'rawText 超过长度限制' }, 400);
+  }
+
+  // 1.1 限流（S-04）：按匿名访客 + IP + 全站日配额三重保护
+  const { ip, identity } = getRateLimitIdentity(request, body && body.visitorToken);
+  const perVisitor = await checkRateLimit(env, 'ai:analyze:visitor:' + identity, 5, 60 * 60 * 1000);
+  if (!perVisitor.allowed) {
+    return jsonResponse({ message: 'AI 解读请求过于频繁，请稍后再试' }, 429, perVisitor.retryAfter);
+  }
+  const perIp = await checkRateLimit(env, 'ai:analyze:ip:' + ip, 20, 60 * 60 * 1000);
+  if (!perIp.allowed) {
+    return jsonResponse({ message: '当前网络请求过于频繁，请稍后再试' }, 429, perIp.retryAfter);
+  }
+  const globalDaily = await checkRateLimit(env, 'ai:analyze:global', 500, 24 * 60 * 60 * 1000);
+  if (!globalDaily.allowed) {
+    return jsonResponse({ message: '今日 AI 解读额度已用完，请明天再试' }, 429, globalDaily.retryAfter);
   }
 
   // 2. 调用 AI

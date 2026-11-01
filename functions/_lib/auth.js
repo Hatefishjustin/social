@@ -9,6 +9,15 @@ export function parseCookie(cookieHeader, name) {
   return match ? match[1] : null;
 }
 
+/**
+ * 计算 User-Agent 的 SHA-256 摘要，用于 IP 信任自动登录的设备指纹绑定。
+ */
+export async function hashUserAgent(ua) {
+  const data = new TextEncoder().encode(String(ua || ''));
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
+}
+
 export async function getCurrentUser(request, env) {
   if (!env.DB) return null;
   const sessionToken = parseCookie(request.headers.get('Cookie'), 'session');

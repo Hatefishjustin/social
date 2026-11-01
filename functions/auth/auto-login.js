@@ -4,6 +4,8 @@
  * GET - 检查当前IP是否有信任记录，有则自动创建session
  */
 import { afterLogin } from '../_lib/visitor.js';
+import { hashUserAgent } from '../_lib/auth.js';
+import { hasColumn } from '../_lib/schema.js';
 
 function generateToken() {
   const arr = new Uint8Array(32);
@@ -26,12 +28,24 @@ export const onRequestGet = async ({ request, env }) => {
 
   const now = Date.now();
 
+  // 安全降级：数据库未迁移出 ua_hash 列时，禁用 IP 信任自动登录。
+  if (!(await hasColumn(env, 'ip_trust', 'ua_hash'))) {
+    return jsonResponse({ ok: false, message: 'no_trust' });
+  }
+
   // Find unexpired trust entry for this IP
   const trust = await env.DB.prepare(
-    `SELECT user_id FROM ip_trust WHERE ip = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`
+    `SELECT user_id, ua_hash FROM ip_trust WHERE ip = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1`
   ).bind(clientIP, now).first();
 
   if (!trust) return jsonResponse({ ok: false, message: 'no_trust' });
+
+  // 必须同时匹配 IP 与 UA 指纹，防止同一 NAT/校园网下他人接管会话。
+  const uaHash = await hashUserAgent(request.headers.get('User-Agent') || '');
+  if (!trust.ua_hash || trust.ua_hash !== uaHash) {
+    await env.DB.prepare(`DELETE FROM ip_trust WHERE ip = ?`).bind(clientIP).run();
+    return jsonResponse({ ok: false, message: 'no_trust' });
+  }
 
   // Create session
   const sessionToken = generateToken();

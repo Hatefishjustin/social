@@ -14,6 +14,7 @@ import { getRequestMeta } from '../_lib/ip.js';
 import { parseUA } from '../_lib/ua.js';
 import { getVisitorId } from '../_lib/visitor.js';
 import { hasColumn } from '../_lib/schema.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from '../_lib/ratelimit.js';
 
 // S11-P1: 读取匿名访客标识（统一为 sm_t_xxx 优先）
 // 优先级：sm_vt cookie（前端 track.js 生成 sm_t_xxx）
@@ -29,17 +30,16 @@ function getVisitorTokenFromCookie(request) {
   return read('sm_vt') || read('visitor_token') || read('visitor_id') || '';
 }
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  });
+function jsonResponse(body, status = 200, retryAfter = 0) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  if (retryAfter > 0) headers['Retry-After'] = String(retryAfter);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 const ALLOWED_ACTIONS = new Set([
@@ -55,6 +55,10 @@ const ALLOWED_ACTIONS = new Set([
 ]);
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   let body;
   try {
     body = await request.json();
@@ -82,6 +86,17 @@ export const onRequestPost = async ({ request, env }) => {
   const identity = visitorToken || visitorId || null;
 
   if (!env || !env.DB) return jsonResponse({ ok: false, error: 'missing_db', message: '数据库未配置' }, 500);
+
+  // 防止统计接口被刷：IP 120 次/分钟，访客标识 60 次/分钟
+  const rl = getRateLimitIdentity(request, body?.visitorToken);
+  const ipLimit = await checkRateLimit(env, `event:ip:${rl.ip}`, 120, 60000);
+  if (!ipLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '操作过于频繁，请稍后再试' }, 429, ipLimit.retryAfter);
+  }
+  const idLimit = await checkRateLimit(env, `event:id:${rl.identity}`, 60, 60000);
+  if (!idLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '操作过于频繁，请稍后再试' }, 429, idLimit.retryAfter);
+  }
 
   const hasNewColumns = await hasColumn(env, 'activity_log', 'device');
   const hasVisitorTokenColumn = await hasColumn(env, 'activity_log', 'visitor_token');

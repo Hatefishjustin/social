@@ -1,21 +1,18 @@
 /* functions/api/daily-question.js */
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const cookieHeader = request.headers.get('Cookie');
-  const match = cookieHeader && cookieHeader.match(new RegExp('(?:^|;\\s*)session=([^;]+)'));
-  if (!match) return null;
-  const row = await env.DB.prepare('SELECT sessions.expires_at as expires_at, users.id as user_id, users.email as email FROM sessions JOIN users ON sessions.user_id = users.id WHERE sessions.token = ?').bind(match[1]).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.user_id, email: row.email };
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' } });
 }
 
+// 每日一问按北京时间（UTC+8）切换，避免 UTC 00:00 对应北京 08:00 的错位
+function todayCN() {
+  return new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayCN();
   const user = await getCurrentUser(request, env);
 
   let q = await env.DB.prepare('SELECT * FROM daily_questions WHERE date = ?').bind(today).first();
@@ -40,7 +37,7 @@ export const onRequestPost = async ({ request, env }) => {
   const user = await getCurrentUser(request, env);
   if (!user) return json({ error: '请先登录' }, 401);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayCN();
   let q = await env.DB.prepare('SELECT * FROM daily_questions WHERE date = ?').bind(today).first();
   if (!q) q = await env.DB.prepare('SELECT * FROM daily_questions ORDER BY date DESC LIMIT 1').first();
   if (!q) return json({ error: '暂无今日之问' }, 404);

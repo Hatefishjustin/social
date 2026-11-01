@@ -4,23 +4,11 @@
  * GET: 管理员查看举报列表
  * PUT: 管理员处理举报 {reportId, action: "dismiss"|"warn"|"ban", admin_note}
  */
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 async function getAdminUser(request, env) {
-  if (!env.DB) return null;
-  const token = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!token) return null;
-  const row = await env.DB.prepare(
-    `SELECT s.expires_at, u.id, u.email, u.is_admin
-     FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?`
-  ).bind(token).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  if (!row.is_admin) return null;
-  return { id: row.id, email: row.email };
+  const user = await getCurrentUser(request, env);
+  return user && user.isAdmin ? user : null;
 }
 
 function json(body, status = 200) {

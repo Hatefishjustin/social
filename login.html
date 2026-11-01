@@ -181,7 +181,7 @@ body{
         emailInput.style.display = 'none';
         errEl.style.display = 'none';
         successEl.style.display = 'block';
-        successText.innerHTML = '验证邮件已发送！请查收邮箱 <strong>'+email+'</strong>，点击邮件中的链接完成登录。<br><br>登录后将自动跳转至目标页面。';
+        successText.innerHTML = '验证邮件已发送！请查收邮箱 <strong>'+String(email).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')+'</strong>，点击邮件中的链接完成登录。<br><br>登录后将自动跳转至目标页面。';
         sessionStorage.removeItem('login_pending_result');
         startCooldown();
       } else {

@@ -8,6 +8,7 @@
  * 属于娱乐和自我探索性质，不代表专业心理诊断。
  */
 import { callDashScope } from '../_lib/ai.js';
+import { checkRateLimit, getRateLimitIdentity } from '../_lib/ratelimit.js';
 
 const SYSTEM_PROMPT = `你是一名心理学方向分析助手。
 
@@ -74,21 +75,21 @@ sections 数量：5个（对应上述5个输出结构部分）
 不要输出 JSON 之外的任何内容`;
 
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-    },
-  });
+function jsonResponse(body, status = 200, retryAfter = 0) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+  };
+  if (retryAfter > 0) headers['Retry-After'] = String(retryAfter);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 export const onRequestPost = async ({ request, env }) => {
   // 1. 解析请求
+  let body;
   let payload;
   try {
-    const body = await request.json();
+    body = await request.json();
     payload = body && body.payload ? body.payload : null;
     console.log('[sm-analyze.js] 收到请求');
   } catch {
@@ -99,6 +100,26 @@ export const onRequestPost = async ({ request, env }) => {
   if (!payload) {
     console.error('[sm-analyze.js] 缺少 payload 参数');
     return jsonResponse({ message: '缺少 payload 参数' }, 400);
+  }
+
+  // 年龄门槛（P2）：该测试仅面向成年人，前端需显式确认
+  if (body.ageConfirmed !== true) {
+    return jsonResponse({ message: '该测试仅面向已满 18 周岁的用户' }, 403);
+  }
+
+  // 限流（与 /analyze 同等级保护，避免 AI 配额被刷）
+  const { ip, identity } = getRateLimitIdentity(request, body && body.visitorToken);
+  const perVisitor = await checkRateLimit(env, 'ai:sm:visitor:' + identity, 5, 60 * 60 * 1000);
+  if (!perVisitor.allowed) {
+    return jsonResponse({ message: 'AI 解读请求过于频繁，请稍后再试' }, 429, perVisitor.retryAfter);
+  }
+  const perIp = await checkRateLimit(env, 'ai:sm:ip:' + ip, 20, 60 * 60 * 1000);
+  if (!perIp.allowed) {
+    return jsonResponse({ message: '当前网络请求过于频繁，请稍后再试' }, 429, perIp.retryAfter);
+  }
+  const globalDaily = await checkRateLimit(env, 'ai:sm:global', 500, 24 * 60 * 60 * 1000);
+  if (!globalDaily.allowed) {
+    return jsonResponse({ message: '今日 AI 解读额度已用完，请明天再试' }, 429, globalDaily.retryAfter);
   }
 
   // 2. 校验评分数据

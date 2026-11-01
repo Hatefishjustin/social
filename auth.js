@@ -6,6 +6,13 @@
 (function(){
 'use strict';
 
+// HTML 属性/文本转义（防止用户可控的 avatar_url、email 注入）
+function escAttr(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 var user = null;
 var listeners = [];
 var wasLoggedIn = false; // S09: 登录成功埋点状态追踪
@@ -85,7 +92,7 @@ function updateNavUI() {
       var short = displayName || (email ? email.split('@')[0] : '我');
       var avatar = getAvatarUrl();
       if (avatar) {
-        btn.innerHTML = '<img src="'+avatar.replace(/"/g,'&quot;')+'" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover" onerror="this.remove()">'+short.replace(/</g,'&lt;');
+        btn.innerHTML = '<img src="'+escAttr(avatar)+'" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover" onerror="this.remove()">'+escAttr(short);
       } else {
         btn.textContent = short;
       }
@@ -235,7 +242,7 @@ function showUserMenu(btn) {
 
   var email = getEmail() || '';
   var html = '';
-  html += '<div class="auth-dd-email">' + email + '</div>';
+  html += '<div class="auth-dd-email">' + escAttr(email) + '</div>';
   html += '<a class="auth-dd-item" href="/profile.html" style="text-decoration:none;display:block;text-align:left">个人设置</a>';
   html += '<a class="auth-dd-item" href="/user.html?userId=' + getUserId() + '" style="text-decoration:none;display:block;text-align:left">我的主页</a>';
   html += '<button class="auth-dd-item" id="authLogoutBtn">退出登录</button>';

@@ -42,6 +42,13 @@ export const onRequestPut = async ({ request, env }) => {
   }
   if (avatarUrl !== undefined) {
     const url = String(avatarUrl).trim().slice(0, 1000);
+    // 只允许站内头像接口或 https 外链，阻止 javascript:/data:/引号注入。
+    const allowed = url === ''
+      || /^\/api\/avatar\?userId=\d+$/.test(url)
+      || /^https:\/\/[^\s"'<>]+$/i.test(url);
+    if (!allowed) {
+      return jsonResponse({ error: 'invalid_avatar_url' }, 400);
+    }
     updates.push('avatar_url = ?');
     params.push(url);
   }

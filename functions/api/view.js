@@ -16,12 +16,12 @@
 import { parseCookie } from '../_lib/auth.js';
 import { parseUA } from '../_lib/ua.js';
 import { hasColumn } from '../_lib/schema.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from '../_lib/ratelimit.js';
 
-function jsonResponse(body, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8' },
-  });
+function jsonResponse(body, status = 200, retryAfter = 0) {
+  const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+  if (retryAfter > 0) headers['Retry-After'] = String(retryAfter);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 // 旧版简名 → 完整路径映射（兼容 match.html / qa.html 旧埋点）
@@ -42,6 +42,7 @@ const LEGACY_PAGE_MAP = {
 
 export const onRequestPost = async ({ request, env }) => {
   if (!env || !env.DB) return jsonResponse({ error: 'missing_db' }, 500);
+  if (!isSameOrigin(request)) return jsonResponse({ error: 'forbidden_origin' }, 403);
 
   let body;
   try { body = await request.json(); } catch { body = {}; }
@@ -77,6 +78,17 @@ export const onRequestPost = async ({ request, env }) => {
   const parsed = parseUA(ua);
   const referrer = String(body.referrer || '').slice(0, 300);
   const visitorToken = String(body.visitorToken || body.visitor_token || '').slice(0, 100);
+
+  // 防止刷 PV：IP 120 次/分钟；同一访客同一页面 30 分钟内只记一次
+  const rl = getRateLimitIdentity(request, visitorToken);
+  const ipLimit = await checkRateLimit(env, `view:ip:${rl.ip}`, 120, 60000);
+  if (!ipLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited' }, 429, ipLimit.retryAfter);
+  }
+  const dedupe = await checkRateLimit(env, `view:page:${rl.identity}:${page}`, 1, 1800000);
+  if (!dedupe.allowed) {
+    return jsonResponse({ success: true, deduped: true });
+  }
 
   try {
     if (hasVisitorTokenField) {

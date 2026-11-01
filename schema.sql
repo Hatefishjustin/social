@@ -72,6 +72,7 @@ CREATE TABLE IF NOT EXISTS ip_trust (
     ip TEXT NOT NULL,
     user_id INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
+    ua_hash TEXT,                       -- 浏览器 UA 的 SHA-256，防止同 IP 会话劫持（S-03）
     PRIMARY KEY (ip, user_id)
 );
 
@@ -150,13 +151,13 @@ CREATE TABLE IF NOT EXISTS matches (
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     match_id INTEGER NOT NULL,
-    sender_id INTEGER NOT NULL,
+    sender_id INTEGER,                  -- NULL 表示系统消息（S-13 对齐线上）
     content TEXT NOT NULL,
     is_read INTEGER DEFAULT 0,
     is_system INTEGER DEFAULT 0,
     created_at INTEGER NOT NULL,
     FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
-    FOREIGN KEY (sender_id) REFERENCES users(id)
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- ── 表白墙 (wall) ──
@@ -204,6 +205,8 @@ CREATE TABLE IF NOT EXISTS askbox_questions (
     is_anonymous INTEGER DEFAULT 1,
     answer_content TEXT,
     answered_at INTEGER,
+    answer_visibility TEXT DEFAULT 'public' CHECK(answer_visibility IN ('public','private')),
+    visitor_token TEXT,                 -- 匿名提问者标识（S-04）
     created_at INTEGER NOT NULL,
     FOREIGN KEY (asker_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (target_id) REFERENCES users(id) ON DELETE CASCADE
@@ -375,6 +378,13 @@ CREATE TABLE IF NOT EXISTS activity_log (
     city TEXT,
     is_anonymous INTEGER DEFAULT 0,
     visitor_id TEXT DEFAULT NULL,      -- 匿名身份标识，关联 anonymous_visitors（S-07 新增）
+    visitor_token TEXT DEFAULT NULL,   -- 前端匿名 token（S09/S11）
+    device TEXT,                       -- mobile/tablet/desktop（S09）
+    os TEXT,                           -- 解析后的操作系统（S09）
+    browser TEXT,                      -- 解析后的浏览器（S09）
+    referrer TEXT,                     -- 来源页（S09）
+    page_path TEXT,                    -- 发生行为的页面路径（S09）
+    detail_json TEXT,                  -- 行为附加信息（S09）
     created_at INTEGER NOT NULL
 );
 
@@ -392,6 +402,11 @@ CREATE TABLE IF NOT EXISTS page_views (
     page TEXT NOT NULL,
     user_id INTEGER,
     is_logged_in INTEGER NOT NULL DEFAULT 0,
+    visitor_token TEXT,                -- 匿名访客标识（S09）
+    referrer TEXT,                     -- 来源页（S09）
+    device TEXT,                       -- mobile/tablet/desktop（S09）
+    os TEXT,                           -- 解析后的操作系统（S09）
+    browser TEXT,                      -- 解析后的浏览器（S09）
     created_at INTEGER NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -580,6 +595,17 @@ CREATE INDEX IF NOT EXISTS idx_sm_test_results_visitor
 
 CREATE INDEX IF NOT EXISTS idx_sm_test_results_user
     ON sm_test_results(user_id, created_at DESC);
+
+-- ── 接口限流（S-13 新增） ──
+-- 固定窗口计数，供 functions/_lib/ratelimit.js 使用。
+-- key 形如 ai:analyze:ip:1.2.3.4 / event:id:sm_t_xxx。
+CREATE TABLE IF NOT EXISTS rate_limits (
+    key TEXT PRIMARY KEY,
+    window_start INTEGER NOT NULL,
+    count INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
 
 
 

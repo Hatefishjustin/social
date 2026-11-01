@@ -4,22 +4,7 @@
  * 方法: GET ?userId=xxx
  * 功能: 获取用户公开资料（昵称/头像/测评摘要/公开回答列表）
  */
-function parseCookie(cookieHeader, name) {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
-  return match ? match[1] : null;
-}
-
-async function getCurrentUser(request, env) {
-  if (!env.DB) return null;
-  const token = parseCookie(request.headers.get('Cookie'), 'session');
-  if (!token) return null;
-  const row = await env.DB.prepare(
-    `SELECT s.expires_at, u.id FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = ?`
-  ).bind(token).first();
-  if (!row || Date.now() > row.expires_at) return null;
-  return { id: row.id };
-}
+import { getCurrentUser } from '../_lib/auth.js';
 
 function json(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
@@ -52,11 +37,13 @@ export const onRequestGet = async ({ request, env }) => {
   // Get public answers (published answered questions)
   const { results: answers } = await env.DB.prepare(
     `SELECT q.id, q.content as question, q.answer_content as answer, q.answered_at, q.is_anonymous,
-            p.nickname as asker_name, a.image_data as asker_avatar
+            CASE WHEN q.is_anonymous = 1 THEN NULL ELSE p.nickname END as asker_name,
+            CASE WHEN q.is_anonymous = 1 THEN NULL ELSE a.image_data END as asker_avatar
      FROM askbox_questions q
      LEFT JOIN profiles p ON p.user_id = q.asker_id
      LEFT JOIN avatars a ON a.user_id = q.asker_id
      WHERE q.target_id = ? AND q.answered_at IS NOT NULL
+       AND (q.answer_visibility = 'public' OR q.answer_visibility IS NULL)
      ORDER BY q.answered_at DESC
      LIMIT 30`
   ).bind(userId).all();
@@ -108,7 +95,7 @@ export const onRequestGet = async ({ request, env }) => {
     } : null,
     answers: answers || [],
     canAsk: canAsk,
-    visitors: visitors || []
+    visitors: (viewer && String(viewer.id) === String(userId)) ? (visitors || []) : []
   });
 };
 
@@ -139,12 +126,7 @@ export const onRequestPost = async ({ request, env }) => {
 
   if (!owner) return json({ error: 'not_found' }, 404);
 
-  // Rate limit: max 5 questions per user per day
-  const { results: recent } = await env.DB.prepare(
-    `SELECT COUNT(*) as cnt FROM askbox_questions
-     WHERE target_id = ? AND asker_id = ? AND created_at > ?`
-  ).bind(userId, viewer.id, Date.now() - 86400000).all();
-
+  // 同一提问者存在未回答的问题时不允许继续提问
   const unansweredCnt = await env.DB.prepare(
     `SELECT COUNT(*) as cnt FROM askbox_questions
      WHERE target_id = ? AND asker_id = ? AND answer_content IS NULL`

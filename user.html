@@ -369,6 +369,13 @@
     return d.innerHTML;
   }
 
+  // 属性值转义：esc() 使用 textContent，不会转义引号，不能直接用于 src/href
+  function escAttr(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function fmtTime(t) {
     if (!t) return '';
     var now = Date.now();
@@ -586,12 +593,12 @@ function submitAsk() {
     if (m.images && m.images.length) {
       imagesHtml = '<div class="moment-images ' + gridClass(m.images.length) + '">' +
         m.images.map(function(src){
-          return '<img class="moment-img" src="' + src + '" loading="lazy" onclick="event.stopPropagation();openMomentViewer(this.src)">';
+          return '<img class="moment-img" src="' + escAttr(src) + '" loading="lazy" onclick="event.stopPropagation();openMomentViewer(this.src)">';
         }).join('') + '</div>';
     }
 
     var avatarHtml = m.ownerAvatar
-      ? '<img class="moment-avatar" src="' + m.ownerAvatar + '" onerror="this.outerHTML=\'<div class=moment-avatar-ph>'+esc((m.ownerName||'?')[0])+'</div>\'">'
+      ? '<img class="moment-avatar" src="' + escAttr(m.ownerAvatar) + '" onerror="this.outerHTML=\'<div class=moment-avatar-ph>'+esc((m.ownerName||'?')[0])+'</div>\'">'
       : '<div class="moment-avatar-ph">' + esc((m.ownerName || '?')[0]) + '</div>';
 
     var commentsHtml = '';
@@ -772,11 +779,11 @@ function submitAsk() {
 
   function renderImport(imp) {
     var avatarHtml = imp.avatar
-      ? '<img class="memory-avatar" src="' + imp.avatar + '" onerror="this.outerHTML=\'<div class=memory-avatar-ph>📚</div>\'">'
+      ? '<img class="memory-avatar" src="' + escAttr(imp.avatar) + '" onerror="this.outerHTML=\'<div class=memory-avatar-ph>📚</div>\'">'
       : '<div class="memory-avatar-ph">📚</div>';
 
     var sourceLink = imp.sourceUrl
-      ? '<a class="memory-source-link" href="' + esc(imp.sourceUrl) + '" target="_blank" rel="noopener">查看来源 ↗</a>'
+      ? '<a class="memory-source-link" href="' + escAttr(imp.sourceUrl) + '" target="_blank" rel="noopener">查看来源 ↗</a>'
       : '';
 
     // 展示前 3 条问答摘要

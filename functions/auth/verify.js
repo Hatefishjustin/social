@@ -6,6 +6,8 @@
  */
 import { getRequestMeta } from '../_lib/ip.js';
 import { afterLogin } from '../_lib/visitor.js';
+import { hashUserAgent } from '../_lib/auth.js';
+import { hasColumn } from '../_lib/schema.js';
 
 function generateToken() {
   const arr = new Uint8Array(32);
@@ -184,13 +186,17 @@ export const onRequestPost = async ({ request, env }) => {
     `INSERT INTO device_codes (code, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
   ).bind(code, user.id, Date.now() + 30 * 60 * 1000, Date.now()).run();
 
-  // Store IP-based trust for auto-login (valid 5 min)
+  // Store IP + UA based trust for auto-login (valid 2 min)
+  // 安全降级：若数据库尚无 ua_hash 列，则不写入信任记录，自动登录自然失效。
   const clientIP = request.headers.get('CF-Connecting-IP') || '';
   if (clientIP) {
     try {
-      await env.DB.prepare(
-        `INSERT OR REPLACE INTO ip_trust (ip, user_id, expires_at) VALUES (?, ?, ?)`
-      ).bind(clientIP, user.id, Date.now() + 5 * 60 * 1000).run();
+      if (await hasColumn(env, 'ip_trust', 'ua_hash')) {
+        const uaHash = await hashUserAgent(request.headers.get('User-Agent') || '');
+        await env.DB.prepare(
+          `INSERT OR REPLACE INTO ip_trust (ip, user_id, expires_at, ua_hash) VALUES (?, ?, ?, ?)`
+        ).bind(clientIP, user.id, Date.now() + 2 * 60 * 1000, uaHash).run();
+      }
     } catch(e) { console.error('ip_trust insert failed:', e.message); }
   }
 

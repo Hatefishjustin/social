@@ -112,6 +112,30 @@ body {
 
 .empty-state { text-align:center; padding:60px 20px; color:var(--text-tertiary); font-size:14px; }
 
+.req-section { padding:4px 0 8px; }
+.req-title { font-size:12px; color:var(--text-quaternary); padding:8px 12px 6px; letter-spacing:0.05em; }
+.req-item {
+  display:flex; align-items:center; gap:12px; padding:12px;
+  border:1px solid var(--border); border-radius:14px; margin-bottom:8px;
+  background:var(--bg-card);
+}
+.req-avatar {
+  width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg, var(--accent), #883a50);
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:700; color:#fff; flex-shrink:0;
+}
+.req-body { flex:1; min-width:0; }
+.req-name { font-size:14px; font-weight:600; color:var(--text-primary); }
+.req-sub { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+.req-actions { display:flex; gap:8px; flex-shrink:0; }
+.req-btn {
+  border:none; border-radius:10px; padding:6px 12px; font-size:12px;
+  cursor:pointer; transition:opacity 0.15s;
+}
+.req-btn:active { opacity:0.7; }
+.req-btn.accept { background:var(--accent); color:#fff; }
+.req-btn.reject { background:transparent; border:1px solid var(--border); color:var(--text-secondary); }
+
 .loading-center {
   display:flex; align-items:center; justify-content:center; padding:60px;
 }
@@ -465,13 +489,42 @@ async function loadConversations() {
     var r = await fetch('/chat/list', { credentials: 'same-origin' });
     var d = await r.json();
     var convs = d.conversations || [];
+    var reqs = d.requests || [];
+    var esc = function(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
 
-    if (convs.length === 0) {
+    if (convs.length === 0 && reqs.length === 0) {
       list.innerHTML = '<div class="empty-state">还没有对话<br>点击上方「开始匹配」开启一段新对话</div>';
       return;
     }
 
     var html = '';
+
+    if (reqs.length > 0) {
+      html += '<div class="req-section"><div class="req-title">待处理的对话请求</div>';
+      reqs.forEach(function(q) {
+        var f = q.from || {};
+        var name = f.nickname || '匿名用户';
+        var mid = parseInt(q.matchId);
+        if (!mid) return;
+        html += '<div class="req-item">' +
+          '<div class="req-avatar">' + esc(name.charAt(0) || '?') + '</div>' +
+          '<div class="req-body">' +
+            '<div class="req-name">' + esc(name) + '</div>' +
+            '<div class="req-sub">请求与你开始对话</div>' +
+          '</div>' +
+          '<div class="req-actions">' +
+            '<button class="req-btn reject" onclick="handleRequest(' + mid + ',\'reject\')">拒绝</button>' +
+            '<button class="req-btn accept" onclick="handleRequest(' + mid + ',\'accept\')">接受</button>' +
+          '</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+
     convs.forEach(function(c) {
       var p = c.partner;
       var initial = (p.nickname || '?')[0];
@@ -491,14 +544,14 @@ async function loadConversations() {
         preview = '暂无消息';
       }
 
-      html += '<div class="conv-item" onclick="enterConversation(\'' + c.matchId + '\', \'' + p.nickname.replace(/'/g, "\\'") + '\')">' +
-        '<div class="conv-avatar">' + initial + '</div>' +
+      html += '<div class="conv-item" onclick="enterConversation(' + parseInt(c.matchId) + ')">' +
+        '<div class="conv-avatar">' + esc(initial) + '</div>' +
         '<div class="conv-body">' +
           '<div class="conv-top">' +
-            '<span class="conv-name">' + p.nickname.replace(/</g,'&lt;') + '</span>' +
+            '<span class="conv-name">' + esc(p.nickname || '匿名用户') + '</span>' +
             '<span class="conv-time">' + (last ? timeAgo(last.time) : '') + '</span>' +
           '</div>' +
-          '<div class="conv-preview' + previewClass + '">' + preview.replace(/</g,'&lt;') + '</div>' +
+          '<div class="conv-preview' + previewClass + '">' + esc(preview) + '</div>' +
         '</div>' +
         (c.unread > 0 ? '<div class="conv-badge">' + (c.unread > 99 ? '99+' : c.unread) + '</div>' : '') +
       '</div>';
@@ -511,7 +564,31 @@ async function loadConversations() {
   }
 }
 
+async function handleRequest(matchId, action) {
+  if (action === 'reject' && !confirm('确定拒绝这个对话请求吗？')) return;
+  try {
+    var r = await fetch('/chat/accept', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ matchId: matchId, action: action })
+    });
+    var d = await r.json();
+    if (!r.ok || !d.ok) { toast(d.message || '操作失败', 'error'); return; }
+    if (action === 'accept') {
+      toast('已接受，现在可以开始聊天了');
+      enterConversation(matchId);
+    } else {
+      toast('已拒绝该请求');
+      loadConversations();
+    }
+  } catch(e) {
+    toast('网络错误', 'error');
+  }
+}
+
 function enterConversation(matchId, partnerName) {
+  partnerName = partnerName || '加载中...';
   showChatView();
   chatState.matchId = matchId;
   document.getElementById('partnerName').textContent = partnerName;
