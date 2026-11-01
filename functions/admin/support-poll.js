@@ -4,7 +4,7 @@
  * 方法: GET
  */
 
-import { getCurrentUser } from '../../_lib/auth.js';
+import { getCurrentUser } from '../_lib/auth.js';
 
 async function isStaff(userId, env) {
   const staff = await env.DB.prepare(
