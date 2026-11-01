@@ -1,9 +1,9 @@
-name = "soulmirror-255"
+name = "soulmirror"
 compatibility_date = "2026-07-27"
 
 # 说明：
 # 1. 本项目部署在 Cloudflare Pages，D1 绑定（变量名 DB）需在
-#    Cloudflare Dashboard → Pages → soulmirror-255 → Settings → Functions
+#    Cloudflare Dashboard → Pages → soulmirror → Settings → Functions
 #    → D1 database bindings 中配置，wrangler.toml 不会自动创建该绑定。
 # 2. Pages Functions 不支持 [triggers] / scheduled handler。
 #    原 crons = ["*/5 * * * *"] 从未执行，属于空转配置，已移除。
