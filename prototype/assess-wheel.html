@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>测评中心 · 轮盘原型</title>
+<style>
+  :root {
+    --bg: #0d0710;
+    --surface: #1a1122;
+    --surface-raised: #22162c;
+    --border: #2c2033;
+    --border-hover: #3d2d47;
+    --text-primary: #f7ede8;
+    --text-secondary: #b3a3ae;
+    --text-tertiary: #7c6c78;
+    --accent: #dfb6b2;
+    --accent-soft: rgba(223, 182, 178, 0.1);
+    --purple: #522b5b;
+    --blue: #854f6c;
+    --radius-lg: 20px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(900px 520px at 50% 62%, rgba(82, 43, 91, 0.42), transparent 68%),
+      radial-gradient(620px 420px at 78% 28%, rgba(133, 79, 108, 0.14), transparent 70%),
+      var(--bg);
+  }
+
+  /* ---------- 深邃镜面：四角压暗 + 背后光晕 ---------- */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 82% 76% at 62% 46%,
+        transparent 0%,
+        transparent 54%,
+        rgba(10, 5, 12, 0.12) 72%,
+        rgba(8, 4, 10, 0.28) 90%,
+        rgba(5, 2, 7, 0.44) 100%),
+      radial-gradient(46% 42% at 0% 0%, rgba(4, 2, 6, 0.28), transparent 72%),
+      radial-gradient(46% 42% at 100% 100%, rgba(4, 2, 6, 0.24), transparent 72%);
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: -6%;
+    z-index: 2;
+    pointer-events: none;
+    background:
+      radial-gradient(640px 480px at 62% 42%, rgba(133, 79, 108, 0.05), transparent 70%),
+      radial-gradient(980px 720px at 62% 58%, rgba(82, 43, 91, 0.18), transparent 74%);
+    transform: translate3d(calc(var(--par-x, 0) * 10px), calc(var(--par-y, 0) * 8px), 0);
+    transition: transform .6s cubic-bezier(.22, .61, .36, 1);
+  }
+
+  .depth-floor {
+    position: fixed;
+    left: 50%;
+    bottom: -14vh;
+    width: 120vmin;
+    height: 46vmin;
+    transform: translateX(-50%);
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 38%, rgba(82, 43, 91, 0.18), rgba(82, 43, 91, 0.06) 46%, transparent 70%);
+    filter: blur(26px);
+  }
+
+  .depth-dust {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0.14;
+    background-image:
+      radial-gradient(circle, rgba(247, 237, 232, 0.18) 0 1px, transparent 1.6px),
+      radial-gradient(circle, rgba(179, 163, 174, 0.14) 0 1px, transparent 1.4px);
+    background-size: 260px 260px, 380px 380px;
+    background-position: 0 0, 120px 90px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 10%, transparent 78%);
+    mask-image: radial-gradient(ellipse 70% 65% at 62% 46%, #000 10%, transparent 78%);
+    animation: dust-drift 30s ease-in-out infinite alternate;
+  }
+
+  @keyframes dust-drift {
+    from { transform: translate3d(0, 0, 0); }
+    to { transform: translate3d(-12px, -20px, 0); }
+  }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    pointer-events: none;
+  }
+
+  .topbar > * { pointer-events: auto; }
+
+  .back {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: color .2s, border-color .2s, background .2s;
+  }
+
+  .back:hover {
+    color: var(--text-primary);
+    border-color: var(--border);
+    background: rgba(26, 17, 34, 0.6);
+  }
+
+  .brand {
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .pos {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--text-tertiary);
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+    text-align: right;
+  }
+
+  /* ---------- 开场文字 ---------- */
+  .intro {
+    position: fixed;
+    top: 96px;
+    left: 5vw;
+    z-index: 150;
+    max-width: 320px;
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .eyebrow::before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent);
+    vertical-align: middle;
+    margin-right: 10px;
+    opacity: 0.7;
+  }
+
+  .intro h1 {
+    font-size: clamp(34px, 4vw, 52px);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .intro p {
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    max-width: 280px;
+  }
+
+  /* ---------- 轮盘舞台 ---------- */
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .stage.is-dragging { cursor: grabbing; }
+
+  .wheel {
+    position: absolute;
+    inset: 0;
+    perspective: 1200px;
+    perspective-origin: 50% 42%;
+    opacity: 0;
+    transition: opacity .7s ease;
+  }
+
+  .wheel.is-ready { opacity: 1; }
+
+  /* 纵深副环：让轮盘像嵌在一面更深的镜面里 */
+  .wheel::before,
+  .wheel::after {
+    content: "";
+    position: absolute;
+    left: var(--cx, 50%);
+    top: var(--cy, 50%);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wheel::before {
+    width: calc(var(--r, 900px) * 2.28);
+    height: calc(var(--r, 900px) * 2.28);
+    border: 1px solid rgba(223, 182, 178, 0.035);
+    box-shadow: inset 0 0 160px rgba(82, 43, 91, 0.16);
+  }
+
+  .wheel::after {
+    width: calc(var(--r, 900px) * 1.56);
+    height: calc(var(--r, 900px) * 1.56);
+    border: 1px solid rgba(223, 182, 178, 0.05);
+  }
+
+  /* 可见弧线 + 光晕 */
+  .ring {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 1840px;
+    height: 1840px;
+    margin-left: -920px;
+    transform: translateY(-920px);
+    border-radius: 50%;
+    border: 1px solid rgba(223, 182, 178, 0.08);
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  .ring::before {
+    content: "";
+    position: absolute;
+    inset: -160px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 88%, rgba(82, 43, 91, 0.22), transparent 46%);
+    pointer-events: none;
+  }
+
+  .ring::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.25;
+    box-shadow: 0 0 40px 12px rgba(223, 182, 178, 0.14);
+  }
+
+  /* ---------- 卡片 ---------- */
+  .wheel-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--card-w, 280px);
+    height: var(--card-h, 370px);
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transform-origin: 50% 50%;
+    will-change: transform, opacity;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 22px;
+    border-radius: var(--radius-lg);
+    background:
+      linear-gradient(158deg, var(--tint, rgba(82, 43, 91, .34)) 0%, rgba(26, 17, 34, .96) 52%, #1a1122 100%);
+    background-color: #1a1122;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color .3s ease, box-shadow .3s ease, background .3s ease;
+  }
+
+  .card-float {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .card-inner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 38%, rgba(255, 255, 255, 0.055) 55%, transparent 68%);
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+  }
+
+  .wheel-card.is-active .card-inner {
+    border-color: rgba(223, 182, 178, 0.42);
+    box-shadow:
+      0 30px 90px rgba(82, 43, 91, 0.55),
+      0 0 0 1px rgba(223, 182, 178, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .wheel-card.is-active .card-inner::before { opacity: 1; }
+
+  .wheel-card:hover .card-inner {
+    border-color: var(--border-hover);
+  }
+
+  .wheel-card.is-active:hover .card-inner {
+    border-color: rgba(223, 182, 178, 0.62);
+  }
+
+  .wheel-card.is-active .card-float {
+    animation: float 6.5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .card-cat {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .card-badge {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: var(--accent);
+    background: rgba(223, 182, 178, 0.1);
+    border: 1px solid rgba(223, 182, 178, 0.16);
+    white-space: nowrap;
+  }
+
+  .card-badge.deep {
+    color: #e8d3cf;
+    background: rgba(133, 79, 108, 0.18);
+    border-color: rgba(133, 79, 108, 0.32);
+  }
+
+  .card-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--accent);
+  }
+
+  .card-icon svg { width: 23px; height: 23px; }
+
+  .card-title {
+    font-size: 27px;
+    line-height: 1.18;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .card-sub {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    letter-spacing: 0.02em;
+  }
+
+  .card-details {
+    margin-top: auto;
+    padding-top: 18px;
+    opacity: 0;
+    transform: translateY(7px);
+    transition: opacity .32s ease, transform .32s ease;
+    pointer-events: none;
+  }
+
+  .wheel-card.is-active .card-details {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .card-desc {
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    white-space: nowrap;
+  }
+
+  .card-meta span.dot {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--text-quaternary, #4a3f47);
+  }
+
+  .card-cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  .card-cta .arrow {
+    transition: transform .25s ease;
+  }
+
+  .wheel-card.is-active:hover .card-cta .arrow {
+    transform: translateX(4px);
+  }
+
+  /* ---------- 底部提示 / 圆点 ---------- */
+  .hud {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%);
+    z-index: 180;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .hint {
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .hint b {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    pointer-events: auto;
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(223, 182, 178, 0.22);
+    cursor: pointer;
+    transition: width .3s ease, background .3s ease, transform .3s ease;
+  }
+
+  .dot:hover { background: rgba(223, 182, 178, 0.45); }
+
+  .dot.is-active {
+    width: 18px;
+    background: var(--accent);
+  }
+
+  /* ---------- 原型标记 ---------- */
+  .proto-flag {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 180;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-quaternary, #4a3f47);
+    pointer-events: none;
+  }
+
+  /* ---------- 弹层 ---------- */
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(6, 3, 8, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .28s ease, visibility .28s ease;
+  }
+
+  .modal.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-card {
+    width: min(420px, 100%);
+    padding: 30px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, #22162c, #150e1b);
+    border: 1px solid rgba(223, 182, 178, 0.18);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+    transform: translateY(12px) scale(0.98);
+    transition: transform .3s cubic-bezier(.22, .61, .36, 1);
+  }
+
+  .modal.is-open .modal-card {
+    transform: none;
+  }
+
+  .modal-cat {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .modal-card h2 {
+    font-size: 26px;
+    letter-spacing: -0.03em;
+    margin-bottom: 10px;
+  }
+
+  .modal-card p {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    font: inherit;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1a0f18;
+    font-weight: 600;
+  }
+
+  .btn.primary:hover { background: #ecc9c5; border-color: #ecc9c5; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------- 移动端 ---------- */
+  @media (max-width: 1100px) {
+    .topbar { padding: 16px 18px; }
+    .brand { display: none; }
+    .pos { min-width: 58px; }
+
+    .intro {
+      top: 76px;
+      left: 22px;
+      right: 22px;
+      max-width: none;
+    }
+
+    .intro h1 { font-size: 28px; margin-bottom: 8px; }
+    .intro p { display: none; }
+    .eyebrow { font-size: 10px; margin-bottom: 10px; }
+
+    .ring {
+      left: auto;
+      right: -920px;
+      margin-left: 0;
+      top: 47%;
+    }
+
+    .hud { bottom: max(18px, env(safe-area-inset-bottom)); }
+    .hint { font-size: 10.5px; }
+    .proto-flag { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wheel { transition: none; }
+    .wheel-card.is-active .card-float { animation: none; }
+    .card-inner, .card-details, .dot { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="depth-floor" aria-hidden="true"></div>
+<div class="depth-dust" aria-hidden="true"></div>
+
+<header class="topbar">
+  <a class="back" href="/index.html">← 返回首页</a>
+  <div class="brand">SoulMirror · Assessment</div>
+  <div class="pos" id="posLabel">01 / 08</div>
+</header>
+
+<div class="intro">
+  <div class="eyebrow">Assessment Center</div>
+  <h1>找到适合你的<br>那一面镜子</h1>
+  <p>转动轮盘，选择一个测试。它们不是诊断，只是帮助你更清楚地看见自己。</p>
+</div>
+
+<main class="stage" id="stage" aria-label="测评轮盘">
+  <div class="wheel" id="wheel">
+    <div class="ring" aria-hidden="true"></div>
+    <!-- cards injected by JS -->
+  </div>
+</main>
+
+<div class="hud">
+  <div class="hint"><b>拖动</b>轮盘 · 点击中心卡片开始</div>
+  <div class="dots" id="dots" aria-label="选择测试"></div>
+</div>
+
+<div class="proto-flag">Visual Prototype · 非正式页面</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <div class="modal-cat" id="modalCat">关系</div>
+    <h2 id="modalTitle">测试名称</h2>
+    <p id="modalDesc">这里将进入答题页。</p>
+    <div class="modal-actions">
+      <button class="btn" id="modalClose">关闭</button>
+      <button class="btn primary" id="modalStart">开始测试 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="sr-only" aria-live="polite" id="announce"></div>
+
+<noscript>
+  <div style="padding:120px 24px; color:#f7ede8;">
+    <h1>测评中心</h1>
+    <p style="color:#b3a3ae; margin:12px 0 24px;">请开启 JavaScript 以使用轮盘，或直接选择：</p>
+    <ul style="line-height:2;">
+      <li>深度匹配测评</li>
+      <li>依恋类型</li>
+      <li>五种爱之语</li>
+      <li>大五人格</li>
+      <li>关系价值观</li>
+      <li>冲突处理风格</li>
+      <li>校园角色</li>
+      <li>社交能量</li>
+    </ul>
+  </div>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var ICONS = {
+    compass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M14.8 9.2l-1.6 4.1-4.1 1.6 1.6-4.1 4.1-1.6z"/></svg>',
+    circles: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="12" r="5.2"/><circle cx="15" cy="12" r="5.2"/></svg>',
+    heart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20s-7.2-4.4-7.2-9.3A4.1 4.1 0 0 1 12 8a4.1 4.1 0 0 1 7.2 2.7C19.2 15.6 12 20 12 20z"/></svg>',
+    pentagon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3.6l8 5.8-3 9.4H7l-3-9.4 8-5.8z"/></svg>',
+    compass2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 15.5L12 8l3.5 7.5-3.5-1.6-3.5 1.6z"/></svg>',
+    split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5v4a4 4 0 0 0 4 4h6a4 4 0 0 1 4 4v2"/><path d="M5 19v-4a4 4 0 0 1 4-4"/><path d="M16 16l3 3-3 3"/></svg>',
+    star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3.5l2.5 5.4 5.9.7-4.4 4 1.2 5.8L12 16.6 6.8 19.4 8 13.6l-4.4-4 5.9-.7L12 3.5z"/></svg>',
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 3L5.5 13h5l-1 8 8-10h-5l1-8z"/></svg>'
+  };
+
+  var TESTS = [
+    {
+      id: 'match41', cat: '深度测评', badge: '主推', badgeClass: 'deep',
+      title: '深度匹配测评', sub: '41 题 · 8–12 分钟',
+      desc: '从依恋、大五、爱之语、价值观四个维度，生成一份完整的匹配画像。',
+      meta: ['41 题', '8–12 分钟', '核心'], tint: 'rgba(82,43,91,.5)', icon: 'compass'
+    },
+    {
+      id: 'attachment', cat: '关系', badge: '热门', badgeClass: '',
+      title: '依恋类型', sub: '8 题 · 3 分钟',
+      desc: '你在亲密关系里更习惯靠近、后退，还是保持警惕？',
+      meta: ['8 题', '3 分钟', '1.2k 人测过'], tint: 'rgba(133,79,108,.42)', icon: 'circles'
+    },
+    {
+      id: 'love-language', cat: '关系', badge: '', badgeClass: '',
+      title: '五种爱之语', sub: '10 题 · 4 分钟',
+      desc: '你最容易被哪一种表达打动：肯定、陪伴、礼物、服务，还是触碰？',
+      meta: ['10 题', '4 分钟', '986 人测过'], tint: 'rgba(223,182,178,.18)', icon: 'heart'
+    },
+    {
+      id: 'big-five', cat: '人格', badge: 'NEW', badgeClass: '',
+      title: '大五人格', sub: '10 题 · 4 分钟',
+      desc: '开放式、尽责性、外向性、宜人性、情绪稳定性，五个维度看自己。',
+      meta: ['10 题', '4 分钟', '754 人测过'], tint: 'rgba(82,43,91,.36)', icon: 'pentagon'
+    },
+    {
+      id: 'values', cat: '关系', badge: '', badgeClass: '',
+      title: '关系价值观', sub: '8 题 · 3 分钟',
+      desc: '承诺、边界、独立与陪伴，你在关系里最看重什么？',
+      meta: ['8 题', '3 分钟', '612 人测过'], tint: 'rgba(133,79,108,.3)', icon: 'compass2'
+    },
+    {
+      id: 'conflict', cat: '沟通', badge: '', badgeClass: '',
+      title: '冲突处理风格', sub: '8 题 · 3 分钟',
+      desc: '争吵发生时，你是迎上去、绕开，还是先冷静再说？',
+      meta: ['8 题', '3 分钟', '438 人测过'], tint: 'rgba(223,182,178,.12)', icon: 'split'
+    },
+    {
+      id: 'campus-role', cat: '趣味', badge: '', badgeClass: '',
+      title: '校园角色', sub: '8 题 · 3 分钟',
+      desc: '如果把你放进一部校园剧，你会是哪个角色？',
+      meta: ['8 题', '3 分钟', '1.8k 人测过'], tint: 'rgba(82,43,91,.32)', icon: 'star'
+    },
+    {
+      id: 'social-energy', cat: '人格', badge: '', badgeClass: '',
+      title: '社交能量', sub: '8 题 · 3 分钟',
+      desc: '人群让你充电还是耗电？你更适合哪种社交节奏？',
+      meta: ['8 题', '3 分钟', '521 人测过'], tint: 'rgba(133,79,108,.36)', icon: 'bolt'
+    }
+  ];
+
+  var stage = document.getElementById('stage');
+  var wheel = document.getElementById('wheel');
+  var dotsEl = document.getElementById('dots');
+  var posLabel = document.getElementById('posLabel');
+  var announce = document.getElementById('announce');
+  var modal = document.getElementById('modal');
+  var modalCat = document.getElementById('modalCat');
+  var modalTitle = document.getElementById('modalTitle');
+  var modalDesc = document.getElementById('modalDesc');
+
+  var cards = [];
+  var current = 0;
+  var geometry = null;
+  var rafId = 0;
+  var dragging = false;
+  var startX = 0, startY = 0, startCurrent = 0;
+  var lastX = 0, lastY = 0, lastTime = 0;
+  var velocity = 0;
+  var moved = 0;
+  var wheelLock = 0;
+  var activeIndex = 0;
+
+  var N = TESTS.length;
+
+  function build() {
+    TESTS.forEach(function (test, i) {
+      var btn = document.createElement('button');
+      btn.className = 'wheel-card';
+      btn.type = 'button';
+      btn.dataset.index = String(i);
+      btn.setAttribute('aria-label', test.title + '，' + test.sub);
+      btn.style.setProperty('--tint', test.tint);
+      btn.innerHTML =
+        '<div class="card-inner">' +
+          '<div class="card-float">' +
+            '<div class="card-top">' +
+              '<span class="card-cat">' + test.cat + '</span>' +
+              (test.badge ? '<span class="card-badge ' + test.badgeClass + '">' + test.badge + '</span>' : '') +
+            '</div>' +
+            '<div class="card-icon">' + ICONS[test.icon] + '</div>' +
+            '<div class="card-title">' + test.title + '</div>' +
+            '<div class="card-sub">' + test.sub + '</div>' +
+            '<div class="card-details">' +
+              '<div class="card-desc">' + test.desc + '</div>' +
+              '<div class="card-meta">' + test.meta.map(function (m, j) {
+                return (j ? '<span class="dot"></span>' : '') + '<span>' + m + '</span>';
+              }).join('') + '</div>' +
+              '<div class="card-cta">开始测试 <span class="arrow">→</span></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      wheel.appendChild(btn);
+      cards.push(btn);
+    });
+
+    TESTS.forEach(function (t, i) {
+      var dot = document.createElement('button');
+      dot.className = 'dot';
+      dot.type = 'button';
+      dot.dataset.index = String(i);
+      dot.setAttribute('aria-label', '切换到' + t.title);
+      dotsEl.appendChild(dot);
+    });
+  }
+
+  function shortestTo(index) {
+    var d = index - current;
+    d = ((d + N / 2) % N + N) % N - N / 2;
+    return d;
+  }
+
+  function shortestBetween(index, from) {
+    var d = index - from;
+    d = ((d + N / 2) % N + N) % N - N / 2;
+    return d;
+  }
+
+  function layout() {
+    var W = stage.clientWidth;
+    var H = stage.clientHeight;
+    var mobile = W <= 1100;
+
+    if (mobile) {
+      var R = Math.max(300, H * 0.42);
+      geometry = {
+        mobile: true,
+        R: R,
+        step: 21 * Math.PI / 180,
+        cx: W * 0.62 + R,
+        cy: H * 0.57,
+        cardW: Math.min(W * 0.64, 280),
+        cardH: 332,
+        maxD: 1.0
+      };
+    } else {
+      var Rd = Math.min(Math.max(W * 0.72, 680), 980);
+      var RdH = Math.min(380, Math.max(300, H * 0.46));
+      geometry = {
+        mobile: false,
+        R: Rd,
+        step: 20 * Math.PI / 180,
+        cx: W * 0.63,
+        cy: H * 0.46,
+        cardW: Math.min(304, Math.max(246, RdH * 0.8)),
+        cardH: RdH,
+        maxD: 2.45
+      };
+    }
+
+    stage.style.setProperty('--card-w', geometry.cardW + 'px');
+    stage.style.setProperty('--card-h', geometry.cardH + 'px');
+    stage.style.setProperty('--cx', geometry.cx + 'px');
+    stage.style.setProperty('--cy', geometry.cy + 'px');
+    stage.style.setProperty('--r', geometry.R + 'px');
+
+    var ring = wheel.querySelector('.ring');
+    if (ring) {
+      var size = geometry.R * 2 + 40;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ring.style.left = (geometry.cx - size / 2) + 'px';
+      ring.style.top = (geometry.cy - size / 2) + 'px';
+      ring.style.right = 'auto';
+      ring.style.marginLeft = '0';
+      ring.style.transform = 'none';
+    }
+
+    render();
+  }
+
+  function render() {
+    if (!geometry) return;
+
+    cards.forEach(function (el, i) {
+      var d = shortestBetween(i, current);
+      var abs = Math.abs(d);
+
+      if (abs > geometry.maxD + 0.8) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '1';
+        return;
+      }
+
+      var angle = d * geometry.step;
+      var x, y;
+
+      if (geometry.mobile) {
+        var a = Math.PI + angle;
+        x = geometry.cx + geometry.R * Math.cos(a);
+        y = geometry.cy + geometry.R * Math.sin(a);
+      } else {
+        x = geometry.cx + geometry.R * Math.sin(angle);
+        y = geometry.cy + geometry.R * (1 - Math.cos(angle));
+      }
+
+      var baseScale = geometry.mobile ? 1.03 : 1.11;
+      var scale = Math.max(0.76, baseScale - abs * 0.13);
+      var rotation = d * (geometry.mobile ? -3.2 : 3.2);
+      var opacity = Math.max(0.28, 1 - abs * 0.24);
+      var z = Math.round(120 - abs * 12);
+      var tz = Math.max(0, 60 - abs * 34);
+
+      el.style.transform =
+        'translate(calc(-50% + ' + x + 'px), calc(-50% + ' + y + 'px)) ' +
+        'rotate(' + rotation + 'deg) scale(' + scale + ') translateZ(' + tz + 'px)';
+      el.style.opacity = String(opacity);
+      el.style.zIndex = String(z);
+      el.style.pointerEvents = abs <= 2.2 ? 'auto' : 'none';
+
+      var isActive = abs < 0.5;
+      el.classList.toggle('is-active', isActive);
+    });
+
+    var idx = ((Math.round(current) % N) + N) % N;
+    if (idx !== activeIndex) {
+      activeIndex = idx;
+      announce.textContent = TESTS[idx].title;
+    }
+
+    posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
+
+    Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
+      dot.classList.toggle('is-active', i === idx);
+      dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    });
+  }
+
+  function pad(n) {
+    return n < 10 ? '0' + n : String(n);
+  }
+
+  function animateTo(end) {
+    cancelAnimationFrame(rafId);
+    var start = current;
+    var dist = end - start;
+    if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
+
+    var duration = 380;
+    var t0 = performance.now();
+
+    function frame(t) {
+      var p = Math.min(1, (t - t0) / duration);
+      var eased = 1 - Math.pow(1 - p, 3);
+      current = start + dist * eased;
+      render();
+      if (p < 1) {
+        rafId = requestAnimationFrame(frame);
+      }
+    }
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function stepBy(delta) {
+    var nearest = Math.round(current);
+    animateTo(nearest + delta);
+  }
+
+  function goToIndex(index) {
+    animateTo(current + shortestBetween(index, current));
+  }
+
+  function openModal(index) {
+    var test = TESTS[index];
+    modalCat.textContent = test.cat;
+    modalTitle.textContent = test.title;
+    modalDesc.textContent = test.desc + '（原型演示：正式版会进入答题页。）';
+    modal.classList.add('is-open');
+  }
+
+  function closeModal() {
+    modal.classList.remove('is-open');
+  }
+
+  /* ---------- 拖动 ---------- */
+  function onDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (e.target.closest('.dot')) return;
+
+    dragging = true;
+    moved = 0;
+    startX = e.clientX;
+    startY = e.clientY;
+    startCurrent = current;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastTime = performance.now();
+    velocity = 0;
+    cancelAnimationFrame(rafId);
+    stage.classList.add('is-dragging');
+
+    if (stage.setPointerCapture) {
+      try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    }
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+
+    var dx = e.clientX - startX;
+    var dy = e.clientY - startY;
+    moved = Math.max(moved, Math.hypot(dx, dy));
+
+    var delta = geometry.mobile ? (-dy / 150) : (-dx / 190);
+    current = startCurrent + delta;
+
+    var now = performance.now();
+    var dt = now - lastTime;
+    if (dt > 0) {
+      var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
+      velocity = -raw / dt;
+    }
+    lastX = e.clientX;
+    lastY = e.clientY;
+    lastTime = now;
+
+    render();
+  }
+
+  function onUp(e) {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+
+    var projected = current + velocity * 0.42;
+    animateTo(Math.round(projected));
+
+    if (moved < 8) {
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var cardEl = el && el.closest ? el.closest('.wheel-card') : null;
+      if (cardEl) {
+        var index = parseInt(cardEl.dataset.index, 10);
+        var d = shortestBetween(index, current);
+        if (Math.abs(d) < 0.5) {
+          openModal(index);
+        } else {
+          animateTo(current + d);
+        }
+      }
+    }
+  }
+
+  function onCancel() {
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('is-dragging');
+    animateTo(Math.round(current));
+  }
+
+  /* ---------- 键盘 / 滚轮 ---------- */
+  function onKey(e) {
+    if (modal.classList.contains('is-open')) {
+      if (e.key === 'Escape') closeModal();
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      stepBy(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      stepBy(-1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      openModal(activeIndex);
+    }
+  }
+
+  function onWheel(e) {
+    if (modal.classList.contains('is-open')) return;
+    var delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if (Math.abs(delta) < 6) return;
+    e.preventDefault();
+    var now = Date.now();
+    if (now - wheelLock < 420) return;
+    wheelLock = now;
+    stepBy(delta > 0 ? 1 : -1);
+  }
+
+  /* ---------- 初始化 ---------- */
+  build();
+  layout();
+  requestAnimationFrame(function () { wheel.classList.add('is-ready'); });
+
+  /* 轻微视差：让背后光晕随指针移动，产生空间纵深 */
+  window.addEventListener('pointermove', function (e) {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var nx = (e.clientX / window.innerWidth - 0.5) * 2;
+    var ny = (e.clientY / window.innerHeight - 0.5) * 2;
+    document.documentElement.style.setProperty('--par-x', nx.toFixed(3));
+    document.documentElement.style.setProperty('--par-y', ny.toFixed(3));
+  }, { passive: true });
+
+  stage.addEventListener('pointerdown', onDown);
+  stage.addEventListener('pointermove', onMove);
+  stage.addEventListener('pointerup', onUp);
+  stage.addEventListener('pointercancel', onCancel);
+  stage.addEventListener('wheel', onWheel, { passive: false });
+
+  dotsEl.addEventListener('click', function (e) {
+    var dot = e.target.closest('.dot');
+    if (!dot) return;
+    e.stopPropagation();
+    goToIndex(parseInt(dot.dataset.index, 10));
+  });
+
+  window.addEventListener('keydown', onKey);
+
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalStart').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(layout, 120);
+  });
+
+  if (window.matchMedia) {
+    var mq = window.matchMedia('(max-width: 1100px)');
+    var handler = function () { layout(); };
+    if (mq.addEventListener) mq.addEventListener('change', handler);
+    else if (mq.addListener) mq.addListener(handler);
+  }
+})();
+</script>
+</body>
+</html>
