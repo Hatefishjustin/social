@@ -7,7 +7,7 @@ export const onRequest = async (context) => {
 
   // 历史遗留域名 → 主域名
   if (url.hostname === 'soulmirror.disabled.pages.dev') {
-    return Response.redirect('https://soulmirror.cc.cd' + url.pathname + url.search, 301);
+    return Response.redirect('https://soulmirror-255.pages.dev' + url.pathname + url.search, 301);
   }
 
   const res = await context.next();

@@ -5,6 +5,7 @@
  * 功能: 定向发起对话请求（需对方接受后才建立会话），is_shadow=0
  */
 import { getCurrentUser } from '../_lib/auth.js';
+import { checkRateLimit, isSameOrigin } from '../_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,8 +15,17 @@ function jsonResponse(body, status = 200) {
 }
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
   if (!user) return jsonResponse({ error: 'unauthorized', message: '请先登录' }, 401);
+
+  const startLimit = await checkRateLimit(env, `chat:start:user:${user.id}`, 20, 24 * 60 * 60 * 1000);
+  if (!startLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '发起对话请求太频繁，请明天再试' }, 429);
+  }
 
   let body;
   try { body = await request.json(); } catch (e) {

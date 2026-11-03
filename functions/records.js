@@ -20,6 +20,7 @@ import { getCurrentUser } from './_lib/auth.js';
 import { getRequestMeta } from './_lib/ip.js';
 import { parseUA } from './_lib/ua.js';
 import { hasColumn } from './_lib/schema.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from './_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -33,6 +34,10 @@ function jsonResponse(body, status = 200) {
 
 // 保存测评记录（POST）
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
 
   let body;
@@ -57,6 +62,19 @@ export const onRequestPost = async ({ request, env }) => {
 
   // S11: 匿名访客标识（前端通过 window.SMTrack.getVisitorToken() 获取）
   const visitorToken = String(body.visitorToken || body.visitor_token || '').slice(0, 100);
+
+  // 防止批量灌入测评记录：匿名按 IP，登录用户再按 user_id 限一层。
+  const rl = getRateLimitIdentity(request, visitorToken);
+  const ipLimit = await checkRateLimit(env, `records:ip:${rl.ip}`, 20, 60 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return jsonResponse({ message: '保存太频繁，请稍后再试' }, 429);
+  }
+  if (user) {
+    const userLimit = await checkRateLimit(env, `records:user:${user.id}`, 30, 60 * 60 * 1000);
+    if (!userLimit.allowed) {
+      return jsonResponse({ message: '保存太频繁，请稍后再试' }, 429);
+    }
+  }
 
   // 匿名用户保存：需要 S11 迁移已执行（quiz_results 含 visitor_token 列且 user_id 可空）
   if (!user) {

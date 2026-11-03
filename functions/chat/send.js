@@ -5,6 +5,7 @@
  */
 
 import { getCurrentUser } from '../_lib/auth.js';
+import { checkRateLimit, isSameOrigin } from '../_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -64,6 +65,10 @@ function filterContent(text) {
 }
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
   if (!user) return jsonResponse({ error: 'unauthorized', message: '请先登录' }, 401);
 
@@ -81,6 +86,11 @@ export const onRequestPost = async ({ request, env }) => {
 
   if (content.length > 500) {
     return jsonResponse({ error: 'too_long', message: '单条消息最多500字' }, 400);
+  }
+
+  const sendLimit = await checkRateLimit(env, `chat:send:user:${user.id}`, 120, 60 * 1000);
+  if (!sendLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '发送太频繁，请稍后再试' }, 429);
   }
 
   const match = await env.DB.prepare(

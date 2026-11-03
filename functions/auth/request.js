@@ -8,6 +8,8 @@
  * 跳转域名: social-6za.pages.dev (当前站点)
  */
 
+import { checkRateLimit, isSameOrigin } from '../_lib/ratelimit.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -32,6 +34,10 @@ export const onRequestOptions = async () => {
 };
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   const ip = request.headers.get('cf-connecting-ip') || 'unknown';
   const now = Date.now();
   const last = lastRequestByIp.get(ip);
@@ -39,6 +45,13 @@ export const onRequestPost = async ({ request, env }) => {
     return jsonResponse({ error: 'rate_limited', message: '发送太频繁，请 1 分钟后再试' }, 429);
   }
   lastRequestByIp.set(ip, now);
+
+  if (env.DB) {
+    const limit = await checkRateLimit(env, `auth:request:ip:${ip}`, 5, 10 * 60 * 1000);
+    if (!limit.allowed) {
+      return jsonResponse({ error: 'rate_limited', message: '发送太频繁，请 10 分钟后再试' }, 429);
+    }
+  }
 
   if (!env.DB) {
     return jsonResponse({ error: 'missing_db', message: '数据库未配置' }, 500);
@@ -127,10 +140,10 @@ export const onRequestPost = async ({ request, env }) => {
       } else if (mailResp.status === 429) {
         message = '发送太频繁，请稍后再试';
       }
+      console.error('Resend send failed:', mailResp.status, errBody.slice(0, 500));
       return jsonResponse({
         error: 'mail_send_failed',
         message,
-        detail: errBody.slice(0, 500),
       }, 502);
     }
   } catch (err) {

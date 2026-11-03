@@ -5,6 +5,7 @@
  */
 
 import { getCurrentUser } from './_lib/auth.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from './_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -24,7 +25,9 @@ export const onRequestGet = async ({ request, env }) => {
   if (!postId) return jsonResponse({ error: 'missing_postId' }, 400);
 
   const { results } = await env.DB.prepare(
-    `SELECT wc.id, wc.post_id, wc.user_id, wc.content, wc.is_anonymous, wc.created_at
+    `SELECT wc.id, wc.post_id,
+            CASE WHEN wc.is_anonymous = 1 THEN NULL ELSE wc.user_id END AS user_id,
+            wc.content, wc.is_anonymous, wc.created_at
      FROM wall_comments wc WHERE wc.post_id = ? ORDER BY wc.created_at ASC`
   ).bind(postId).all();
 
@@ -32,6 +35,10 @@ export const onRequestGet = async ({ request, env }) => {
 };
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
 
   let body;
@@ -44,6 +51,18 @@ export const onRequestPost = async ({ request, env }) => {
   const is_anonymous = body.is_anonymous;
   if (!postId2 || !content || typeof content !== 'string' || content.length > 1000) {
     return jsonResponse({ error: 'invalid_params', message: '参数不合法' }, 400);
+  }
+
+  const rl = getRateLimitIdentity(request, body && body.visitorToken);
+  const ipLimit = await checkRateLimit(env, `wall:comment:ip:${rl.ip}`, 30, 60 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '评论太频繁，请稍后再试' }, 429);
+  }
+  if (user) {
+    const userLimit = await checkRateLimit(env, `wall:comment:user:${user.id}`, 60, 60 * 60 * 1000);
+    if (!userLimit.allowed) {
+      return jsonResponse({ error: 'rate_limited', message: '评论太频繁，请稍后再试' }, 429);
+    }
   }
 
   const now = Date.now();

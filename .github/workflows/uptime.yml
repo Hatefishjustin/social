@@ -1,0 +1,33 @@
+name: SoulMirror uptime
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Homepage responds
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 https://soulmirror-255.pages.dev/)
+          echo "homepage HTTP $code"
+          test "$code" = "200"
+
+      - name: Health endpoint and D1
+        run: |
+          curl -fsS --max-time 20 https://soulmirror-255.pages.dev/health -o /tmp/soulmirror-health.json
+          cat /tmp/soulmirror-health.json
+          python3 - <<'PY'
+          import json
+          with open('/tmp/soulmirror-health.json', encoding='utf-8') as f:
+              data = json.load(f)
+          assert data.get('ok') is True, data
+          assert data.get('db') is True, data
+          print('health ok, commit=', data.get('commit'))
+          PY

@@ -8,6 +8,7 @@
 
 import { getRequestMeta } from './_lib/ip.js';
 import { getCurrentUser } from './_lib/auth.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from './_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -53,7 +54,9 @@ export const onRequestGet = async ({ request, env }) => {
   const tag = url.searchParams.get('tag') || null;
   const offset = (page - 1) * PAGE_SIZE;
 
-  let sql = `SELECT w.id, w.content, w.tag, w.is_anonymous, w.school, w.created_at, w.likes_count, w.comments_count, w.user_id, p.nickname
+  let sql = `SELECT w.id, w.content, w.tag, w.is_anonymous, w.school, w.created_at, w.likes_count, w.comments_count,
+                    CASE WHEN w.is_anonymous = 1 THEN NULL ELSE w.user_id END AS user_id,
+                    CASE WHEN w.is_anonymous = 1 THEN NULL ELSE p.nickname END AS nickname
              FROM wall_posts w
              LEFT JOIN profiles p ON w.user_id = p.user_id`;
   let countSql = `SELECT COUNT(*) as total FROM wall_posts w
@@ -78,6 +81,10 @@ export const onRequestGet = async ({ request, env }) => {
 };
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ error: 'forbidden_origin', message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
   const meta = getRequestMeta(request);
 
@@ -91,6 +98,18 @@ export const onRequestPost = async ({ request, env }) => {
   const { content, tag = '#表白', isAnonymous = true, school = '' } = body || {};
   if (!content || typeof content !== 'string' || content.length > 2000) {
     return jsonResponse({ error: 'invalid_content', message: '内容不能为空且不超过2000字' }, 400);
+  }
+
+  const rl = getRateLimitIdentity(request, body && body.visitorToken);
+  const ipLimit = await checkRateLimit(env, `wall:post:ip:${rl.ip}`, 10, 60 * 60 * 1000);
+  if (!ipLimit.allowed) {
+    return jsonResponse({ error: 'rate_limited', message: '发帖太频繁，请稍后再试' }, 429);
+  }
+  if (user) {
+    const userLimit = await checkRateLimit(env, `wall:post:user:${user.id}`, 20, 60 * 60 * 1000);
+    if (!userLimit.allowed) {
+      return jsonResponse({ error: 'rate_limited', message: '发帖太频繁，请稍后再试' }, 429);
+    }
   }
 
   const now = Date.now();

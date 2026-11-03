@@ -4,11 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SoulMirror 心镜 - 私信对话</title>
-<meta name="description" content="和心动的人一对一聊天，或开启随机匹配，遇见有缘人。">
+<meta name="description" content="心镜对话功能内测中，暂时仅保留已有会话。">
 <meta property="og:title" content="SoulMirror 心镜 - 私信对话">
-<meta property="og:description" content="和心动的人一对一聊天，或开启随机匹配，遇见有缘人。">
+<meta property="og:description" content="心镜对话功能内测中，暂时仅保留已有会话。">
 <meta property="og:image" content="https://soulmirror-255.pages.dev/shareLOGO-icon.png">
-<meta property="og:url" content="https://soulmirror.cc.cd/chat.html">
+<meta property="og:url" content="https://soulmirror-255.pages.dev/chat.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SoulMirror 心镜">
 <link rel="icon" type="image/png" href="/assets/logo.png">
@@ -282,9 +282,9 @@ body {
 
   <!-- Conversation List Screen -->
   <div id="convListScreen" style="display:flex;flex-direction:column;height:100%">
-    <div class="match-btn-bar">
-      <button class="match-btn" id="startMatchBtn" onclick="startMatch()">开始匹配</button>
-      <div class="match-status" id="matchStatus"></div>
+    <div class="match-btn-bar" style="flex-direction:column;align-items:stretch;gap:8px;">
+      <a class="match-btn" href="/match.html" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">先做 41 题关系测评</a>
+      <div class="match-status" style="font-size:12px;line-height:1.6;color:var(--text-tertiary);">对话功能内测中，暂时只保留已有会话。</div>
     </div>
     <div class="conv-list" id="convList">
       <div class="loading-center"><div class="spinner"></div></div>
@@ -497,7 +497,7 @@ async function loadConversations() {
     };
 
     if (convs.length === 0 && reqs.length === 0) {
-      list.innerHTML = '<div class="empty-state">还没有对话<br>点击上方「开始匹配」开启一段新对话</div>';
+      list.innerHTML = '<div class="empty-state">还没有对话<br>先去做一次 <a href="/match.html" style="color:var(--accent);text-decoration:none;">41 题关系测评</a>，或去 <a href="/campus.html" style="color:var(--accent);text-decoration:none;">表白墙</a> 逛逛</div>';
       return;
     }
 

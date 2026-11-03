@@ -20,4 +20,5 @@ node_modules/
 # === Whitelist (must be tracked) ===
 !schema.sql
 !docs/migrations/*.sql
+!docs/seeds/*.sql
 !docs/test-data/*.sql

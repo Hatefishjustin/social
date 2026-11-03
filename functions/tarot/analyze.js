@@ -10,6 +10,7 @@
 import { callDashScope } from '../_lib/ai.js';
 import { getCurrentUser } from '../_lib/auth.js';
 import { getRequestMeta } from '../_lib/ip.js';
+import { checkRateLimit, isSameOrigin } from '../_lib/ratelimit.js';
 
 const SYSTEM_PROMPT = `你是一位专业的塔罗牌解读师，同时具备心理咨询背景。用户会提供抽到的塔罗牌信息（可能是单张牌，也可能是"过去-现在-未来"三张牌阵），有时还会附上一个具体问题，以及用户的心理测评结果作为参考背景。
 
@@ -81,8 +82,21 @@ function buildPrompt(spreadType, cards, question, quizContext) {
 }
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ message: '非法来源' }, 403);
+  }
+
   const user = await getCurrentUser(request, env);
   if (!user) return jsonResponse({ message: '请先登录' }, 401);
+
+  const userLimit = await checkRateLimit(env, `ai:tarot:user:${user.id}`, 30, 60 * 60 * 1000);
+  if (!userLimit.allowed) {
+    return jsonResponse({ message: '塔罗解读请求过于频繁，请稍后再试' }, 429);
+  }
+  const globalDaily = await checkRateLimit(env, 'ai:tarot:global', 500, 24 * 60 * 60 * 1000);
+  if (!globalDaily.allowed) {
+    return jsonResponse({ message: '今日塔罗解读额度已用完，请明天再试' }, 429);
+  }
 
   let body;
   try {

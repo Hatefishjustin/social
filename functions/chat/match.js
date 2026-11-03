@@ -7,6 +7,9 @@
 
 import { getCurrentUser } from '../_lib/auth.js';
 
+// 方案 A：随机匹配暂时关闭。保留代码供后续真实匹配改造，避免继续产生影子客服/假匹配分。
+const RANDOM_MATCH_ENABLED = false;
+
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -55,6 +58,10 @@ function generateMatchReason(profileA, profileB, score) {
 }
 
 export const onRequestPost = async ({ request, env }) => {
+  if (!RANDOM_MATCH_ENABLED) {
+    return jsonResponse({ error: 'match_disabled', message: '随机匹配功能内测中，暂未开放' }, 410);
+  }
+
   const user = await getCurrentUser(request, env);
   if (!user) return jsonResponse({ error: 'unauthorized', message: '请先登录' }, 401);
 
