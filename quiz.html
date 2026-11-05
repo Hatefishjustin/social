@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>测评 · 心镜 SoulMirror</title>
+<meta name="description" content="心镜测评中心的通用答题器：恋爱脑浓度、精神状态图鉴、宿舍生存人格等轻量测试。">
+<meta property="og:title" content="心镜 SoulMirror · 测评">
+<meta property="og:description" content="做一个小测试，看看今天的你是什么状态。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SoulMirror 心镜">
+<link rel="icon" type="image/png" href="/assets/logo.png">
+<link rel="apple-touch-icon" href="/assets/logo.png">
+<script src="/quiz-data.js"></script>
+<script src="/track.js"></script>
+<script src="/auth.js"></script>
+<style>
+  /* 设计基线：与 assess.html 共用同一套色板 / 字体 / 圆角 / 阴影 */
+  :root {
+    --bg: #151019;
+    --surface: #1a1122;
+    --surface-raised: #22162c;
+    --border: #2c2033;
+    --border-hover: #3d2d47;
+    --text-primary: #f7ede8;
+    --text-secondary: #b3a3ae;
+    --text-tertiary: #7c6c78;
+    --accent: #dfb6b2;
+    --accent-soft: rgba(223, 182, 178, 0.1);
+    --purple: #522b5b;
+    --blue: #854f6c;
+    --radius-lg: 20px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+  }
+
+  body {
+    background:
+      radial-gradient(880px 560px at 58% 12%, rgba(223, 182, 178, 0.08), transparent 70%),
+      radial-gradient(760px 520px at 82% 62%, rgba(82, 43, 91, 0.14), transparent 74%),
+      var(--bg);
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 24px;
+    background: linear-gradient(rgba(21, 16, 25, 0.92), rgba(21, 16, 25, 0.55), transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .topbar a {
+    font-size: 13px;
+    color: var(--text-secondary);
+    transition: color .2s ease;
+    white-space: nowrap;
+  }
+  .topbar a:hover { color: var(--text-primary); }
+  .brand {
+    font-size: 11px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .shell {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 84px 24px 72px;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade { animation: fadeUp .5s cubic-bezier(.16, 1, .3, 1) both; }
+
+  /* ---------- 通用文字 ---------- */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 18px;
+    height: 1px;
+    background: var(--accent);
+    opacity: .7;
+  }
+
+  .h1 {
+    font-size: clamp(30px, 5.4vw, 42px);
+    line-height: 1.16;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .sub {
+    font-size: 15.5px;
+    line-height: 1.75;
+    color: var(--text-secondary);
+    margin-bottom: 22px;
+  }
+
+  .muted {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--text-tertiary);
+  }
+
+  /* ---------- 落地页 ---------- */
+  .landing-card {
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(160deg, var(--surface-raised), #150e1b);
+    border: 1px solid rgba(223, 182, 178, 0.16);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+    margin-bottom: 22px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .chip {
+    font-size: 12px;
+    line-height: 1;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
+  }
+  .chip.accent {
+    border-color: rgba(223, 182, 178, 0.32);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .landing-card h2 {
+    font-size: 18px;
+    line-height: 1.5;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .landing-card p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .btn {
+    font: inherit;
+    font-size: 13px;
+    padding: 11px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: center;
+  }
+  .btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1a0f18;
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: #ecc9c5; border-color: #ecc9c5; }
+  .btn.block {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .start-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .start-row .btn.primary { flex: 1; }
+  .resume-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .recent {
+    margin-top: 28px;
+  }
+  .recent-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .recent-head h3 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+  .recent-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(26, 17, 34, 0.6);
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .recent-item:hover {
+    border-color: var(--border-hover);
+    background: var(--surface);
+  }
+  .recent-item strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .recent-item span {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .recent-score {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  .disclaimer {
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--text-tertiary);
+  }
+
+  /* ---------- 答题 ---------- */
+  .quiz-progress {
+    position: sticky;
+    top: 58px;
+    z-index: 20;
+    padding: 10px 0 14px;
+    background: linear-gradient(rgba(21, 16, 25, 0.95), rgba(21, 16, 25, 0.7), transparent);
+  }
+  .progress-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .progress-meta .pct { color: var(--accent); }
+  .progress-track {
+    height: 2px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    transition: width .35s cubic-bezier(.22, .61, .36, 1);
+  }
+
+  .quiz-body { animation: fadeUp .45s cubic-bezier(.16, 1, .3, 1) both; }
+
+  .q-count {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+  .q-text {
+    font-size: 23px;
+    line-height: 1.55;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+  }
+  .q-hint {
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 18px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    width: 100%;
+    padding: 17px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.55;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, background .2s ease, transform .16s ease;
+  }
+  .option:hover { border-color: var(--border-hover); background: var(--surface-raised); }
+  .option:active { transform: scale(0.99); }
+  .option.selected {
+    border-color: rgba(223, 182, 178, 0.62);
+    background: var(--accent-soft);
+  }
+  .option .mark {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(247, 237, 232, 0.28);
+    position: relative;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .option.selected .mark {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .option.selected .mark::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1a0f18;
+    transform: translate(-50%, -50%);
+  }
+  .option .txt { flex: 1; }
+
+  .scale-labels {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .q-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 26px;
+  }
+  .back-btn {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: color .2s ease;
+  }
+  .back-btn:hover { color: var(--text-primary); }
+  .back-btn:disabled { opacity: 0.3; cursor: default; }
+  .next-btn {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 26px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #1a0f18;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .next-btn:hover { background: #ecc9c5; border-color: #ecc9c5; }
+  .next-btn:disabled { opacity: 0.32; cursor: default; }
+  .next-btn:disabled:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* ---------- 结果 ---------- */
+  .result-kicker {
+    font-size: 11px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .result-name {
+    font-size: clamp(34px, 7vw, 46px);
+    line-height: 1.12;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-wrap: balance;
+  }
+  .result-tagline {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .score-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 4px 0 18px;
+  }
+  .score-num {
+    font-size: 56px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .score-unit {
+    font-size: 16px;
+    color: var(--text-secondary);
+  }
+  .score-label {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .result-card {
+    padding: 22px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .result-card h3 {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+  .result-card p {
+    font-size: 14.5px;
+    line-height: 1.85;
+    color: var(--text-secondary);
+  }
+  .result-card .lead {
+    color: var(--text-primary);
+  }
+
+  .symptom-list, .copy-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .symptom-list li, .copy-list li {
+    list-style: none;
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+  }
+  .symptom-list li::before {
+    content: "";
+    flex-shrink: 0;
+    width: 5px;
+    height: 5px;
+    margin-top: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: .6;
+  }
+  .copy-list li::before {
+    content: "·";
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+
+  .energy {
+    margin-top: 4px;
+  }
+  .energy-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .energy-track {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .energy-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--purple), var(--accent));
+  }
+  .energy-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    margin-top: 7px;
+  }
+
+  .pair-block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pair-row {
+    display: flex;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.65;
+  }
+  .pair-key {
+    flex-shrink: 0;
+    width: 76px;
+    color: var(--text-tertiary);
+  }
+  .pair-val { flex: 1; color: var(--text-secondary); }
+
+  .tip-card {
+    padding: 20px 22px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(160deg, rgba(82, 43, 91, 0.34), rgba(26, 17, 34, 0.9));
+    border: 1px solid rgba(223, 182, 178, 0.16);
+    margin-bottom: 20px;
+  }
+  .tip-card p {
+    font-size: 15px;
+    line-height: 1.8;
+    color: var(--text-primary);
+  }
+
+  .result-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-actions .btn.block { padding: 14px 16px; font-size: 14px; }
+  .result-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .text-link {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    transition: color .2s ease;
+  }
+  .text-link:hover { color: var(--text-primary); }
+
+  /* ---------- 分享层 ---------- */
+  .share-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(6, 3, 9, 0.68);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .28s ease, visibility .28s;
+  }
+  .share-layer.is-open { opacity: 1; visibility: visible; }
+  .share-card {
+    width: min(420px, 100%);
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 22px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, #22162c, #150e1b);
+    border: 1px solid rgba(223, 182, 178, 0.18);
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.6);
+    transform: translateY(12px) scale(0.98);
+    transition: transform .3s cubic-bezier(.22, .61, .36, 1);
+  }
+  .share-layer.is-open .share-card { transform: none; }
+  .share-card h3 {
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
+  .share-preview {
+    width: 100%;
+    display: block;
+    border-radius: 14px;
+    background: #0d0710;
+    margin-bottom: 14px;
+  }
+  .caption-box {
+    width: 100%;
+    min-height: 92px;
+    padding: 12px 13px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.7;
+    resize: none;
+  }
+  .share-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .share-note {
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+  .share-close {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
+    padding: 11px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .share-close:hover { border-color: var(--border-hover); color: var(--text-primary); }
+
+  /* ---------- 错误态 ---------- */
+  .empty-state {
+    padding: 40px 0;
+    text-align: center;
+  }
+  .empty-state h2 { font-size: 24px; margin-bottom: 10px; }
+  .empty-state p { color: var(--text-secondary); margin-bottom: 22px; }
+
+  /* ---------- 移动端 ---------- */
+  @media (max-width: 640px) {
+    .topbar { padding: 14px 16px; }
+    .brand { display: none; }
+    .shell { padding: 72px 16px 56px; }
+    .landing-card { padding: 20px; border-radius: 18px; }
+    .q-text { font-size: 21px; }
+    .option { padding: 15px 16px; font-size: 14.5px; border-radius: 13px; }
+    .result-card { padding: 18px; border-radius: 18px; }
+    .result-actions { grid-template-columns: 1fr; }
+    .share-card { padding: 18px; border-radius: 18px; }
+  }
+
+  @media (max-width: 390px) {
+    .h1 { font-size: 30px; }
+    .score-num { font-size: 48px; }
+    .q-nav { margin-top: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="/assess.html">← 测评中心</a>
+  <span class="brand">SoulMirror · Assess</span>
+</header>
+
+<main id="app" class="shell" aria-live="polite"></main>
+
+<div id="shareLayer" class="share-layer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="分享结果">
+  <div class="share-card">
+    <h3>分享你的结果</h3>
+    <img id="sharePreview" class="share-preview" alt="测评结果分享卡">
+    <textarea id="captionBox" class="caption-box" readonly></textarea>
+    <div class="share-actions">
+      <button id="saveImageBtn" class="btn primary" type="button">保存图片</button>
+      <button id="copyTextBtn" class="btn" type="button">复制文案</button>
+    </div>
+    <p class="share-note">分享卡为白底黑码，二维码四周已留出静区。发到群里前，记得把文案里的 @XXX 换成你想艾特的人。</p>
+    <button id="shareCloseBtn" class="share-close" type="button">关闭</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var QR_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAACEklEQVR42u2cQY6EMAwEreUBeRJfz5N4AFIGErdjMpedue125xAhwBcoOe2Owdrno5qCFKQgBSlIQQpSEILMx3YdH9t9+p7KaWNqB27Ye9CPfTEU9DeCnIj+pm8YrqMTb/9wLMbRvE9EMBBxOAJIBZ4eOgK4sIkIQiIuDvpiYliDEioigpSILhxuBErzSUQQ64g5dUryOekIJiKi1hj54G1SrUFGxDKuteIMQMBBKln19P4/EV1K1uFHGAyIjkUJEI64WU+PgwiICSdinaqUJV2OyJmh+xGtuTNhuCAieJQlys3xzu1ZdTQHRKsGkR/hjsM1kCO85oR7aSKCKkeM131iESktWVIOyLyqp8fgUMGp3LH3Oa7W8Cg8g4gIolrDQkr60gEXu8NQRQSdjoi9T6waZtOoUI5gqzWyH5GrDvRHqPpkU5beJ5O6ImKbA1jIs6SrPgcM8fZRfXrbjPY+CXUEzlWIiTyZcgSVjoD3EBpz9aq0r0FVfc7GmLrUnKEs9yZlSeVHZMcaScFsLifY+BIRJDpidtmi7XL9VMNEBNWqEe1T3oM7N8fbc3NDRBA5VGFWu7IMLFxHaO+Tb9WAi90iUayGlYig8SMsfcyXmmXmkGfJSYR/91keXdlzP1Q5gpUIe2vNVlcdrY4oj57KZ5++cgRhrZH/FZFd7KQyRASTH6H/sShIQQpSkIIUpKDfBr0A86X9hrmnvO0AAAAASUVORK5CYII=';
+
+  var app = document.getElementById('app');
+  var shareLayer = document.getElementById('shareLayer');
+  var sharePreview = document.getElementById('sharePreview');
+  var captionBox = document.getElementById('captionBox');
+  var saveImageBtn = document.getElementById('saveImageBtn');
+  var copyTextBtn = document.getElementById('copyTextBtn');
+  var shareCloseBtn = document.getElementById('shareCloseBtn');
+
+  var PROGRESS_KEY = 'xinjing_quiz_progress_v3_';
+  var RESULT_KEY = 'xinjing_quiz_result_v3_';
+  var HISTORY_KEY = 'xinjing_quiz_history_v3';
+
+  var state = {
+    slug: '',
+    bank: null,
+    answers: [],
+    index: 0,
+    finished: false,
+    result: null,
+    mouthPct: null,
+    shareDataUrl: '',
+    shareCaption: ''
+  };
+
+  function esc(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .replace(/&/g, '&' + 'amp;')
+      .replace(/</g, '&' + 'lt;')
+      .replace(/>/g, '&' + 'gt;')
+      .replace(/"/g, '&' + 'quot;');
+  }
+
+  function readJSON(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function writeJSON(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {}
+  }
+
+  function removeKey(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  function track(action, data) {
+    try {
+      if (typeof window.trackEvent === 'function') window.trackEvent(action, data);
+    } catch (e) {}
+  }
+
+  function getVisitorToken() {
+    try {
+      if (typeof window.SMTrack !== 'undefined' && SMTrack.getVisitorToken) {
+        return SMTrack.getVisitorToken();
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  /* ---------- 计分 ---------- */
+  function computeTypeResult(bank) {
+    var dims = Object.keys(bank.dimensions || {});
+    var raw = {};
+    var max = {};
+    dims.forEach(function (dim) { raw[dim] = 0; max[dim] = 0; });
+
+    bank.questions.forEach(function (q, qi) {
+      dims.forEach(function (dim) {
+        var best = 0;
+        (q.options || []).forEach(function (opt) {
+          var v = opt && opt.v ? Number(opt.v[dim]) || 0 : 0;
+          if (v > best) best = v;
+        });
+        max[dim] += best;
+      });
+      var chosen = q.options && q.options[state.answers[qi]];
+      if (chosen && chosen.v) {
+        Object.keys(chosen.v).forEach(function (dim) {
+          if (raw[dim] !== undefined) raw[dim] += Number(chosen.v[dim]) || 0;
+        });
+      }
+    });
+
+    var ranked = dims
+      .map(function (dim, order) {
+        return {
+          dim: dim,
+          order: order,
+          percent: max[dim] ? raw[dim] / max[dim] : 0
+        };
+      })
+      .filter(function (item) { return max[item.dim] > 0; })
+      .sort(function (a, b) {
+        if (b.percent !== a.percent) return b.percent - a.percent;
+        return a.order - b.order;
+      });
+
+    var top = ranked[0];
+    if (!top) return { key: dims[0] || 'result', name: bank.title, tagline: '', desc: '', percent: 0 };
+
+    var base = bank.dimensions[top.dim] || {};
+    var picked = base;
+    if (base.high && base.low) {
+      picked = top.percent >= 0.5 ? base.high : base.low;
+    }
+
+    var result = {
+      key: top.dim,
+      name: picked.title || picked.name || bank.title,
+      category: picked.category || (base.high && base.low ? base.name : ''),
+      tagline: picked.tagline || '',
+      desc: picked.desc || '',
+      strengths: picked.strengths || [],
+      growth: picked.growth || [],
+      tip: picked.tip || '',
+      symptoms: picked.symptoms || [],
+      quote: picked.quote || '',
+      partner: picked.partner || '',
+      highlight: picked.highlight || '',
+      minefield: picked.minefield || '',
+      bestMatch: picked.bestMatch || '',
+      groupLine: picked.groupLine || '',
+      energyStable: typeof picked.energyStable === 'number' ? picked.energyStable : null,
+      energyDrain: typeof picked.energyDrain === 'number' ? picked.energyDrain : null,
+      percent: Math.round(top.percent * 100)
+    };
+    return result;
+  }
+
+  function computeScaleResult(bank) {
+    var dims = Object.keys(bank.dimensions || {});
+    var raw = {};
+    var max = {};
+    dims.forEach(function (dim) { raw[dim] = 0; max[dim] = 0; });
+
+    bank.questions.forEach(function (q, qi) {
+      var dim = q.dim;
+      if (!dim || raw[dim] === undefined) return;
+      max[dim] += 5;
+      var value = Number(state.answers[qi]);
+      if (isNaN(value)) value = 3;
+      if (q.reverse) value = 6 - value;
+      raw[dim] += value;
+    });
+
+    var ranked = dims
+      .map(function (dim, order) {
+        return { dim: dim, order: order, percent: max[dim] ? raw[dim] / max[dim] : 0 };
+      })
+      .filter(function (item) { return max[item.dim] > 0; })
+      .sort(function (a, b) {
+        if (b.percent !== a.percent) return b.percent - a.percent;
+        return a.order - b.order;
+      });
+
+    var top = ranked[0];
+    if (!top) return { key: dims[0] || 'result', name: bank.title, tagline: '', desc: '', percent: 0 };
+
+    var base = bank.dimensions[top.dim] || {};
+    var picked = base;
+    if (base.high && base.low) {
+      picked = top.percent >= 0.5 ? base.high : base.low;
+    }
+
+    return {
+      key: top.dim,
+      name: picked.title || picked.name || bank.title,
+      category: picked.category || (base.high && base.low ? base.name : ''),
+      tagline: picked.tagline || '',
+      desc: picked.desc || '',
+      strengths: picked.strengths || [],
+      growth: picked.growth || [],
+      tip: picked.tip || '',
+      percent: Math.round(top.percent * 100)
+    };
+  }
+
+  function computeScoreResult(bank) {
+    var total = 0;
+    var max = 0;
+    var mouth = 0;
+    var mouthMax = 0;
+
+    bank.questions.forEach(function (q, qi) {
+      var options = q.options || [];
+      var bestP = 0;
+      var bestM = 0;
+      options.forEach(function (opt) {
+        var p = Number(opt.p) || 0;
+        var m = Number(opt.m) || 0;
+        if (p > bestP) bestP = p;
+        if (m > bestM) bestM = m;
+      });
+      max += bestP;
+      mouthMax += bestM;
+      var chosen = options[state.answers[qi]];
+      if (chosen) {
+        total += Number(chosen.p) || 0;
+        mouth += Number(chosen.m) || 0;
+      }
+    });
+
+    var percent = max ? Math.round(total / max * 100) : 0;
+    var mouthPct = mouthMax ? Math.round(mouth / mouthMax * 100) : 0;
+    var bands = bank.bands || [];
+    var band = bands[bands.length - 1] || {};
+    for (var i = 0; i < bands.length; i += 1) {
+      if (percent <= bands[i].max) { band = bands[i]; break; }
+    }
+
+    state.mouthPct = mouthPct;
+
+    return {
+      key: 'band-' + percent,
+      name: band.name || bank.title,
+      category: bank.scoreLabel || '',
+      tagline: band.tagline || '',
+      desc: band.desc || '',
+      strengths: band.strengths || [],
+      growth: band.growth || [],
+      tip: band.tip || '',
+      symptoms: band.symptoms || [],
+      quote: band.quote || '',
+      percent: percent,
+      mouthPct: mouthPct
+    };
+  }
+
+  function computeResult() {
+    if (state.bank.mode === 'score') return computeScoreResult(state.bank);
+    if (state.bank.mode === 'scale') return computeScaleResult(state.bank);
+    return computeTypeResult(state.bank);
+  }
+
+  /* ---------- 本地记录 ---------- */
+  function saveHistory(result) {
+    var list = readJSON(HISTORY_KEY);
+    if (!Array.isArray(list)) list = [];
+    list.unshift({
+      slug: state.slug,
+      title: state.bank.title,
+      resultName: result.name,
+      score: result.percent,
+      createdAt: Date.now()
+    });
+    writeJSON(HISTORY_KEY, list.slice(0, 20));
+  }
+
+  function getRecent() {
+    var list = readJSON(HISTORY_KEY);
+    if (!Array.isArray(list)) return [];
+    var seen = {};
+    return list.filter(function (item) {
+      if (!item || !item.slug || seen[item.slug]) return false;
+      seen[item.slug] = true;
+      return true;
+    }).slice(0, 4);
+  }
+
+  function saveServerResult(result) {
+    if (!state.bank) return;
+    var payload = {
+      slug: state.slug,
+      quizTitle: String(state.bank.title || '').slice(0, 80),
+      resultKey: String(result.key || '').slice(0, 80),
+      resultName: String(result.name || '').slice(0, 80),
+      score: Number(result.percent) || 0,
+      mouthScore: result.mouthPct === null || result.mouthPct === undefined ? null : Number(result.mouthPct),
+      visitorToken: getVisitorToken()
+    };
+    try {
+      fetch('/api/quiz-result', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  /* ---------- 落地页 ---------- */
+  function renderLanding() {
+    var bank = state.bank;
+    var progress = readJSON(PROGRESS_KEY + state.slug);
+    var recent = getRecent();
+
+    var metaHtml = '';
+    if (bank.meta) metaHtml += '<span class="chip accent">' + esc(bank.meta) + '</span>';
+    if (bank.cat) metaHtml += '<span class="chip">' + esc(bank.cat) + '</span>';
+    if (bank.badge) metaHtml += '<span class="chip">' + esc(bank.badge) + '</span>';
+
+    var recentHtml = '';
+    if (recent.length) {
+      recentHtml = '<section class="recent"><div class="recent-head"><h3>本机最近测过</h3></div>' +
+        recent.map(function (item) {
+          return '<a class="recent-item" href="/quiz.html?slug=' + encodeURIComponent(item.slug) + '">' +
+            '<div><strong>' + esc(item.title) + '</strong><span>' + esc(item.resultName || '已完成') + '</span></div>' +
+            '<span class="recent-score">' + (item.score === null || item.score === undefined ? '' : esc(item.score) + '%') + '</span>' +
+          '</a>';
+        }).join('') + '</section>';
+    }
+
+    app.innerHTML =
+      '<div class="fade">' +
+        '<div class="eyebrow">' + esc(bank.cat || '测评') + '</div>' +
+        '<h1 class="h1">' + esc(bank.title) + '</h1>' +
+        '<p class="sub">' + esc(bank.subtitle || bank.sub || '') + '</p>' +
+        (progress && progress.answers && progress.answers.length
+          ? '<div class="resume-note">已保存上次进度，可以接着答</div>'
+          : '') +
+        '<div class="start-row">' +
+          '<button id="startBtn" class="btn primary block" type="button">' +
+            (progress && progress.answers && progress.answers.length ? '继续上次进度' : '开始测试') +
+          '</button>' +
+        '</div>' +
+        '<div class="landing-card">' +
+          '<div class="chips">' + metaHtml + '</div>' +
+          '<h2>开始之前</h2>' +
+          '<p>' + esc(bank.intro || bank.desc || '') + '</p>' +
+        '</div>' +
+        recentHtml +
+        '<p class="disclaimer">' +
+          '本测试为娱乐与自我探索用途，不构成心理诊断或医疗建议。结果只描述倾向，不是对你的定义。' +
+          '如果你近期持续感到困扰，建议和信任的人聊聊，或联系学校心理老师。' +
+        '</p>' +
+      '</div>';
+
+    var startBtn = document.getElementById('startBtn');
+    if (startBtn) startBtn.addEventListener('click', startQuiz);
+  }
+
+  /* ---------- 答题 ---------- */
+  function startQuiz() {
+    var bank = state.bank;
+    var progress = readJSON(PROGRESS_KEY + state.slug);
+    if (progress && Array.isArray(progress.answers) && progress.answers.length === bank.questions.length) {
+      state.answers = progress.answers.slice();
+      state.index = Math.min(Math.max(progress.index || 0, 0), bank.questions.length - 1);
+    } else {
+      state.answers = new Array(bank.questions.length).fill(null);
+      state.index = 0;
+    }
+    state.finished = false;
+    state.result = null;
+    track('quiz_start', { quiz_type: state.slug });
+    renderQuestion();
+  }
+
+  function saveProgress() {
+    writeJSON(PROGRESS_KEY + state.slug, {
+      answers: state.answers,
+      index: state.index
+    });
+  }
+
+  function renderQuestion() {
+    var bank = state.bank;
+    var index = state.index;
+    var total = bank.questions.length;
+    var question = bank.questions[index];
+    var answered = state.answers[index];
+    var pct = Math.round((index + 1) / total * 100);
+
+    var bodyHtml = '';
+    if (bank.mode === 'scale') {
+      var scale = bank.scale || ['非常不符合', '比较不符合', '一般', '比较符合', '非常符合'];
+      bodyHtml = '<div class="options">' +
+        scale.map(function (label, i) {
+          return '<button class="option' + (answered === i + 1 ? ' selected' : '') + '" type="button" data-value="' + (i + 1) + '">' +
+            '<span class="mark"></span><span class="txt">' + esc(label) + '</span></button>';
+        }).join('') + '</div>';
+    } else {
+      bodyHtml = '<div class="options">' +
+        (question.options || []).map(function (opt, i) {
+          return '<button class="option' + (answered === i ? ' selected' : '') + '" type="button" data-index="' + i + '">' +
+            '<span class="mark"></span><span class="txt">' + esc(opt.t || opt.text || '') + '</span></button>';
+        }).join('') + '</div>';
+    }
+
+    app.innerHTML =
+      '<div class="quiz-progress">' +
+        '<div class="progress-meta"><span>' + esc(bank.title) + '</span><span class="pct">' + pct + '%</span></div>' +
+        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>' +
+      '<div class="quiz-body">' +
+        '<div class="q-count">Q ' + (index + 1) + ' / ' + total + '</div>' +
+        '<h2 class="q-text">' + esc(question.text || '') + '</h2>' +
+        '<p class="q-hint">' + (bank.mode === 'scale' ? '按最近大多数时候的状态选择' : '选更接近你第一反应的那一个') + '</p>' +
+        bodyHtml +
+        '<div class="q-nav">' +
+          '<button id="backBtn" class="back-btn" type="button"' + (index === 0 ? ' disabled' : '') + '>← 上一题</button>' +
+          '<button id="nextBtn" class="next-btn" type="button"' + (answered === null || answered === undefined ? ' disabled' : '') + '>' +
+            (index === total - 1 ? '看结果' : '下一题') +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    var optionEls = app.querySelectorAll('.option');
+    for (var i = 0; i < optionEls.length; i += 1) {
+      optionEls[i].addEventListener('click', onSelectOption);
+    }
+
+    var backBtn = document.getElementById('backBtn');
+    var nextBtn = document.getElementById('nextBtn');
+    if (backBtn) backBtn.addEventListener('click', onBack);
+    if (nextBtn) nextBtn.addEventListener('click', onNext);
+  }
+
+  function onSelectOption(e) {
+    var el = e.currentTarget;
+    var value;
+    if (el.hasAttribute('data-index')) {
+      value = Number(el.getAttribute('data-index'));
+    } else {
+      // scale 模式直接存 1–5，与计分逻辑保持一致
+      value = Number(el.getAttribute('data-value'));
+    }
+    state.answers[state.index] = value;
+    saveProgress();
+
+    var options = app.querySelectorAll('.option');
+    for (var i = 0; i < options.length; i += 1) {
+      options[i].classList.remove('selected');
+    }
+    el.classList.add('selected');
+
+    var nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) nextBtn.disabled = false;
+  }
+
+  function onBack() {
+    if (state.index <= 0) return;
+    state.index -= 1;
+    saveProgress();
+    renderQuestion();
+  }
+
+  function onNext() {
+    if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
+    if (state.index < state.bank.questions.length - 1) {
+      state.index += 1;
+      saveProgress();
+      renderQuestion();
+      return;
+    }
+    finishQuiz();
+  }
+
+  function finishQuiz() {
+    state.finished = true;
+    var result = computeResult();
+    state.result = result;
+
+    removeKey(PROGRESS_KEY + state.slug);
+    writeJSON(RESULT_KEY + state.slug, {
+      result: result,
+      savedAt: Date.now()
+    });
+    saveHistory(result);
+    saveServerResult(result);
+
+    track('quiz_complete', { quiz_type: state.slug, result_type: String(result.key || '') });
+    track('quiz_view_result', { quiz_type: state.slug, result_type: String(result.key || '') });
+
+    renderResult(result, false);
+  }
+
+  /* ---------- 结果页 ---------- */
+  function listHtml(items) {
+    return items.map(function (item) {
+      return '<li>' + esc(item) + '</li>';
+    }).join('');
+  }
+
+  function pairRow(key, value) {
+    if (!value) return '';
+    return '<div class="pair-row"><span class="pair-key">' + esc(key) + '</span><span class="pair-val">' + esc(value) + '</span></div>';
+  }
+
+  function renderResult(result, restored) {
+    var bank = state.bank;
+    var isScore = bank.mode === 'score';
+    var growthLabel = isScore ? '给你的急救包' : (bank.id === 'dorm-persona' ? '相处提醒' : '可以练习的');
+    var percent = Number(result.percent) || 0;
+
+    var scoreHtml = '';
+    if (isScore) {
+      scoreHtml = '<div class="score-line">' +
+        '<span class="score-num">' + percent + '</span>' +
+        '<span class="score-unit">' + esc(bank.scoreUnit || '%') + '</span>' +
+        '<span class="score-label">' + esc(bank.scoreLabel || '') + '</span>' +
+      '</div>';
+    }
+
+    var symptomsHtml = '';
+    if (result.symptoms && result.symptoms.length) {
+      symptomsHtml = '<div class="result-card"><h3>你的典型状态</h3>' +
+        '<ul class="symptom-list">' + listHtml(result.symptoms) + '</ul></div>';
+    }
+
+    var energyHtml = '';
+    if (typeof result.energyStable === 'number') {
+      var stable = Math.max(0, Math.min(100, result.energyStable));
+      energyHtml = '<div class="result-card"><h3>今日电量</h3>' +
+        '<div class="energy">' +
+          '<div class="energy-head"><span>稳定输出</span><span>' + stable + '%</span></div>' +
+          '<div class="energy-track"><div class="energy-fill" style="width:' + stable + '%"></div></div>' +
+          '<div class="energy-foot"><span>省电待机</span><span>低电量预警</span></div>' +
+        '</div></div>';
+    }
+
+    var strengthsHtml = '';
+    if (result.strengths && result.strengths.length) {
+      strengthsHtml = '<div class="result-card"><h3>你的优势</h3>' +
+        '<ul class="copy-list">' + listHtml(result.strengths) + '</ul></div>';
+    }
+
+    var growthHtml = '';
+    if (result.growth && result.growth.length) {
+      growthHtml = '<div class="result-card"><h3>' + esc(growthLabel) + '</h3>' +
+        '<ul class="copy-list">' + listHtml(result.growth) + '</ul></div>';
+    }
+
+    var pairHtml = '';
+    var pairParts = '';
+    if (result.highlight) pairParts += pairRow('高光时刻', result.highlight);
+    if (result.minefield) pairParts += pairRow('你的雷区', result.minefield);
+    if (result.bestMatch) pairParts += pairRow('最佳搭子', result.bestMatch);
+    if (result.partner && !result.bestMatch) pairParts += pairRow('适合相处', result.partner);
+    if (result.groupLine) pairParts += pairRow('群聊宣言', result.groupLine);
+    if (pairParts) {
+      pairHtml = '<div class="result-card"><h3>关系说明书</h3><div class="pair-block">' + pairParts + '</div></div>';
+    }
+
+    var mouthHtml = '';
+    if (result.mouthPct !== null && result.mouthPct !== undefined) {
+      var mouth = Number(result.mouthPct) || 0;
+      mouthHtml = '<div class="result-card"><h3>附加指标</h3>' +
+        '<div class="energy-head"><span>嘴硬指数</span><span>' + mouth + '%</span></div>' +
+        '<div class="energy-track"><div class="energy-fill" style="width:' + mouth + '%"></div></div>' +
+        '<p class="muted" style="margin-top:10px;">' + (mouth >= 70 ? '嘴上说没事，身体很诚实。' : mouth >= 40 ? '偶尔嘴硬，但关键时刻还是会说实话。' : '你的嘴和心基本在同一频道。') + '</p>' +
+      '</div>';
+    }
+
+    var quoteHtml = result.quote
+      ? '<div class="tip-card"><p>「' + esc(result.quote) + '」</p></div>'
+      : '';
+
+    var tipHtml = result.tip
+      ? '<div class="result-card"><h3>写在最后</h3><p>' + esc(result.tip) + '</p></div>'
+      : '';
+
+    app.innerHTML =
+      '<div class="fade">' +
+        (restored ? '<div class="resume-note">这是你上次测出的结果</div>' : '') +
+        '<div class="result-kicker">' + esc(bank.title) + (result.category ? ' · ' + esc(result.category) : '') + '</div>' +
+        '<h1 class="result-name">' + esc(result.name) + '</h1>' +
+        '<p class="result-tagline">' + esc(result.tagline) + '</p>' +
+        scoreHtml +
+        '<div class="result-card"><p class="lead">' + esc(result.desc) + '</p></div>' +
+        symptomsHtml +
+        energyHtml +
+        mouthHtml +
+        strengthsHtml +
+        growthHtml +
+        pairHtml +
+        quoteHtml +
+        tipHtml +
+        '<div class="result-actions">' +
+          '<button id="shareBtn" class="btn primary block" type="button">生成分享卡</button>' +
+          '<button id="copyBtn" class="btn block" type="button">复制分享文案</button>' +
+        '</div>' +
+        '<div class="result-foot">' +
+          '<a class="text-link" href="/assess.html">回测评中心</a>' +
+          '<button id="retakeBtn" class="text-link" type="button">再测一次</button>' +
+        '</div>' +
+        '<p class="disclaimer">结果仅描述这段时间的倾向，不构成心理诊断。转发时可以只分享结果，不必带上你的答案。</p>' +
+      '</div>';
+
+    document.getElementById('shareBtn').addEventListener('click', function () {
+      generateShareCard(result);
+    });
+    document.getElementById('copyBtn').addEventListener('click', function () {
+      var caption = buildCaption(result);
+      copyText(caption);
+      var btn = document.getElementById('copyBtn');
+      if (btn) {
+        btn.textContent = '已复制';
+        setTimeout(function () { btn.textContent = '复制分享文案'; }, 1600);
+      }
+    });
+    document.getElementById('retakeBtn').addEventListener('click', function () {
+      removeKey(RESULT_KEY + state.slug);
+      resetAndStart();
+    });
+  }
+
+  function resetAndStart() {
+    writeJSON(PROGRESS_KEY + state.slug, {
+      answers: new Array(state.bank.questions.length).fill(null),
+      index: 0
+    });
+    startQuiz();
+  }
+
+  /* ---------- 分享 ---------- */
+  function buildCaption(result) {
+    var template = (state.bank.share && state.bank.share.caption) || '我的{name}结果：{tagline}';
+    return template
+      .replace(/{name}/g, result.name || '')
+      .replace(/{tagline}/g, result.tagline || '')
+      .replace(/{score}/g, String(result.percent === null || result.percent === undefined ? '' : result.percent))
+      .replace(/{mouth}/g, String(result.mouthPct === null || result.mouthPct === undefined ? '' : result.mouthPct))
+      + '\nhttps://soulmirror-255.pages.dev/quiz.html?slug=' + state.slug;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function wrapText(ctx, text, maxWidth, maxLines) {
+    var chars = String(text || '').split('');
+    var lines = [];
+    var line = '';
+    for (var i = 0; i < chars.length; i += 1) {
+      var test = line + chars[i];
+      if (ctx.measureText(test).width > maxWidth && line) {
+        lines.push(line);
+        line = chars[i];
+        if (maxLines && lines.length >= maxLines - 1) {
+          while (i < chars.length - 1) {
+            line += chars[i + 1];
+            i += 1;
+          }
+          break;
+        }
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function generateShareCard(result) {
+    var bank = state.bank;
+    var W = 750;
+    var H = 1000;
+    var canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    var ctx = canvas.getContext('2d');
+
+    // 背景与光晕
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#1c1224');
+    bg.addColorStop(0.55, '#140c1a');
+    bg.addColorStop(1, '#0d0710');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    var glow = ctx.createRadialGradient(200, -80, 20, 200, -80, 520);
+    glow.addColorStop(0, 'rgba(223,182,178,0.20)');
+    glow.addColorStop(1, 'rgba(223,182,178,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, 520);
+
+    // 品牌
+    ctx.fillStyle = '#dfb6b2';
+    ctx.beginPath();
+    ctx.arc(56, 68, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f7ede8';
+    ctx.font = '600 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('心镜', 76, 76);
+    ctx.fillStyle = 'rgba(247,237,232,0.42)';
+    ctx.font = '15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('SOULMIRROR · 测评', 148, 75);
+
+    // 小标题
+    ctx.fillStyle = 'rgba(223,182,178,0.82)';
+    ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText(bank.cat || '测评', 56, 150);
+    ctx.fillStyle = 'rgba(247,237,232,0.38)';
+    ctx.fillText(bank.title, 56, 176);
+
+    // 结果名（自动缩放）
+    var name = String(result.name || '');
+    var nameSize = name.length <= 6 ? 88 : name.length <= 10 ? 72 : 58;
+    ctx.fillStyle = '#f7ede8';
+    ctx.font = '700 ' + nameSize + 'px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.textAlign = 'left';
+    var nameLines = wrapText(ctx, name, 620, 2);
+    var nameY = 300;
+    nameLines.forEach(function (line) {
+      ctx.fillText(line, 56, nameY);
+      nameY += nameSize * 1.15;
+    });
+
+    // 分数
+    if (bank.mode === 'score') {
+      ctx.fillStyle = '#dfb6b2';
+      ctx.font = '700 52px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(String(result.percent) + (bank.scoreUnit || '%'), 56, nameY + 30);
+      ctx.fillStyle = 'rgba(247,237,232,0.6)';
+      ctx.font = '16px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText(bank.scoreLabel || '', 56, nameY + 58);
+      nameY += 96;
+    }
+
+    // tagline
+    ctx.fillStyle = 'rgba(223,182,178,0.92)';
+    ctx.font = '26px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    var tagLines = wrapText(ctx, result.tagline, 630, 2);
+    var tagY = nameY + 24;
+    tagLines.forEach(function (line) {
+      ctx.fillText(line, 56, tagY);
+      tagY += 37;
+    });
+
+    // 描述
+    ctx.fillStyle = 'rgba(247,237,232,0.62)';
+    ctx.font = '19px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    var descLines = wrapText(ctx, result.desc, 620, 2);
+    var descY = tagY + 34;
+    descLines.forEach(function (line) {
+      ctx.fillText(line, 56, descY);
+      descY += 31;
+    });
+
+    // 关键词卡片
+    var chips = [];
+    if (result.symptoms && result.symptoms.length) chips = result.symptoms.slice(0, 3);
+    else if (result.strengths && result.strengths.length) chips = result.strengths.slice(0, 3);
+    var cardY = 650;
+    if (chips.length) {
+      ctx.fillStyle = 'rgba(255,255,255,0.045)';
+      roundRect(ctx, 40, cardY, W - 80, 104, 18);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(223,182,178,0.16)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#dfb6b2';
+      ctx.font = '600 14px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText('状态关键词', 64, cardY + 32);
+      ctx.fillStyle = 'rgba(247,237,232,0.82)';
+      ctx.font = '17px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      var chipLine = chips.join('  ·  ');
+      var chipLines = wrapText(ctx, chipLine, 600, 2);
+      var chipY = cardY + 64;
+      chipLines.forEach(function (line) {
+        ctx.fillText(line, 64, chipY);
+        chipY += 27;
+      });
+    }
+
+    // 页脚
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(247,237,232,0.34)';
+    ctx.font = '15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('心镜 · 测评 — 看见自己，也看见彼此', W / 2, 928);
+    ctx.fillStyle = 'rgba(247,237,232,0.22)';
+    ctx.font = '12px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+    ctx.fillText('娱乐向自我探索 · 不构成心理诊断', W / 2, 952);
+
+    // 二维码：白底 + 静区
+    ctx.fillStyle = '#ffffff';
+    roundRect(ctx, 560, 766, 132, 132, 12);
+    ctx.fill();
+
+    var qrImg = new Image();
+    var done = false;
+    function finishCard() {
+      if (done) return;
+      done = true;
+      var dataUrl = canvas.toDataURL('image/png');
+      state.shareDataUrl = dataUrl;
+      var caption = buildCaption(result);
+      state.shareCaption = caption;
+      showShareLayer(dataUrl, caption);
+      track('share', { quiz_type: state.slug, share_type: 'card' });
+    }
+    qrImg.onload = function () {
+      // 132 白底内放 104 二维码，四周留 14px 静区
+      ctx.drawImage(qrImg, 574, 780, 104, 104);
+      finishCard();
+    };
+    qrImg.onerror = finishCard;
+    qrImg.src = QR_BASE64;
+    setTimeout(function () {
+      if (!done) { finishCard(); }
+    }, 600);
+  }
+
+  function showShareLayer(dataUrl, caption) {
+    if (dataUrl) sharePreview.src = dataUrl;
+    else if (state.shareDataUrl) sharePreview.src = state.shareDataUrl;
+    captionBox.value = caption || '';
+    shareLayer.classList.add('is-open');
+    shareLayer.setAttribute('aria-hidden', 'false');
+  }
+
+  function hideShareLayer() {
+    shareLayer.classList.remove('is-open');
+    shareLayer.setAttribute('aria-hidden', 'true');
+  }
+
+  function copyText(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () {});
+        return;
+      }
+    } catch (e) {}
+    try {
+      captionBox.value = text;
+      captionBox.select();
+      document.execCommand('copy');
+    } catch (e) {}
+  }
+
+  saveImageBtn.addEventListener('click', function () {
+    if (!state.shareDataUrl) return;
+    var link = document.createElement('a');
+    link.href = state.shareDataUrl;
+    link.download = '心镜-' + state.bank.title + '.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  copyTextBtn.addEventListener('click', function () {
+    copyText(captionBox.value || state.shareCaption);
+    copyTextBtn.textContent = '已复制';
+    setTimeout(function () { copyTextBtn.textContent = '复制文案'; }, 1600);
+    track('share', { quiz_type: state.slug, share_type: 'caption' });
+  });
+
+  shareCloseBtn.addEventListener('click', hideShareLayer);
+  shareLayer.addEventListener('click', function (e) {
+    if (e.target === shareLayer) hideShareLayer();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') hideShareLayer();
+  });
+
+  /* ---------- 初始化 ---------- */
+  function renderMissing() {
+    app.innerHTML =
+      '<div class="empty-state fade">' +
+        '<h2>没有找到这个测试</h2>' +
+        '<p>链接可能写错了，或者这个测试还没有上线。</p>' +
+        '<a class="btn primary" href="/assess.html" style="display:inline-block;">回测评中心</a>' +
+      '</div>';
+  }
+
+  function init() {
+    var params = new URLSearchParams(window.location.search);
+    var slug = params.get('slug') || params.get('id') || '';
+
+    if (!slug || !window.QUIZ_BANK || !window.QUIZ_BANK[slug]) {
+      renderMissing();
+      return;
+    }
+
+    state.slug = slug;
+    state.bank = window.QUIZ_BANK[slug];
+    document.title = state.bank.title + ' · 心镜 SoulMirror';
+
+    var saved = readJSON(RESULT_KEY + slug);
+    if (saved && saved.result) {
+      state.result = saved.result;
+      state.mouthPct = saved.result.mouthPct;
+      renderResult(saved.result, true);
+      return;
+    }
+
+    renderLanding();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

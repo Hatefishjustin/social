@@ -1957,7 +1957,11 @@
   function startOpenedTest() {
     var test = TESTS[openedIndex];
     if (!test) return;
+    // 目录记录没有 entry_url 时，统一回退到通用答题器
     var url = test.entryUrl;
+    if (!url && test.slug) {
+      url = '/quiz.html?slug=' + encodeURIComponent(test.slug);
+    }
     closeModal();
     if (url) {
       setTimeout(function () { window.location.href = url; }, 560);
@@ -1997,10 +2001,18 @@
       }
       historyListEl.innerHTML = items.map(function (item) {
         var isSm = item.type === 'sm';
-        var href = isSm ? '/sm-test.html' : '/match.html';
-        return '<a class="history-item" href="' + href + '">' +
+        var isQuiz = item.type === 'quiz';
+        var href = String(item.href || '');
+        if (href.charAt(0) !== '/' || href.indexOf('//') === 0) href = '';
+        if (!href) {
+          href = isQuiz
+            ? (item.slug ? '/quiz.html?slug=' + encodeURIComponent(item.slug) : '/assess.html')
+            : (isSm ? '/sm-test.html' : '/match.html');
+        }
+        var typeLabel = isQuiz ? '状态测评' : (isSm ? 'S/M 互动倾向' : '深度匹配测评');
+        return '<a class="history-item" href="' + esc(href) + '">' +
           '<div class="history-item-top">' +
-            '<span class="history-item-type">' + (isSm ? 'S/M 互动倾向' : '深度匹配测评') + '</span>' +
+            '<span class="history-item-type">' + esc(typeLabel) + '</span>' +
             '<span class="history-item-date">' + esc(formatHistoryDate(item.createdAt)) + '</span>' +
           '</div>' +
           '<div class="history-item-title">' + esc(item.title || '测评记录') + '</div>' +

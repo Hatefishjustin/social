@@ -2,7 +2,7 @@
  * Cloudflare Pages Function
  * 路由: /api/quiz-history
  *
- * GET: 当前登录用户的测评历史（深度匹配测评 + S/M 互动倾向）
+ * GET: 当前登录用户的测评历史（深度匹配测评 + S/M 互动倾向 + 通用答题器测评）
  *   - 仅返回当前账号的记录
  *   - 按时间倒序，最多 20 条
  *   - 不返回原始答案，只返回结果摘要
@@ -86,6 +86,33 @@ export async function onRequestGet({ request, env }) {
     }
   } catch (e) {
     console.error('quiz-history sm query failed:', e.message);
+  }
+
+  try {
+    if (await hasTable(env, 'quiz_attempts')) {
+      const quiz = await env.DB.prepare(
+        `SELECT id, slug, quiz_title, result_name, score, created_at
+         FROM quiz_attempts
+         WHERE user_id = ?
+         ORDER BY created_at DESC
+         LIMIT ?`
+      ).bind(user.id, limit).all();
+
+      (quiz.results || []).forEach((row) => {
+        const score = roundScore(row.score);
+        items.push({
+          id: 'quiz-' + row.id,
+          type: 'quiz',
+          slug: row.slug || '',
+          title: (row.quiz_title || '状态测评') + (row.result_name ? ' · ' + row.result_name : ''),
+          createdAt: row.created_at,
+          summary: score === null ? '' : '得分 ' + score + '%',
+          href: row.slug ? '/quiz.html?slug=' + encodeURIComponent(row.slug) : '/quiz.html',
+        });
+      });
+    }
+  } catch (e) {
+    console.error('quiz-history quiz query failed:', e.message);
   }
 
   items.sort((a, b) => (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0));

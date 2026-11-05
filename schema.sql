@@ -637,5 +637,25 @@ CREATE TABLE IF NOT EXISTS quizzes (
 
 CREATE INDEX IF NOT EXISTS idx_quizzes_status_sort ON quizzes(status, sort_order, id);
 
+-- 2026-11-05 新增：quiz_attempts
+-- 说明：/quiz.html 通用答题器的结果摘要，只存结果，不存逐题答案。
+-- 匿名用户以 visitor_token 记录；登录用户同时写入 user_id。
+-- 迁移文件：docs/migrations/2026-11-05-S15-three-quizzes.sql
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL DEFAULT '',
+    quiz_title TEXT NOT NULL DEFAULT '',
+    result_key TEXT NOT NULL DEFAULT '',
+    result_name TEXT NOT NULL DEFAULT '',
+    score REAL,
+    mouth_score REAL,
+    user_id INTEGER,
+    visitor_token TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user_time ON quiz_attempts(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_slug ON quiz_attempts(slug, created_at DESC);
+
 
 
