@@ -11,7 +11,7 @@
 - **数据库**：Cloudflare D1（SQLite 兼容），绑定名 `DB`，通过 `env.DB` 访问
 - **AI 服务**：阿里云 DashScope（通义千问），模型默认 `qwen-plus`，统一封装在 `functions/_lib/ai.js`
 - **前端**：原生 HTML + 原生 JavaScript（无框架、无构建工具、无 npm 依赖）
-- **配置**：`wrangler.toml`（项目名 `soulmirror`，含 cron 触发器 `*/5 * * * *`）
+- **配置**：`wrangler.toml`（项目名 `soulmirror`；未声明 cron，Pages Functions 不支持 scheduled，线上巡检由 GitHub Actions 每 15 分钟执行）
 - **启动域名**：`https://soulmirror-255.pages.dev`（校园推广期以此为准；`soulmirror.cc.cd` 大陆网络会被 reset，暂不作为主入口）
 - **Git 远程**：`https://github.com/Hatefishjustin/social.git`
 
@@ -61,8 +61,8 @@
 - **无 Node 专属 API**：禁止使用 Node.js 专属模块（如 `fs`、`path`、`http`），只能使用 Web 标准 API（`fetch`、`Request`、`Response`、`URL`、`AbortController` 等）。
 - **环境变量**：通过 `env` 参数读取（如 `env.DB`、`env.DASHSCOPE_API_KEY`），禁止硬编码。
 - **绑定**：数据库绑定名为 `DB`（D1）。新增绑定需同步更新 `wrangler.toml`。
-- **Cron 触发器**：`wrangler.toml` 中已有 `*/5 * * * *` 定时任务，新增定时任务需在 `wrangler.toml` 的 `[triggers]` 中声明。
-- **重定向**：`functions/_middleware.js` 负责将 Pages 默认域名 301 重定向到自定义域名，修改时避免造成重定向死循环。
+- **Cron 触发器**：Pages Functions 不支持 `[triggers]` / scheduled；`wrangler.toml` 现无 cron 配置。如需定时任务，应单独建 Worker + Cron Trigger。
+- **重定向**：`functions/_middleware.js` 仅将旧默认域名 `soulmirror.disabled.pages.dev` 301 重定向到自定义域名（`soulmirror-255.pages.dev` 不重定向），修改时避免造成重定向死循环。
 - **兼容性日期**：`wrangler.toml` 中 `compatibility_date` 为 `2026-07-27`，使用 API 时需确保在该日期下可用。
 
 ---
