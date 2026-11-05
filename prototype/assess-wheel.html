@@ -6,7 +6,7 @@
 <title>测评中心 · 轮盘原型</title>
 <style>
   :root {
-    --bg: #0d0710;
+    --bg: #151019;
     --surface: #1a1122;
     --surface-raised: #22162c;
     --border: #2c2033;
@@ -34,8 +34,9 @@
 
   body {
     background:
-      radial-gradient(900px 520px at 50% 62%, rgba(82, 43, 91, 0.42), transparent 68%),
-      radial-gradient(620px 420px at 78% 28%, rgba(133, 79, 108, 0.14), transparent 70%),
+      radial-gradient(880px 560px at 58% 46%, rgba(223, 182, 178, 0.10), transparent 70%),
+      radial-gradient(760px 520px at 62% 62%, rgba(82, 43, 91, 0.16), transparent 74%),
+      radial-gradient(520px 380px at 82% 22%, rgba(133, 79, 108, 0.06), transparent 72%),
       var(--bg);
   }
 
@@ -50,11 +51,11 @@
       radial-gradient(ellipse 82% 76% at 62% 46%,
         transparent 0%,
         transparent 54%,
-        rgba(10, 5, 12, 0.12) 72%,
-        rgba(8, 4, 10, 0.28) 90%,
-        rgba(5, 2, 7, 0.44) 100%),
-      radial-gradient(46% 42% at 0% 0%, rgba(4, 2, 6, 0.28), transparent 72%),
-      radial-gradient(46% 42% at 100% 100%, rgba(4, 2, 6, 0.24), transparent 72%);
+        rgba(10, 5, 12, 0.10) 72%,
+        rgba(8, 4, 10, 0.22) 90%,
+        rgba(5, 2, 7, 0.36) 100%),
+      radial-gradient(46% 42% at 0% 0%, rgba(4, 2, 6, 0.22), transparent 72%),
+      radial-gradient(46% 42% at 100% 100%, rgba(4, 2, 6, 0.18), transparent 72%);
   }
 
   body::after {
@@ -64,8 +65,8 @@
     z-index: 2;
     pointer-events: none;
     background:
-      radial-gradient(640px 480px at 62% 42%, rgba(133, 79, 108, 0.05), transparent 70%),
-      radial-gradient(980px 720px at 62% 58%, rgba(82, 43, 91, 0.18), transparent 74%);
+      radial-gradient(720px 540px at 62% 44%, rgba(223, 182, 178, 0.07), transparent 70%),
+      radial-gradient(1000px 740px at 62% 58%, rgba(82, 43, 91, 0.10), transparent 74%);
     transform: translate3d(calc(var(--par-x, 0) * 10px), calc(var(--par-y, 0) * 8px), 0);
     transition: transform .6s cubic-bezier(.22, .61, .36, 1);
   }
@@ -79,7 +80,7 @@
     transform: translateX(-50%);
     z-index: 3;
     pointer-events: none;
-    background: radial-gradient(ellipse at 50% 38%, rgba(82, 43, 91, 0.18), rgba(82, 43, 91, 0.06) 46%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 38%, rgba(223, 182, 178, 0.07), rgba(82, 43, 91, 0.03) 46%, transparent 70%);
     filter: blur(26px);
   }
 
@@ -157,7 +158,7 @@
     top: 96px;
     left: 5vw;
     z-index: 150;
-    max-width: 320px;
+    max-width: 360px;
     pointer-events: none;
   }
 
@@ -181,19 +182,21 @@
   }
 
   .intro h1 {
-    font-size: clamp(34px, 4vw, 52px);
-    line-height: 1.08;
-    letter-spacing: -0.04em;
+    font-size: clamp(32px, 3.1vw, 46px);
+    line-height: 1.04;
+    letter-spacing: -0.045em;
     font-weight: 700;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
+    max-width: 360px;
+    text-wrap: balance;
   }
 
   .intro p {
-    font-size: 14px;
-    line-height: 1.75;
-    color: var(--text-secondary);
-    letter-spacing: 0.02em;
-    max-width: 280px;
+    font-size: 14.5px;
+    line-height: 1.70;
+    color: rgba(247, 237, 232, 0.72);
+    letter-spacing: 0.015em;
+    max-width: 300px;
   }
 
   /* ---------- 轮盘舞台 ---------- */
@@ -211,8 +214,6 @@
   .wheel {
     position: absolute;
     inset: 0;
-    perspective: 1200px;
-    perspective-origin: 50% 42%;
     opacity: 0;
     transition: opacity .7s ease;
   }
@@ -298,7 +299,6 @@
     text-align: left;
     cursor: pointer;
     transform-origin: 50% 50%;
-    will-change: transform, opacity;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -307,12 +307,18 @@
     width: 100%;
     height: 100%;
     padding: 22px;
-    border-radius: var(--radius-lg);
+    border-radius: 22px;
     background:
-      linear-gradient(158deg, var(--tint, rgba(82, 43, 91, .34)) 0%, rgba(26, 17, 34, .96) 52%, #1a1122 100%);
-    background-color: #1a1122;
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28);
+      linear-gradient(150deg, rgba(255, 255, 255, 0.14) 0%, rgba(247, 237, 232, 0.045) 16%, rgba(34, 24, 46, 1) 52%, rgba(20, 14, 28, 1) 100%);
+    background-color: #1b1324;
+    isolation: isolate;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow:
+      0 30px 80px rgba(0, 0, 0, 0.50),
+      0 2px 8px rgba(0, 0, 0, 0.28),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.10),
+      inset 0 0 40px rgba(255, 255, 255, 0.035);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -320,34 +326,70 @@
   }
 
   .card-float {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
   }
 
+  .card-ghost {
+    position: absolute;
+    right: 14px;
+    bottom: 4px;
+    font-size: 68px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -0.06em;
+    color: rgba(255, 255, 255, 0.022);
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+
   .card-inner::before {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, transparent 38%, rgba(255, 255, 255, 0.055) 55%, transparent 68%);
-    opacity: 0;
+    background: linear-gradient(125deg, transparent 28%, rgba(255, 255, 255, 0.16) 44%, rgba(255, 255, 255, 0.03) 56%, transparent 74%);
+    opacity: 0.55;
     transition: opacity .35s ease;
     pointer-events: none;
   }
 
+  /* 玻璃颗粒：让表面有细微的“实体”质感，而不是纯色半透明 */
+  .card-inner::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.5) 0.5px, transparent 0.7px);
+    background-size: 3px 3px;
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+  }
+
   .wheel-card.is-active .card-inner {
-    border-color: rgba(223, 182, 178, 0.42);
+    background-color: #1c1426;
+    border-color: rgba(255, 255, 255, 0.30);
     box-shadow:
-      0 30px 90px rgba(82, 43, 91, 0.55),
-      0 0 0 1px rgba(223, 182, 178, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      0 40px 110px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(255, 255, 255, 0.06),
+      0 0 80px rgba(223, 182, 178, 0.10),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.65),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.12);
   }
 
   .wheel-card.is-active .card-inner::before { opacity: 1; }
+  .wheel-card.is-active .card-ghost { opacity: 0; }
 
   .wheel-card:hover .card-inner {
     border-color: var(--border-hover);
+  }
+
+  .wheel-card:focus { outline: none; }
+  .wheel-card:focus-visible .card-inner {
+    border-color: rgba(223, 182, 178, 0.55);
   }
 
   .wheel-card.is-active:hover .card-inner {
@@ -367,25 +409,40 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 22px;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
   }
 
   .card-cat {
-    font-size: 10px;
-    letter-spacing: 0.22em;
+    font-size: 10.5px;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: var(--text-tertiary);
+    color: rgba(247, 237, 232, 0.50);
     white-space: nowrap;
   }
 
-  .card-badge {
+  .card-top-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-no {
     font-size: 10px;
-    letter-spacing: 0.08em;
-    padding: 3px 9px;
+    letter-spacing: 0.14em;
+    color: rgba(247, 237, 232, 0.32);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card-badge {
+    font-size: 9.5px;
+    letter-spacing: 0.10em;
+    padding: 3px 8px;
     border-radius: 999px;
     color: var(--accent);
-    background: rgba(223, 182, 178, 0.1);
+    background: rgba(223, 182, 178, 0.10);
     border: 1px solid rgba(223, 182, 178, 0.16);
     white-space: nowrap;
   }
@@ -397,37 +454,38 @@
   }
 
   .card-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     display: grid;
     place-items: center;
-    margin-bottom: 20px;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     color: var(--accent);
   }
 
-  .card-icon svg { width: 23px; height: 23px; }
+  .card-icon svg { width: 20px; height: 20px; }
 
   .card-title {
-    font-size: 27px;
-    line-height: 1.18;
-    letter-spacing: -0.03em;
-    font-weight: 700;
+    font-size: 28px;
+    line-height: 1.10;
+    letter-spacing: -0.035em;
+    font-weight: 650;
     margin-bottom: 8px;
+    text-wrap: balance;
   }
 
   .card-sub {
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--text-tertiary);
-    letter-spacing: 0.02em;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: rgba(247, 237, 232, 0.46);
+    letter-spacing: 0.06em;
   }
 
   .card-details {
     margin-top: auto;
-    padding-top: 18px;
+    padding-top: 16px;
     opacity: 0;
     transform: translateY(7px);
     transition: opacity .32s ease, transform .32s ease;
@@ -441,10 +499,10 @@
   }
 
   .card-desc {
-    font-size: 12.5px;
-    line-height: 1.65;
-    color: var(--text-secondary);
-    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.72;
+    color: rgba(247, 237, 232, 0.72);
+    margin-bottom: 13px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -455,28 +513,33 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 10.5px;
-    letter-spacing: 0.04em;
-    color: var(--text-tertiary);
-    margin-bottom: 16px;
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    color: rgba(247, 237, 232, 0.44);
+    margin-bottom: 12px;
     white-space: nowrap;
+    font-variant-numeric: tabular-nums;
   }
 
   .card-meta span.dot {
     width: 2px;
     height: 2px;
     border-radius: 50%;
-    background: var(--text-quaternary, #4a3f47);
+    background: rgba(247, 237, 232, 0.24);
   }
 
   .card-cta {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    font-size: 12.5px;
+    width: 100%;
+    padding-top: 11px;
+    border-top: 1px solid rgba(255, 255, 255, 0.075);
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--accent);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.10em;
   }
 
   .card-cta .arrow {
@@ -485,6 +548,41 @@
 
   .wheel-card.is-active:hover .card-cta .arrow {
     transform: translateX(4px);
+  }
+
+  /* 手机：优先保证字号与信息完整，去掉装饰图标 */
+  @media (max-width: 1100px) {
+    .card-inner { padding: 18px; }
+    .card-top {
+      margin-bottom: 14px;
+      padding-bottom: 11px;
+    }
+    .card-icon { display: none; }
+    .card-title {
+      font-size: 23px;
+      line-height: 1.12;
+      margin-bottom: 6px;
+    }
+    .card-sub { font-size: 10.5px; }
+    .card-ghost {
+      right: 10px;
+      bottom: 2px;
+      font-size: 46px;
+    }
+    .card-details { padding-top: 12px; }
+    .card-desc {
+      font-size: 12px;
+      line-height: 1.60;
+      margin-bottom: 10px;
+    }
+    .card-meta {
+      font-size: 9.5px;
+      margin-bottom: 9px;
+    }
+    .card-cta {
+      font-size: 11px;
+      padding-top: 9px;
+    }
   }
 
   /* ---------- 底部提示 / 圆点 ---------- */
@@ -511,6 +609,62 @@
   .hint b {
     color: var(--text-secondary);
     font-weight: 500;
+  }
+
+  /* ---------- 目录加载 / 空状态 ---------- */
+  .catalog-status {
+    position: fixed;
+    left: 63%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 160;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: rgba(247, 237, 232, 0.42);
+  }
+
+  .catalog-empty {
+    position: fixed;
+    left: 63%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 160;
+    width: min(360px, 82vw);
+    text-align: left;
+  }
+
+  .catalog-empty[hidden],
+  .catalog-status[hidden] { display: none; }
+
+  .catalog-empty-kicker {
+    font-size: 10.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(223, 182, 178, 0.62);
+    margin-bottom: 14px;
+  }
+
+  .catalog-empty h2 {
+    font-size: clamp(26px, 3vw, 34px);
+    line-height: 1.08;
+    letter-spacing: -0.04em;
+    margin-bottom: 12px;
+  }
+
+  .catalog-empty p {
+    font-size: 13.5px;
+    line-height: 1.72;
+    color: rgba(247, 237, 232, 0.58);
+    margin-bottom: 22px;
+  }
+
+  .catalog-empty a {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(223, 182, 178, 0.30);
+    padding-bottom: 4px;
   }
 
   .dots {
@@ -637,6 +791,229 @@
 
   .btn.primary:hover { background: #ecc9c5; border-color: #ecc9c5; }
 
+  /* ---------- 3D 翻转详情层 ---------- */
+  .flip-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, visibility .35s;
+  }
+
+  .flip-layer.is-open { opacity: 1; visibility: visible; }
+
+  .flip-layer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 3, 9, 0.62);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .flip-stage {
+    position: relative;
+    width: min(420px, 86vw);
+    height: min(560px, 78vh);
+    transform-style: preserve-3d;
+    will-change: transform;
+    transform-origin: 50% 50%;
+  }
+
+  .flip-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    overflow: hidden;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .flip-front { background: transparent; }
+  .flip-front .card-inner { height: 100%; }
+  .flip-front .card-details {
+    opacity: 1;
+    transform: none;
+    pointer-events: none;
+  }
+
+  .flip-layer.is-closing { pointer-events: none; }
+
+  .flip-back {
+    transform: rotateY(180deg);
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    background:
+      linear-gradient(155deg, rgba(255, 255, 255, 0.13) 0%, rgba(32, 22, 42, 0.97) 40%, rgba(14, 9, 20, 0.99) 100%);
+    background-color: #181020;
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    box-shadow:
+      0 50px 140px rgba(0, 0, 0, 0.65),
+      inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.10);
+  }
+
+  .flip-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .flip-cat {
+    font-size: 10.5px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: rgba(223, 182, 178, 0.90);
+  }
+
+  .flip-no {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    color: rgba(247, 237, 232, 0.38);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flip-back h2 {
+    font-size: clamp(28px, 3.2vw, 36px);
+    line-height: 1.06;
+    letter-spacing: -0.04em;
+    font-weight: 700;
+    margin-bottom: 12px;
+    text-wrap: balance;
+  }
+
+  .flip-desc {
+    font-size: 13.5px;
+    line-height: 1.72;
+    color: rgba(247, 237, 232, 0.72);
+    margin-bottom: 16px;
+    max-width: 36ch;
+  }
+
+  .flip-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .flip-tag {
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    padding: 5px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    color: rgba(247, 237, 232, 0.60);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flip-rule {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.10);
+    margin-bottom: 18px;
+  }
+
+  .flip-section-label {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(247, 237, 232, 0.42);
+    margin-bottom: 12px;
+  }
+
+  .flip-points {
+    list-style: none;
+    display: grid;
+    gap: 10px;
+    margin: 0 0 22px;
+    padding: 0;
+  }
+
+  .flip-points li {
+    display: flex;
+    gap: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: rgba(247, 237, 232, 0.80);
+  }
+
+  .flip-point-no {
+    flex: none;
+    padding-top: 2px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    opacity: 0.70;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .flip-quote {
+    margin: 0 0 18px;
+    padding-left: 14px;
+    border-left: 2px solid rgba(223, 182, 178, 0.35);
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: rgba(223, 182, 178, 0.75);
+  }
+
+  .flip-result {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 18px;
+  }
+
+  .flip-result-label {
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(247, 237, 232, 0.38);
+  }
+
+  .flip-result-value {
+    font-size: 12px;
+    color: rgba(247, 237, 232, 0.68);
+  }
+
+  .flip-foot {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .flip-note {
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: rgba(247, 237, 232, 0.40);
+  }
+
+  .flip-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 1100px) {
+    .flip-stage { width: min(340px, 84vw); height: min(500px, 70vh); }
+    .flip-back { padding: 24px; }
+    .flip-back h2 { font-size: 26px; }
+    .flip-desc { font-size: 12.5px; line-height: 1.65; }
+    .flip-points { gap: 8px; margin-bottom: 16px; }
+    .flip-points li { font-size: 12px; }
+  }
+
   .sr-only {
     position: absolute;
     width: 1px; height: 1px;
@@ -663,6 +1040,15 @@
     .intro h1 { font-size: 28px; margin-bottom: 8px; }
     .intro p { display: none; }
     .eyebrow { font-size: 10px; margin-bottom: 10px; }
+
+    .catalog-status,
+    .catalog-empty {
+      left: 22px;
+      right: 22px;
+      top: 54%;
+      width: auto;
+      transform: translateY(-50%);
+    }
 
     .ring {
       left: auto;
@@ -691,13 +1077,22 @@
 <header class="topbar">
   <a class="back" href="/index.html">← 返回首页</a>
   <div class="brand">SoulMirror · Assessment</div>
-  <div class="pos" id="posLabel">01 / 08</div>
+  <div class="pos" id="posLabel">— / —</div>
 </header>
 
 <div class="intro">
   <div class="eyebrow">Assessment Center</div>
   <h1>找到适合你的<br>那一面镜子</h1>
   <p>转动轮盘，选择一个测试。它们不是诊断，只是帮助你更清楚地看见自己。</p>
+</div>
+
+<div class="catalog-status" id="catalogStatus">正在读取测评…</div>
+
+<div class="catalog-empty" id="catalogEmpty" hidden>
+  <div class="catalog-empty-kicker">Assessment Center</div>
+  <h2>还没有测评</h2>
+  <p>管理员添加并发布测试后，卡片会自动出现在这里。数量不限，轮盘会按实际数量循环。</p>
+  <a href="/index.html">← 返回首页</a>
 </div>
 
 <main class="stage" id="stage" aria-label="测评轮盘">
@@ -722,6 +1117,36 @@
     <div class="modal-actions">
       <button class="btn" id="modalClose">关闭</button>
       <button class="btn primary" id="modalStart">开始测试 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="flip-layer" id="flipLayer" aria-hidden="true">
+  <div class="flip-stage" id="flipStage">
+    <div class="flip-face flip-front" id="flipFront"></div>
+    <div class="flip-face flip-back">
+      <div class="flip-head">
+        <div class="flip-cat" id="flipCat"></div>
+        <span class="flip-no" id="flipNo"></span>
+      </div>
+      <h2 id="flipTitle"></h2>
+      <p class="flip-desc" id="flipDesc"></p>
+      <div class="flip-tags" id="flipTags"></div>
+      <div class="flip-rule"></div>
+      <div class="flip-section-label">这次测评会帮你看清</div>
+      <ul class="flip-points" id="flipPoints"></ul>
+      <p class="flip-quote">没有标准答案，只有你更习惯的那一种。</p>
+      <div class="flip-result">
+        <span class="flip-result-label">你会得到</span>
+        <span class="flip-result-value">一份可保存的结果与解读</span>
+      </div>
+      <div class="flip-foot">
+        <span class="flip-note" id="flipNote"></span>
+        <div class="flip-actions">
+          <button class="btn" id="flipClose">返回</button>
+          <button class="btn primary" id="flipStart">开始测试 →</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -757,69 +1182,131 @@
     compass2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 15.5L12 8l3.5 7.5-3.5-1.6-3.5 1.6z"/></svg>',
     split: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 5v4a4 4 0 0 0 4 4h6a4 4 0 0 1 4 4v2"/><path d="M5 19v-4a4 4 0 0 1 4-4"/><path d="M16 16l3 3-3 3"/></svg>',
     star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3.5l2.5 5.4 5.9.7-4.4 4 1.2 5.8L12 16.6 6.8 19.4 8 13.6l-4.4-4 5.9-.7L12 3.5z"/></svg>',
-    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 3L5.5 13h5l-1 8 8-10h-5l1-8z"/></svg>'
+    bolt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 3L5.5 13h5l-1 8 8-10h-5l1-8z"/></svg>',
+    wave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12c2.2-3.6 4.4-3.6 6.6 0s4.4 3.6 6.6 0 4.4-3.6 4.8 0"/><path d="M3 17c2.2-2.4 4.4-2.4 6.6 0s4.4 2.4 6.6 0 4.4-2.4 4.8 0" opacity=".5"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l7 3v6c0 4.4-3 7.4-7 9-4-1.6-7-4.6-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/></svg>',
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8"/><path d="M17.5 14.6A5.5 5.5 0 0 1 20.5 20"/></svg>'
   };
 
-  var TESTS = [
-    {
-      id: 'match41', cat: '深度测评', badge: '主推', badgeClass: 'deep',
-      title: '深度匹配测评', sub: '41 题 · 8–12 分钟',
-      desc: '从依恋、大五、爱之语、价值观四个维度，生成一份完整的匹配画像。',
-      meta: ['41 题', '8–12 分钟', '核心'], tint: 'rgba(82,43,91,.5)', icon: 'compass'
-    },
-    {
-      id: 'attachment', cat: '关系', badge: '热门', badgeClass: '',
-      title: '依恋类型', sub: '8 题 · 3 分钟',
-      desc: '你在亲密关系里更习惯靠近、后退，还是保持警惕？',
-      meta: ['8 题', '3 分钟', '1.2k 人测过'], tint: 'rgba(133,79,108,.42)', icon: 'circles'
-    },
-    {
-      id: 'love-language', cat: '关系', badge: '', badgeClass: '',
-      title: '五种爱之语', sub: '10 题 · 4 分钟',
-      desc: '你最容易被哪一种表达打动：肯定、陪伴、礼物、服务，还是触碰？',
-      meta: ['10 题', '4 分钟', '986 人测过'], tint: 'rgba(223,182,178,.18)', icon: 'heart'
-    },
-    {
-      id: 'big-five', cat: '人格', badge: 'NEW', badgeClass: '',
-      title: '大五人格', sub: '10 题 · 4 分钟',
-      desc: '开放式、尽责性、外向性、宜人性、情绪稳定性，五个维度看自己。',
-      meta: ['10 题', '4 分钟', '754 人测过'], tint: 'rgba(82,43,91,.36)', icon: 'pentagon'
-    },
-    {
-      id: 'values', cat: '关系', badge: '', badgeClass: '',
-      title: '关系价值观', sub: '8 题 · 3 分钟',
-      desc: '承诺、边界、独立与陪伴，你在关系里最看重什么？',
-      meta: ['8 题', '3 分钟', '612 人测过'], tint: 'rgba(133,79,108,.3)', icon: 'compass2'
-    },
-    {
-      id: 'conflict', cat: '沟通', badge: '', badgeClass: '',
-      title: '冲突处理风格', sub: '8 题 · 3 分钟',
-      desc: '争吵发生时，你是迎上去、绕开，还是先冷静再说？',
-      meta: ['8 题', '3 分钟', '438 人测过'], tint: 'rgba(223,182,178,.12)', icon: 'split'
-    },
-    {
-      id: 'campus-role', cat: '趣味', badge: '', badgeClass: '',
-      title: '校园角色', sub: '8 题 · 3 分钟',
-      desc: '如果把你放进一部校园剧，你会是哪个角色？',
-      meta: ['8 题', '3 分钟', '1.8k 人测过'], tint: 'rgba(82,43,91,.32)', icon: 'star'
-    },
-    {
-      id: 'social-energy', cat: '人格', badge: '', badgeClass: '',
-      title: '社交能量', sub: '8 题 · 3 分钟',
-      desc: '人群让你充电还是耗电？你更适合哪种社交节奏？',
-      meta: ['8 题', '3 分钟', '521 人测过'], tint: 'rgba(133,79,108,.36)', icon: 'bolt'
-    }
+  var TESTS = [];
+
+  var TINTS = [
+    'rgba(82,43,91,.50)',
+    'rgba(133,79,108,.42)',
+    'rgba(223,182,178,.18)',
+    'rgba(82,43,91,.36)',
+    'rgba(133,79,108,.30)',
+    'rgba(223,182,178,.12)'
   ];
+
+  function formatCount(n) {
+    var num = Number(n) || 0;
+    if (num >= 10000) return Math.round(num / 1000) + 'k';
+    if (num >= 1000) return (Math.round(num / 100) / 10) + 'k';
+    return String(num);
+  }
+
+  function normalizeQuiz(raw, index) {
+    var slug = String(raw.slug || raw.id || ('quiz-' + index)).trim();
+    var meta = Array.isArray(raw.meta)
+      ? raw.meta.map(function (m) { return String(m); }).filter(Boolean).slice(0, 4)
+      : [];
+    if (!meta.length) {
+      if (raw.questionCount) meta.push(raw.questionCount + ' 题');
+      if (raw.durationMinutes) meta.push(raw.durationMinutes + ' 分钟');
+      if (raw.participantCount) meta.push(formatCount(raw.participantCount) + ' 人测过');
+    }
+    var points = Array.isArray(raw.points)
+      ? raw.points.map(function (p) { return String(p); }).filter(Boolean).slice(0, 8)
+      : [];
+
+    return {
+      id: slug,
+      slug: slug,
+      cat: String(raw.category || raw.cat || '测评'),
+      title: String(raw.title || '未命名测评'),
+      sub: String(raw.subtitle || raw.sub || meta.join(' · ') || ''),
+      desc: String(raw.description || raw.desc || ''),
+      meta: meta,
+      points: points,
+      icon: String(raw.icon || 'spark'),
+      tint: String(raw.tint || TINTS[index % TINTS.length]),
+      badge: String(raw.badge || ''),
+      badgeClass: String(raw.badgeClass || ''),
+      durationMinutes: Number(raw.durationMinutes) || 0
+    };
+  }
+
+  function normalizeList(items) {
+    return (Array.isArray(items) ? items : [])
+      .filter(function (item) { return item && (!item.status || item.status === 'published'); })
+      .map(normalizeQuiz);
+  }
+
+  function loadDemoScript() {
+    return new Promise(function (resolve, reject) {
+      if (Array.isArray(window.SM_DEMO_QUIZZES)) {
+        resolve();
+        return;
+      }
+      var script = document.createElement('script');
+      script.src = '../demo-quizzes.js';
+      script.onload = function () { resolve(); };
+      script.onerror = function () { reject(new Error('demo script failed')); };
+      document.head.appendChild(script);
+    });
+  }
+
+  async function loadCatalog() {
+    var demo = new URLSearchParams(window.location.search).get('demo') === '1';
+    if (demo) {
+      try {
+        await loadDemoScript();
+      } catch (e) {
+        console.warn('演示数据读取失败：', e.message);
+        return [];
+      }
+      return Array.isArray(window.SM_DEMO_QUIZZES)
+        ? normalizeList(window.SM_DEMO_QUIZZES)
+        : [];
+    }
+
+    try {
+      var response = await fetch('/api/quizzes', {
+        headers: { Accept: 'application/json' },
+        credentials: 'same-origin'
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      var data = await response.json();
+      return normalizeList(Array.isArray(data) ? data : (data.items || []));
+    } catch (e) {
+      console.warn('测评目录读取失败：', e.message);
+      return [];
+    }
+  }
 
   var stage = document.getElementById('stage');
   var wheel = document.getElementById('wheel');
   var dotsEl = document.getElementById('dots');
   var posLabel = document.getElementById('posLabel');
   var announce = document.getElementById('announce');
+  var catalogStatus = document.getElementById('catalogStatus');
+  var catalogEmpty = document.getElementById('catalogEmpty');
   var modal = document.getElementById('modal');
   var modalCat = document.getElementById('modalCat');
   var modalTitle = document.getElementById('modalTitle');
   var modalDesc = document.getElementById('modalDesc');
+  var flipLayer = document.getElementById('flipLayer');
+  var flipStage = document.getElementById('flipStage');
+  var flipFront = document.getElementById('flipFront');
+  var flipCat = document.getElementById('flipCat');
+  var flipNo = document.getElementById('flipNo');
+  var flipTitle = document.getElementById('flipTitle');
+  var flipDesc = document.getElementById('flipDesc');
+  var flipTags = document.getElementById('flipTags');
+  var flipPoints = document.getElementById('flipPoints');
+  var flipNote = document.getElementById('flipNote');
 
   var cards = [];
   var current = 0;
@@ -832,10 +1319,27 @@
   var moved = 0;
   var wheelLock = 0;
   var activeIndex = 0;
+  var closing = false;
+  var cleanupTimer = 0;
+  var openedIndex = -1;
+  var openedCard = null;
+  var openedReady = false;
 
-  var N = TESTS.length;
+  var N = 0;
+
+  function esc(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
+    });
+  }
 
   function build() {
+    Array.prototype.forEach.call(wheel.querySelectorAll('.wheel-card'), function (el) {
+      el.remove();
+    });
+    dotsEl.innerHTML = '';
+    cards = [];
+
     TESTS.forEach(function (test, i) {
       var btn = document.createElement('button');
       btn.className = 'wheel-card';
@@ -847,20 +1351,24 @@
         '<div class="card-inner">' +
           '<div class="card-float">' +
             '<div class="card-top">' +
-              '<span class="card-cat">' + test.cat + '</span>' +
-              (test.badge ? '<span class="card-badge ' + test.badgeClass + '">' + test.badge + '</span>' : '') +
+              '<span class="card-cat">' + esc(test.cat) + '</span>' +
+              '<span class="card-top-right">' +
+                '<span class="card-no">' + pad(i + 1) + '</span>' +
+                (test.badge ? '<span class="card-badge ' + (test.badgeClass === 'deep' ? 'deep' : '') + '">' + esc(test.badge) + '</span>' : '') +
+              '</span>' +
             '</div>' +
-            '<div class="card-icon">' + ICONS[test.icon] + '</div>' +
-            '<div class="card-title">' + test.title + '</div>' +
-            '<div class="card-sub">' + test.sub + '</div>' +
+            '<div class="card-icon">' + (ICONS[test.icon] || ICONS.compass) + '</div>' +
+            '<div class="card-title">' + esc(test.title) + '</div>' +
+            '<div class="card-sub">' + esc(test.sub) + '</div>' +
             '<div class="card-details">' +
-              '<div class="card-desc">' + test.desc + '</div>' +
+              '<div class="card-desc">' + esc(test.desc) + '</div>' +
               '<div class="card-meta">' + test.meta.map(function (m, j) {
-                return (j ? '<span class="dot"></span>' : '') + '<span>' + m + '</span>';
+                return (j ? '<span class="dot"></span>' : '') + '<span>' + esc(m) + '</span>';
               }).join('') + '</div>' +
               '<div class="card-cta">开始测试 <span class="arrow">→</span></div>' +
             '</div>' +
           '</div>' +
+          '<span class="card-ghost" aria-hidden="true">' + pad(i + 1) + '</span>' +
         '</div>';
       wheel.appendChild(btn);
       cards.push(btn);
@@ -874,15 +1382,20 @@
       dot.setAttribute('aria-label', '切换到' + t.title);
       dotsEl.appendChild(dot);
     });
+
+    // 测评很多时不再堆一排圆点，改由顶部序号显示进度
+    dotsEl.style.display = N > 14 ? 'none' : 'flex';
   }
 
   function shortestTo(index) {
+    if (!N) return 0;
     var d = index - current;
     d = ((d + N / 2) % N + N) % N - N / 2;
     return d;
   }
 
   function shortestBetween(index, from) {
+    if (!N) return 0;
     var d = index - from;
     d = ((d + N / 2) % N + N) % N - N / 2;
     return d;
@@ -894,31 +1407,35 @@
     var mobile = W <= 1100;
 
     if (mobile) {
-      var R = Math.max(300, H * 0.42);
+      var R = Math.max(340, H * 0.42);
       geometry = {
         mobile: true,
         R: R,
-        step: 21 * Math.PI / 180,
+        step: 25 * Math.PI / 180,
         cx: W * 0.62 + R,
-        cy: H * 0.57,
-        cardW: Math.min(W * 0.64, 280),
-        cardH: 332,
-        maxD: 1.0
+        cy: H * 0.70,
+        cardW: Math.min(W * 0.48, 190),
+        cardH: 270,
+        maxD: 2.2
       };
     } else {
       var Rd = Math.min(Math.max(W * 0.72, 680), 980);
-      var RdH = Math.min(380, Math.max(300, H * 0.46));
+      var RdH = Math.min(352, Math.max(300, H * 0.44));
       geometry = {
         mobile: false,
         R: Rd,
-        step: 20 * Math.PI / 180,
+        step: 21 * Math.PI / 180,
         cx: W * 0.63,
         cy: H * 0.46,
-        cardW: Math.min(304, Math.max(246, RdH * 0.8)),
+        cardW: Math.min(272, Math.max(236, RdH * 0.78)),
         cardH: RdH,
         maxD: 2.45
       };
     }
+
+    // 卡片少时全部显示；卡片多时只渲染附近几张，轮盘仍可无限循环
+    var showAll = N > 0 && N <= (mobile ? 5 : 7);
+    if (showAll) geometry.maxD = Math.max(geometry.maxD, Math.ceil(N / 2));
 
     stage.style.setProperty('--card-w', geometry.cardW + 'px');
     stage.style.setProperty('--card-h', geometry.cardH + 'px');
@@ -942,13 +1459,14 @@
   }
 
   function render() {
-    if (!geometry) return;
+    if (!geometry || !N) return;
 
     cards.forEach(function (el, i) {
       var d = shortestBetween(i, current);
       var abs = Math.abs(d);
 
-      if (abs > geometry.maxD + 0.8) {
+      // 只渲染可视范围内的卡片，避免半张卡露出、顶部信息被裁掉
+      if (abs > geometry.maxD) {
         el.style.opacity = '0';
         el.style.pointerEvents = 'none';
         el.style.zIndex = '1';
@@ -967,19 +1485,18 @@
         y = geometry.cy + geometry.R * (1 - Math.cos(angle));
       }
 
-      var baseScale = geometry.mobile ? 1.03 : 1.11;
-      var scale = Math.max(0.76, baseScale - abs * 0.13);
-      var rotation = d * (geometry.mobile ? -3.2 : 3.2);
-      var opacity = Math.max(0.28, 1 - abs * 0.24);
+      var baseScale = geometry.mobile ? 1.02 : 1.06;
+      var scale = Math.max(0.86, baseScale - abs * 0.06);
+      var rotation = d * (geometry.mobile ? -14 : 12);
+      var opacity = Math.max(0.55, 1 - abs * 0.15);
       var z = Math.round(120 - abs * 12);
-      var tz = Math.max(0, 60 - abs * 34);
 
       el.style.transform =
-        'translate(calc(-50% + ' + x + 'px), calc(-50% + ' + y + 'px)) ' +
-        'rotate(' + rotation + 'deg) scale(' + scale + ') translateZ(' + tz + 'px)';
+        'translate(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px)) ' +
+        'rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
       el.style.opacity = String(opacity);
       el.style.zIndex = String(z);
-      el.style.pointerEvents = abs <= 2.2 ? 'auto' : 'none';
+      el.style.pointerEvents = abs <= geometry.maxD ? 'auto' : 'none';
 
       var isActive = abs < 0.5;
       el.classList.toggle('is-active', isActive);
@@ -1036,18 +1553,152 @@
 
   function openModal(index) {
     var test = TESTS[index];
-    modalCat.textContent = test.cat;
-    modalTitle.textContent = test.title;
-    modalDesc.textContent = test.desc + '（原型演示：正式版会进入答题页。）';
-    modal.classList.add('is-open');
+    var card = cards[index];
+    var inner = card && card.querySelector('.card-inner');
+    if (!test || !inner || !N) return;
+
+    openedIndex = index;
+    openedCard = card;
+    openedReady = false;
+    closing = false;
+    clearTimeout(cleanupTimer);
+    flipLayer.classList.remove('is-closing');
+    flipStage.getAnimations().forEach(function (a) { a.cancel(); });
+    flipStage.style.transform = '';
+
+    var rect = card.getBoundingClientRect();
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var targetW = Math.min(420, vw * 0.86);
+    var targetH = Math.min(560, vh * 0.78);
+
+    flipStage.style.width = targetW + 'px';
+    flipStage.style.height = targetH + 'px';
+    flipFront.innerHTML = inner.outerHTML;
+
+    flipCat.textContent = test.cat;
+    flipNo.textContent = pad(index + 1) + ' / ' + pad(N);
+    flipTitle.textContent = test.title;
+    flipDesc.textContent = test.desc;
+    flipTags.innerHTML = test.meta.map(function (m) {
+      return '<span class="flip-tag">' + esc(m) + '</span>';
+    }).join('');
+
+    var points = (test.points || []).slice(0, 3);
+    if (!points.length) {
+      points = ['你在这方面的默认反应', '什么情境最容易触发它', '你可以尝试的一个小调整'];
+    }
+    points.push('你下一次可以尝试的一小步');
+    flipPoints.innerHTML = points.map(function (p, i) {
+      return '<li><span class="flip-point-no">' + pad(i + 1) + '</span><span>' + esc(p) + '</span></li>';
+    }).join('');
+
+    var durationLabel = test.meta[1] || (test.durationMinutes ? test.durationMinutes + ' 分钟' : '几分钟');
+    flipNote.textContent = '约 ' + durationLabel + ' · 仅供自我探索，不构成诊断';
+
+    flipLayer.classList.add('is-open');
+    flipLayer.setAttribute('aria-hidden', 'false');
+
+    var dx = rect.left + rect.width / 2 - vw / 2;
+    var dy = rect.top + rect.height / 2 - vh / 2;
+    var sx = rect.width / targetW;
+    var sy = rect.height / targetH;
+    var start = 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ') rotateY(0deg)';
+    var end = 'translate(0,0) scale(1,1) rotateY(180deg)';
+
+    flipStage.style.transform = start;
+    void flipStage.offsetWidth;
+    var anim = flipStage.animate([
+      { transform: start, offset: 0 },
+      {
+        transform: 'translate(' + (dx * 0.18) + 'px,' + (dy * 0.18) + 'px) scale(' +
+          ((sx + 1) / 2) + ',' + ((sy + 1) / 2) + ') rotateY(96deg)',
+        offset: 0.58
+      },
+      { transform: end, offset: 1 }
+    ], { duration: 820, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' });
+    anim.onfinish = function () {
+      flipStage.style.transform = end;
+      openedReady = true;
+    };
   }
 
   function closeModal() {
+    if (flipLayer.classList.contains('is-open')) {
+      if (closing) return;
+      closing = true;
+      flipLayer.classList.add('is-closing');
+
+      // 固定回到“打开时的那张卡”，而不是当前轮盘中心卡
+      var card = openedCard || cards[openedIndex] || cards[activeIndex] || cards[Math.round(current)];
+      var rect = card ? card.getBoundingClientRect() : null;
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var targetW = flipStage.offsetWidth || 1;
+      var targetH = flipStage.offsetHeight || 1;
+      var anims = flipStage.getAnimations();
+      var running = anims.some(function (a) { return a.playState === 'running'; });
+      var startTransform = running
+        ? getComputedStyle(flipStage).transform
+        : (flipStage.style.transform || 'translate(0,0) scale(1,1) rotateY(180deg)');
+
+      anims.forEach(function (a) { a.cancel(); });
+      flipStage.style.transform = startTransform;
+      void flipStage.offsetWidth;
+
+      var finish = function () {
+        flipLayer.classList.remove('is-open');
+        flipLayer.classList.remove('is-closing');
+        flipLayer.setAttribute('aria-hidden', 'true');
+        closing = false;
+        openedIndex = -1;
+        openedCard = null;
+        openedReady = false;
+        cleanupTimer = setTimeout(function () {
+          if (flipLayer.classList.contains('is-open')) return;
+          flipStage.style.transform = '';
+          flipFront.innerHTML = '';
+        }, 380);
+      };
+
+      if (rect) {
+        var dx = rect.left + rect.width / 2 - vw / 2;
+        var dy = rect.top + rect.height / 2 - vh / 2;
+        var sx = rect.width / targetW;
+        var sy = rect.height / targetH;
+
+        // 完全打开时翻满 360°：详情面先转走，接着由“打开时那张卡”的正面
+        // 接上并落回原位，避免半路消失后露出翻之前的旧卡片。
+        // 中途关闭则只回到 0°，直接翻回正面。
+        var endRotate = (openedReady && !running) ? 360 : 0;
+        var back = 'translate(' + dx + 'px,' + dy + 'px) scale(' + sx + ',' + sy + ') rotateY(' + endRotate + 'deg)';
+        var anim = flipStage.animate([
+          { transform: startTransform },
+          { transform: back }
+        ], { duration: 520, easing: 'cubic-bezier(.22,.61,.36,1)', fill: 'forwards' });
+        anim.onfinish = finish;
+        anim.oncancel = function () { closing = false; };
+        return;
+      }
+
+      finish();
+      return;
+    }
+
+    flipLayer.classList.remove('is-open');
+    flipLayer.classList.remove('is-closing');
+    flipLayer.setAttribute('aria-hidden', 'true');
+    flipStage.style.transform = '';
+    flipFront.innerHTML = '';
     modal.classList.remove('is-open');
+    openedIndex = -1;
+    openedCard = null;
+    openedReady = false;
   }
 
   /* ---------- 拖动 ---------- */
   function onDown(e) {
+    if (!N || !geometry) return;
     if (e.button !== undefined && e.button !== 0) return;
     if (e.target.closest('.dot')) return;
 
@@ -1069,7 +1720,7 @@
   }
 
   function onMove(e) {
-    if (!dragging) return;
+    if (!dragging || !geometry) return;
 
     var dx = e.clientX - startX;
     var dy = e.clientY - startY;
@@ -1123,10 +1774,18 @@
 
   /* ---------- 键盘 / 滚轮 ---------- */
   function onKey(e) {
+    if (flipLayer.classList.contains('is-open')) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal();
+      }
+      return;
+    }
     if (modal.classList.contains('is-open')) {
       if (e.key === 'Escape') closeModal();
       return;
     }
+    if (!N) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
       stepBy(1);
@@ -1140,7 +1799,8 @@
   }
 
   function onWheel(e) {
-    if (modal.classList.contains('is-open')) return;
+    if (!N) return;
+    if (modal.classList.contains('is-open') || flipLayer.classList.contains('is-open')) return;
     var delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (Math.abs(delta) < 6) return;
     e.preventDefault();
@@ -1151,9 +1811,33 @@
   }
 
   /* ---------- 初始化 ---------- */
-  build();
-  layout();
-  requestAnimationFrame(function () { wheel.classList.add('is-ready'); });
+  async function init() {
+    var items = await loadCatalog();
+    TESTS = items;
+    N = TESTS.length;
+
+    if (!N) {
+      catalogStatus.hidden = true;
+      catalogEmpty.hidden = false;
+      wheel.style.display = 'none';
+      posLabel.textContent = '00 / 00';
+      var hud = document.querySelector('.hud');
+      if (hud) hud.style.display = 'none';
+      return;
+    }
+
+    catalogStatus.hidden = true;
+    catalogEmpty.hidden = true;
+    build();
+
+    var startParam = parseInt(new URLSearchParams(location.search).get('start'), 10);
+    if (isFinite(startParam)) current = startParam;
+
+    layout();
+    requestAnimationFrame(function () { wheel.classList.add('is-ready'); });
+  }
+
+  init();
 
   /* 轻微视差：让背后光晕随指针移动，产生空间纵深 */
   window.addEventListener('pointermove', function (e) {
@@ -1183,6 +1867,12 @@
   document.getElementById('modalStart').addEventListener('click', closeModal);
   modal.addEventListener('click', function (e) {
     if (e.target === modal) closeModal();
+  });
+
+  document.getElementById('flipClose').addEventListener('click', closeModal);
+  document.getElementById('flipStart').addEventListener('click', closeModal);
+  flipLayer.addEventListener('click', function (e) {
+    if (e.target === flipLayer) closeModal();
   });
 
   var resizeTimer = 0;

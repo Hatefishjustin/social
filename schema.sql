@@ -1,7 +1,7 @@
 -- ============================================================
 -- 心镜社交独立站数据库 Schema（完整版）
 -- 项目: Hatefishjustin/social
--- 更新: 2026-07-31 - D1线上全量对齐 + 补缺失表 + tarot_readings
+-- 更新: 2026-11-04 - 新增 S14 测评目录 quizzes 表
 -- ============================================================
 
 -- ── 用户体系 ──
@@ -606,6 +606,36 @@ CREATE TABLE IF NOT EXISTS rate_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+
+-- ── 测评目录（S14 新增）──
+-- 2026-11-04 新增：quizzes
+-- 说明：测评中心的唯一数据源。只返回 status='published' 的记录；
+-- 轮盘卡片数量完全由本表决定，不在前端写死。
+-- 迁移文件：docs/migrations/2026-11-04-S14-quiz-catalog.sql
+CREATE TABLE IF NOT EXISTS quizzes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug TEXT NOT NULL UNIQUE,              -- URL 标识，如 attachment
+    title TEXT NOT NULL,                    -- 卡片标题
+    category TEXT NOT NULL DEFAULT '测评',  -- 关系 / 人格 / 情绪 / 沟通 / 趣味 / 成长
+    subtitle TEXT NOT NULL DEFAULT '',      -- 卡片副标题
+    description TEXT NOT NULL DEFAULT '',   -- 卡片导语 / 详情描述
+    question_count INTEGER NOT NULL DEFAULT 0,
+    duration_minutes INTEGER NOT NULL DEFAULT 0,
+    participant_count INTEGER NOT NULL DEFAULT 0,
+    points_json TEXT NOT NULL DEFAULT '[]', -- 详情页 3 条“会帮你看清”
+    questions_json TEXT NOT NULL DEFAULT '[]', -- 题目数据，列表接口不返回
+    entry_url TEXT NOT NULL DEFAULT '',     -- 开始按钮跳转的站内路径；空则回退 /quiz.html?slug=
+    icon TEXT NOT NULL DEFAULT 'spark',     -- 前端图标键
+    tint TEXT NOT NULL DEFAULT '',          -- 卡片色调，可空
+    badge TEXT NOT NULL DEFAULT '',         -- 主推 / 热门 / NEW，可空
+    badge_class TEXT NOT NULL DEFAULT '',   -- deep，可空
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published', 'archived')),
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_quizzes_status_sort ON quizzes(status, sort_order, id);
 
 
 

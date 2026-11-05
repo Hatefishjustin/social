@@ -186,6 +186,7 @@ function showUserMenu(btn) {
   var email = getEmail() || '';
   var html = '';
   html += '<div class="auth-dd-email">' + escAttr(email) + '</div>';
+  html += '<a class="auth-dd-item" href="/assess.html?history=1" style="text-decoration:none;display:block;text-align:left">我的测评记录</a>';
   html += '<a class="auth-dd-item" href="/profile.html" style="text-decoration:none;display:block;text-align:left">个人设置</a>';
   html += '<a class="auth-dd-item" href="/user.html?userId=' + getUserId() + '" style="text-decoration:none;display:block;text-align:left">我的主页</a>';
   html += '<button class="auth-dd-item" id="authLogoutBtn">退出登录</button>';
