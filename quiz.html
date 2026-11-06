@@ -1317,12 +1317,12 @@
   function onNext() {
     if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
     if (state.index < state.bank.questions.length - 1) {
-      state.index += 1;
-      // --- onNext 里弹答题进度彩蛋（和整蛊彩蛋同触发路径，可靠）---
-      if (state.index === 7 && !state._easterHalfShown) {
+      // --- 答题进度彩蛋：state.index 还是"当前题目"时检查 ---
+      if (state.index === 6 && !state._easterHalfShown) {
         state._easterHalfShown = true;
         showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
       }
+      state.index += 1;
       saveProgress();
       renderQuestion();
       return;
