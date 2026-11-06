@@ -300,6 +300,8 @@
     cursor: pointer;
     transform-origin: 50% 50%;
     -webkit-tap-highlight-color: transparent;
+    will-change: transform;
+    backface-visibility: hidden;
   }
 
   .card-inner {
@@ -1575,7 +1577,7 @@
   var velocity = 0;
   var moved = 0;
   var wheelLock = 0;
-  var activeIndex = 0;
+  var activeIndex = -1;
   var closing = false;
   var cleanupTimer = 0;
   var openedIndex = -1;
@@ -1749,7 +1751,7 @@
       var z = Math.round(120 - abs * 12);
 
       el.style.transform =
-        'translate(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px)) ' +
+        'translate3d(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px), 0) ' +
         'rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
       el.style.opacity = String(opacity);
       el.style.zIndex = String(z);
@@ -1763,14 +1765,12 @@
     if (idx !== activeIndex) {
       activeIndex = idx;
       announce.textContent = TESTS[idx].title;
+      posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
+      Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
+        dot.classList.toggle('is-active', i === idx);
+        dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
+      });
     }
-
-    posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
-
-    Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
-      dot.classList.toggle('is-active', i === idx);
-      dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
-    });
   }
 
   function pad(n) {
@@ -2072,6 +2072,15 @@
     }
   }
 
+  var renderQueued = 0;
+  function scheduleRender() {
+    if (renderQueued) return;
+    renderQueued = requestAnimationFrame(function () {
+      renderQueued = 0;
+      render();
+    });
+  }
+
   function onMove(e) {
     if (!dragging || !geometry) return;
 
@@ -2079,20 +2088,22 @@
     var dy = e.clientY - startY;
     moved = Math.max(moved, Math.hypot(dx, dy));
 
-    var delta = geometry.mobile ? (-dy / 150) : (-dx / 190);
+    // 移动端为纵向轮盘（索引大的卡片在中心上方），内容跟随手指：
+    // 上滑(dy<0)应让 current 减小；桌面端横向轮盘方向不变
+    var delta = geometry.mobile ? (dy / 150) : (-dx / 190);
     current = startCurrent + delta;
 
     var now = performance.now();
     var dt = now - lastTime;
     if (dt > 0) {
       var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
-      velocity = -raw / dt;
+      velocity = geometry.mobile ? (raw / dt) : (-raw / dt);
     }
     lastX = e.clientX;
     lastY = e.clientY;
     lastTime = now;
 
-    render();
+    scheduleRender();
   }
 
   function onUp(e) {
@@ -2200,13 +2211,21 @@
   init();
   maybeOpenHistoryFromUrl();
 
-  /* 轻微视差：让背后光晕随指针移动，产生空间纵深 */
+  /* 轻微视差：让背后光晕随指针移动，产生空间纵深
+     性能注意：写根元素自定义属性会触发全文档样式重算，
+     因此拖动轮盘时跳过，并按帧节流（body::after 自带 .6s 过渡，无需逐事件更新） */
+  var parQueued = 0, parNX = 0, parNY = 0;
   window.addEventListener('pointermove', function (e) {
+    if (dragging) return;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var nx = (e.clientX / window.innerWidth - 0.5) * 2;
-    var ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    document.documentElement.style.setProperty('--par-x', nx.toFixed(3));
-    document.documentElement.style.setProperty('--par-y', ny.toFixed(3));
+    parNX = (e.clientX / window.innerWidth - 0.5) * 2;
+    parNY = (e.clientY / window.innerHeight - 0.5) * 2;
+    if (parQueued) return;
+    parQueued = requestAnimationFrame(function () {
+      parQueued = 0;
+      document.documentElement.style.setProperty('--par-x', parNX.toFixed(3));
+      document.documentElement.style.setProperty('--par-y', parNY.toFixed(3));
+    });
   }, { passive: true });
 
   stage.addEventListener('pointerdown', onDown);
