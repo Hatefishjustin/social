@@ -301,6 +301,7 @@
     cursor: pointer;
     transform-origin: 50% 50%;
     -webkit-tap-highlight-color: transparent;
+    /* 与基线一致：常驻合成层，改动会改变文字栅格化观感，禁止随性能优化移除 */
     will-change: transform;
     backface-visibility: hidden;
   }
@@ -1591,7 +1592,19 @@
   var velocity = 0;
   var moved = 0;
   var wheelLock = 0;
-  var activeIndex = 0;
+  var moveRaf = 0;
+  var parRaf = 0;
+  var parX = 0, parY = 0;
+
+  /* 惯性手感参数：慢拖不加惯性，轻甩 1 格、用力甩 2 格，跟手比例始终 1:1 */
+  var INERTIA_WINDOW_MS = 320;
+  var INERTIA_MAX_EXTRA = 2;
+  var INERTIA_DEAD_ZONE_PX = 0.30;
+  var INERTIA_IDLE_MS = 80;
+  var ANIM_BASE_MS = 380;
+  var ANIM_PER_EXTRA_CARD_MS = 70;
+  var ANIM_MAX_MS = 560;
+  var activeIndex = -1;
   var closing = false;
   var cleanupTimer = 0;
   var openedIndex = -1;
@@ -1744,13 +1757,15 @@
     cards.forEach(function (el, i) {
       var d = shortestBetween(i, current);
       var abs = Math.abs(d);
+      var lv = el.__lv || (el.__lv = {});
 
       /* 手机端可见窗口 4 张；桌面沿用基线 maxD 规则 */
       var visible = geometry.mobile ? inView(d) : abs <= geometry.maxD;
       if (!visible) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '1';
+        if (lv.opacity !== '0') { el.style.opacity = '0'; lv.opacity = '0'; }
+        if (lv.pe !== 'none') { el.style.pointerEvents = 'none'; lv.pe = 'none'; }
+        if (lv.z !== '1') { el.style.zIndex = '1'; lv.z = '1'; }
+        if (lv.active !== false) { el.classList.remove('is-active'); lv.active = false; }
         return;
       }
 
@@ -1773,29 +1788,28 @@
       var opacity = Math.max(0.55, 1 - abs * 0.15);
       var z = Math.round(120 - abs * 12);
 
-      el.style.transform =
-        'translate(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px)) ' +
-        'rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
-      el.style.opacity = String(opacity);
-      el.style.zIndex = String(z);
-      el.style.pointerEvents = 'auto';
+      /* 纯数值 transform：等价于基线 translate(-50% + X, -50% + Y)，
+         百分比偏移交给浏览器解析，避免每帧读布局 */
+      var transform = 'translate(-50%, -50%) translate3d(' + Math.round(x) + 'px, ' + Math.round(y) + 'px, 0) rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
+      if (lv.transform !== transform) { el.style.transform = transform; lv.transform = transform; }
+      if (lv.opacity !== opacity) { el.style.opacity = String(opacity); lv.opacity = opacity; }
+      if (lv.z !== String(z)) { el.style.zIndex = String(z); lv.z = String(z); }
+      if (lv.pe !== 'auto') { el.style.pointerEvents = 'auto'; lv.pe = 'auto'; }
 
       var isActive = abs < 0.5;
-      el.classList.toggle('is-active', isActive);
+      if (lv.active !== isActive) { el.classList.toggle('is-active', isActive); lv.active = isActive; }
     });
 
     var idx = ((Math.round(current) % N) + N) % N;
     if (idx !== activeIndex) {
       activeIndex = idx;
       announce.textContent = TESTS[idx].title;
+      posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
+      Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
+        dot.classList.toggle('is-active', i === idx);
+        dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
+      });
     }
-
-    posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
-
-    Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
-      dot.classList.toggle('is-active', i === idx);
-      dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
-    });
   }
 
   function pad(n) {
@@ -1808,7 +1822,7 @@
     var dist = end - start;
     if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
 
-    var duration = 380;
+    var duration = Math.min(ANIM_MAX_MS, ANIM_BASE_MS + ANIM_PER_EXTRA_CARD_MS * Math.max(0, Math.abs(dist) - 1));
     var t0 = performance.now();
 
     function frame(t) {
@@ -1818,6 +1832,8 @@
       render();
       if (p < 1) {
         rafId = requestAnimationFrame(frame);
+      } else {
+        rafId = 0;
       }
     }
 
@@ -2105,11 +2121,21 @@
     lastTime = performance.now();
     velocity = 0;
     cancelAnimationFrame(rafId);
+    rafId = 0;
     stage.classList.add('is-dragging');
 
     if (stage.setPointerCapture) {
       try { stage.setPointerCapture(e.pointerId); } catch (err) {}
     }
+  }
+
+  /* 手势帧合并：touchmove 只算数值，样式每帧最多写一次 */
+  function scheduleRender() {
+    if (moveRaf) return;
+    moveRaf = requestAnimationFrame(function () {
+      moveRaf = 0;
+      render();
+    });
   }
 
   function onMove(e) {
@@ -2134,15 +2160,28 @@
     lastY = e.clientY;
     lastTime = now;
 
-    render();
+    scheduleRender();
   }
 
   function onUp(e) {
     if (!dragging) return;
     dragging = false;
     stage.classList.remove('is-dragging');
+    if (moveRaf) { cancelAnimationFrame(moveRaf); moveRaf = 0; }
 
-    var projected = current + velocity * 0.42;
+    /* 惯性：先扣掉慢拖死区，再按 320ms 速度窗口投影；额外跨卡最多 2 格，
+       且已拖过的距离优先，避免一甩多张 */
+    var dragCards = Math.abs(current - startCurrent);
+    var slack = Math.max(0, INERTIA_MAX_EXTRA - dragCards);
+    var speed = Math.abs(velocity);
+    var span = geometry.mobile ? 150 : 190;
+    var extra = speed > INERTIA_DEAD_ZONE_PX
+      ? (velocity < 0 ? -1 : 1) * ((speed - INERTIA_DEAD_ZONE_PX) * INERTIA_WINDOW_MS / span)
+      : 0;
+    if (moved < 8 || performance.now() - lastTime > INERTIA_IDLE_MS) extra = 0;
+    extra = Math.max(-slack, Math.min(slack, extra));
+
+    var projected = current + extra;
     animateTo(Math.round(projected));
 
     if (moved < 8) {
@@ -2242,13 +2281,17 @@
   init();
   maybeOpenHistoryFromUrl();
 
-  /* 轻微视差：让背后光晕随指针移动，产生空间纵深（基线行为） */
+  /* 轻微视差：让背后光晕随指针移动，产生空间纵深（基线行为），按帧合并写入 */
   window.addEventListener('pointermove', function (e) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var nx = (e.clientX / window.innerWidth - 0.5) * 2;
-    var ny = (e.clientY / window.innerHeight - 0.5) * 2;
-    document.documentElement.style.setProperty('--par-x', nx.toFixed(3));
-    document.documentElement.style.setProperty('--par-y', ny.toFixed(3));
+    parX = (e.clientX / window.innerWidth - 0.5) * 2;
+    parY = (e.clientY / window.innerHeight - 0.5) * 2;
+    if (parRaf) return;
+    parRaf = requestAnimationFrame(function () {
+      parRaf = 0;
+      document.documentElement.style.setProperty('--par-x', parX.toFixed(3));
+      document.documentElement.style.setProperty('--par-y', parY.toFixed(3));
+    });
   }, { passive: true });
 
   stage.addEventListener('pointerdown', onDown);
