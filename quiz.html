@@ -1249,16 +1249,6 @@
     var nextBtn = document.getElementById('nextBtn');
     if (backBtn) backBtn.addEventListener('click', onBack);
     if (nextBtn) nextBtn.addEventListener('click', onNext);
-
-    // --- 答题过程中彩蛋提示 ---
-    if (index === 0 && !state._easter7shown) {
-      state._easter7shown = true;
-      showEaster('欢迎来测～12 题大概 3 分钟，每题按第一反应选就好 🎯');
-    }
-    if (index === 6 && !state._easterHalfShown) {
-      state._easterHalfShown = true;
-      showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
-    }
   }
 
   function showEaster(msg) {
@@ -1330,6 +1320,11 @@
     if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
     if (state.index < state.bank.questions.length - 1) {
       state.index += 1;
+      // --- onNext 里弹答题进度彩蛋（和整蛊彩蛋同触发路径，可靠）---
+      if (state.index === 7 && !state._easterHalfShown) {
+        state._easterHalfShown = true;
+        showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
+      }
       saveProgress();
       renderQuestion();
       return;
