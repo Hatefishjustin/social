@@ -486,7 +486,39 @@
     font-size: 17px;
     line-height: 1.55;
     color: var(--accent);
-    margin-bottom: 16px;
+    margin-bottom: 10px;
+  }
+  .result-anti {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-tertiary, #8a7b8f);
+    font-style: italic;
+    margin: 0 0 16px;
+    opacity: .85;
+  }
+  .quiz-easter {
+    position: fixed; left: 50%; top: 50%;
+    transform: translate(-50%, -50%) scale(.9);
+    background: rgba(25, 14, 30, .96);
+    border: 1px solid rgba(223, 182, 178, .35);
+    border-radius: 14px;
+    padding: 16px 22px;
+    color: #efdcd9;
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 280px;
+    text-align: center;
+    z-index: 9999;
+    box-shadow: 0 18px 50px rgba(0,0,0,.6);
+    animation: easterIn .35s ease-out forwards;
+  }
+  .quiz-easter .easter-close {
+    display: block; margin-top: 10px;
+    color: var(--accent); font-size: 12px;
+    cursor: pointer; background: none; border: 0; padding: 4px;
+  }
+  @keyframes easterIn {
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   }
   .score-line {
     display: flex;
@@ -1024,6 +1056,7 @@
       tip: band.tip || '',
       symptoms: band.symptoms || [],
       quote: band.quote || '',
+      antiTagline: band.antiTagline || '',
       percent: percent,
       mouthPct: mouthPct
     };
@@ -1207,6 +1240,27 @@
     var nextBtn = document.getElementById('nextBtn');
     if (backBtn) backBtn.addEventListener('click', onBack);
     if (nextBtn) nextBtn.addEventListener('click', onNext);
+
+    // --- 第 7 题彩蛋浮动提示 ---
+    if (index === 6 && !state._easter7shown) {
+      state._easter7shown = true;
+      setTimeout(function () {
+        showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
+      }, 600);
+    }
+  }
+
+  function showEaster(msg) {
+    var old = document.querySelector('.quiz-easter');
+    if (old) old.remove();
+    var div = document.createElement('div');
+    div.className = 'quiz-easter';
+    div.innerHTML = '<div>' + esc(msg) + '</div>' +
+      '<button class="easter-close" type="button">好的，继续 →</button>';
+    document.body.appendChild(div);
+    var close = div.querySelector('.easter-close');
+    if (close) close.addEventListener('click', function () { div.remove(); });
+    setTimeout(function () { if (div.parentNode) div.remove(); }, 4500);
   }
 
   function onSelectOption(e) {
@@ -1220,6 +1274,23 @@
     }
     state.answers[state.index] = value;
     saveProgress();
+
+    // --- 恋爱脑连选 3 次最上头整蛊 ---
+    if (state.bank.id === 'lovebrain-level') {
+      var opts = state.bank.questions[state.index].options || [];
+      var hottest = opts.length - 1;
+      if (value === hottest) {
+        state._hotStreak = (state._hotStreak || 0) + 1;
+        if (state._hotStreak === 3 && !state._stung) {
+          state._stung = true;
+          setTimeout(function () {
+            showEaster('别慌，我们这题故意设了陷阱题——你发现了吗？👀 （开玩笑的，没有陷阱，你就是上头了）');
+          }, 300);
+        }
+      } else {
+        state._hotStreak = 0;
+      }
+    }
 
     var options = app.querySelectorAll('.option');
     for (var i = 0; i < options.length; i += 1) {
@@ -1359,6 +1430,7 @@
         '<div class="result-kicker">' + esc(bank.title) + (result.category ? ' · ' + esc(result.category) : '') + '</div>' +
         '<h1 class="result-name">' + esc(result.name) + '</h1>' +
         '<p class="result-tagline">' + esc(result.tagline) + '</p>' +
+        (result.antiTagline ? '<p class="result-anti">' + esc(result.antiTagline) + '</p>' : '') +
         scoreHtml +
         '<div class="result-card"><p class="lead">' + esc(result.desc) + '</p></div>' +
         symptomsHtml +
