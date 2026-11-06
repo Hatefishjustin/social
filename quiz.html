@@ -1262,16 +1262,22 @@
   }
 
   function showEaster(msg) {
-    var old = document.querySelector('.quiz-easter');
-    if (old) old.remove();
-    var div = document.createElement('div');
-    div.className = 'quiz-easter';
-    div.innerHTML = '<div>' + esc(msg) + '</div>' +
-      '<button class="easter-close" type="button">好的，继续 →</button>';
-    document.body.appendChild(div);
-    var close = div.querySelector('.easter-close');
-    if (close) close.addEventListener('click', function () { div.remove(); });
-    setTimeout(function () { if (div.parentNode) div.remove(); }, 4500);
+    try {
+      console.log('[quiz-easter] showEaster called:', msg);
+      var old = document.querySelector('.quiz-easter');
+      if (old) old.remove();
+      var div = document.createElement('div');
+      div.className = 'quiz-easter';
+      div.innerHTML = '<div>' + esc(msg) + '</div>' +
+        '<button class="easter-close" type="button">好的，继续 →</button>';
+      document.body.appendChild(div);
+      console.log('[quiz-easter] appended to body, div:', div);
+      var close = div.querySelector('.easter-close');
+      if (close) close.addEventListener('click', function () { div.remove(); });
+      setTimeout(function () { if (div.parentNode) div.remove(); }, 4500);
+    } catch (e) {
+      console.error('[quiz-easter] showEaster error:', e);
+    }
   }
 
   function onSelectOption(e) {
