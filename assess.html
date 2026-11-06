@@ -285,55 +285,6 @@
     box-shadow: 0 0 40px 12px rgba(223, 182, 178, 0.14);
   }
 
-  /* ========================================================
-     移动端性能降级：体验不变，GPU 负担砍到 1/5
-     策略：只保留 transform/opacity 两类廉价属性的动画，
-     其余装饰层/重阴影/合成隔离全部关闭
-     ======================================================== */
-
-  /* 触屏设备：关闭合成隔离 + 合并多重阴影 + 去掉伪元素颗粒层
-     （isolation + 5 层 box-shadow + mix-blend-mode 是移动端 GPU 三大杀手）*/
-  @media (pointer: coarse) {
-    .card-inner {
-      isolation: auto;                        /* 已无 mix-blend-mode，不需要独立合成层 */
-      box-shadow:
-        0 16px 40px rgba(0, 0, 0, 0.42),     /* 1 层主阴影即可，5 层是 PC 视觉 */
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
-      transition: border-color .25s ease;      /* 去掉 box-shadow 和 background 过渡——阴影动画极贵 */
-    }
-    .card-inner::before { transition: none; } /* 高光层不需要过渡 */
-    .card-inner::after { display: none; }     /* 3% opacity 颗粒纹理在手机上看不见 */
-
-    .wheel-card.is-active .card-inner {
-      box-shadow:
-        0 22px 56px rgba(0, 0, 0, 0.48),
-        0 0 0 1px rgba(255, 255, 255, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-
-    /* 去掉卡片的独立合成层声明——transform 已通过 parent 的 will-change 加速 */
-    .wheel-card { backface-visibility: visible; }
-  }
-
-  /* 窄屏：关掉全屏装饰层（blur 26px + 多层 radial-gradient = 移动端 GPU 炸弹） */
-  @media (max-width: 1100px) {
-    body::before,
-    body::after,
-    .depth-floor,
-    .depth-dust { display: none; }
-
-    /* 手机端轮盘纵向铺满一屏，开场大标题会让位，避免压在卡片上 */
-    .intro { display: none; }
-
-    /* 轮盘装饰环：移动端只留一条主环，去掉光晕和中心点 */
-    .ring::before,
-    .ring::after { display: none; }
-
-    /* 轮盘纵深副环（::before/::after 两个超大圆形 + inset box-shadow）——移动端也关掉 */
-    .wheel::before,
-    .wheel::after { display: none; }
-  }
-
   /* ---------- 卡片 ---------- */
   .wheel-card {
     position: absolute;
@@ -1128,14 +1079,6 @@
     .proto-flag { display: none; }
   }
 
-  /* 横屏手机：高度不足以同时容纳标题、描述和按钮，隐藏非必要文案，避免裁切与标题压卡 */
-  @media (max-width: 1100px) and (max-height: 520px) {
-    .intro { display: none; }
-    .card-desc,
-    .card-meta { display: none; }
-    .card-details { padding-top: 10px; }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .wheel { transition: none; }
     .wheel-card.is-active .card-float { animation: none; }
@@ -1643,13 +1586,12 @@
   var geometry = null;
   var rafId = 0;
   var dragging = false;
-  var animating = false;            /* 惯性/自动动画期间为 true——跳过 is-active class 切换 */
   var startX = 0, startY = 0, startCurrent = 0;
   var lastX = 0, lastY = 0, lastTime = 0;
   var velocity = 0;
   var moved = 0;
   var wheelLock = 0;
-  var activeIndex = -1;
+  var activeIndex = 0;
   var closing = false;
   var cleanupTimer = 0;
   var openedIndex = -1;
@@ -1732,10 +1674,11 @@
     return d;
   }
 
-  /* 可见窗口：宽度 4 格（-2.5 ~ +1.5），任何时刻恰好 4 张。
-     多出来的那张放在负方向（竖屏即下方），避免正方向卡片在置中后继续挡住视线 */
+  /* 可见窗口：沿用基线弧形排布，只把可见张数从 3 张放宽到 4 张。
+     窗口取 d∈(-1.5, +2.5)：中心卡两侧各留一张，第四张放在正方向（弧线向上，
+     上部空间比下部宽裕），不再渲染最外圈的边缘残影 */
   function inView(d) {
-    return d > -2.5 && d < 1.5;
+    return d > -1.5 && d < 2.5;
   }
 
   function layout() {
@@ -1744,43 +1687,18 @@
     var mobile = W <= 1100;
 
     if (mobile) {
-      /* 手机端布局自成一套，不复用桌面弧线：竖屏纵向风扇、横屏横向铺开 */
-      if (W > H) {
-        /* 横屏：宽度富余，横向排开 4 张，几乎不互相压住 */
-        var lCardW = Math.min(W * 0.30, 200);
-        var lCardH = Math.max(190, Math.min(300, H - 150));
-        var lGap = lCardW * 0.92;
-        geometry = {
-          mobile: true,
-          horizontal: true,
-          R: Math.max(300, W * 0.36),   /* 只用于背后装饰环 */
-          step: 19 * Math.PI / 180,
-          cx: W * 0.5,                  /* 当前卡居中，窗口多出的一张落在左侧 */
-          cy: H * 0.5 + 26,
-          cardW: lCardW,
-          cardH: lCardH,
-          gapX: lGap,
-          gapY: 0
-        };
-      } else {
-        /* 竖屏：卡片纵向排开，与纵向滑动手势一致；4 张窗口纵向铺满一屏 */
-        var mCardW = Math.min(W * 0.46, 176);
-        var mCardH = Math.min(280, Math.max(210, H * 0.34));
-        var mGapY = Math.min(H * 0.215, mCardH * 0.64);
-        geometry = {
-          mobile: true,
-          horizontal: false,
-          R: Math.max(300, H * 0.36),   /* 只用于背后装饰环 */
-          step: 19 * Math.PI / 180,
-          cx: W * 0.5,
-          /* 4 张纵向铺满一屏，整体再下移一点，让最上面那张避开顶栏按钮 */
-          cy: H * 0.5 - mGapY * 0.5 + Math.min(56, H * 0.075),
-          cardW: mCardW,
-          cardH: mCardH,
-          gapX: mCardW * 0.14,          /* 轻微水平错位，避免完全叠死 */
-          gapY: mGapY
-        };
-      }
+      /* 基线弧形排布（回滚）：同心圆弧上的扇形卡片，旋转 -14° */
+      var R = Math.max(340, H * 0.42);
+      geometry = {
+        mobile: true,
+        R: R,
+        step: 25 * Math.PI / 180,
+        cx: W * 0.62 + R,
+        cy: H * 0.70,
+        cardW: Math.min(W * 0.48, 190),
+        cardH: 270,
+        maxD: 2.2
+      };
     } else {
       var Rd = Math.min(Math.max(W * 0.72, 680), 980);
       var RdH = Math.min(352, Math.max(300, H * 0.44));
@@ -1791,8 +1709,12 @@
         cx: W * 0.63,
         cy: H * 0.46,
         cardW: Math.min(272, Math.max(236, RdH * 0.78)),
-        cardH: RdH
+        cardH: RdH,
+        maxD: 2.45
       };
+      // 桌面保持基线：卡片少时全部显示
+      var showAllDesktop = N > 0 && N <= 7;
+      if (showAllDesktop) geometry.maxD = Math.max(geometry.maxD, Math.ceil(N / 2));
     }
 
     stage.style.setProperty('--card-w', geometry.cardW + 'px');
@@ -1823,29 +1745,23 @@
       var d = shortestBetween(i, current);
       var abs = Math.abs(d);
 
-      /* 可见窗口宽度固定 4 格：d∈(-2.5, 1.5) 恒含 4 张卡，
-         静止与滑动过程中都正好 4 张，不会多一张少一张 */
-      if (!inView(d)) {
-        if (el._vis !== 0) {
-          el._vis = 0;
-          el.style.opacity = '0';
-          el.style.pointerEvents = 'none';
-          el.style.zIndex = '1';
-        }
+      /* 手机端可见窗口 4 张；桌面沿用基线 maxD 规则 */
+      var visible = geometry.mobile ? inView(d) : abs <= geometry.maxD;
+      if (!visible) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = '1';
         return;
       }
-      el._vis = 1;
 
       var angle = d * geometry.step;
       var x, y;
 
       if (geometry.mobile) {
-        /* 手机端独立坐标：竖屏纵向风扇（负 d 在下、正 d 在上，手指上滑 content 跟着上移），
-           横屏横向铺开 */
-        x = geometry.cx + d * geometry.gapX;
-        y = geometry.horizontal
-          ? geometry.cy + Math.abs(d) * 10
-          : geometry.cy - d * geometry.gapY;
+        /* 基线弧形：圆心在右下方，卡片沿弧线向上扇开 */
+        var a = Math.PI + angle;
+        x = geometry.cx + geometry.R * Math.cos(a);
+        y = geometry.cy + geometry.R * Math.sin(a);
       } else {
         x = geometry.cx + geometry.R * Math.sin(angle);
         y = geometry.cy + geometry.R * (1 - Math.cos(angle));
@@ -1853,44 +1769,33 @@
 
       var baseScale = geometry.mobile ? 1.02 : 1.06;
       var scale = Math.max(0.86, baseScale - abs * 0.06);
-      var rotation = d * (geometry.mobile ? -9 : 12);
-      // 透明度量化到 1/50，减少拖动中的无谓样式写入
-      var opacity = Math.round(Math.max(0.55, 1 - abs * 0.15) * 50) / 50;
+      var rotation = d * (geometry.mobile ? -14 : 12);
+      var opacity = Math.max(0.55, 1 - abs * 0.15);
       var z = Math.round(120 - abs * 12);
 
-      // 纯数值 translate3d：不再逐帧拼 calc()，省去每帧样式解析；
-      // 所有写入先与缓存比对，值没变就不碰 DOM
-      var tx = Math.round(x - geometry.cardW / 2);
-      var ty = Math.round(y - geometry.cardH / 2);
-      var t = 'translate3d(' + tx + 'px,' + ty + 'px,0) rotate(' + rotation.toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
-      if (el._t !== t) { el._t = t; el.style.transform = t; }
-      var o = String(opacity);
-      if (el._o !== o) { el._o = o; el.style.opacity = o; }
-      if (el._z !== z) { el._z = z; el.style.zIndex = String(z); }
-      if (el._pe !== 'auto') { el._pe = 'auto'; el.style.pointerEvents = 'auto'; }
+      el.style.transform =
+        'translate(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px)) ' +
+        'rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
+      el.style.opacity = String(opacity);
+      el.style.zIndex = String(z);
+      el.style.pointerEvents = 'auto';
 
       var isActive = abs < 0.5;
-      if (!animating) {
-        /* 只在"稳定态"（非惯性动画）切换 is-active class，
-           因为每次 toggle 会触发 .card-inner 的 border-color/.box-shadow/::before 过渡，
-           还会启停 .card-float 6.5s 无限动画。
-           甩动期间如果反复切，移动端 GPU 会同时处理十几条并行 CSS transition，直接掉帧。
-           惯性期间 transform/opacity 已经在视觉上把中心卡做得最大最亮了，
-           不需要额外 class 切换就能看出"当前选中"。*/
-        if (el._act !== isActive) { el._act = isActive; el.classList.toggle('is-active', isActive); }
-      }
+      el.classList.toggle('is-active', isActive);
     });
 
     var idx = ((Math.round(current) % N) + N) % N;
     if (idx !== activeIndex) {
       activeIndex = idx;
       announce.textContent = TESTS[idx].title;
-      posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
-      Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
-        dot.classList.toggle('is-active', i === idx);
-        dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
-      });
     }
+
+    posLabel.textContent = pad(idx + 1) + ' / ' + pad(N);
+
+    Array.prototype.forEach.call(dotsEl.children, function (dot, i) {
+      dot.classList.toggle('is-active', i === idx);
+      dot.setAttribute('aria-current', i === idx ? 'true' : 'false');
+    });
   }
 
   function pad(n) {
@@ -1901,41 +1806,22 @@
     cancelAnimationFrame(rafId);
     var start = current;
     var dist = end - start;
-    if (Math.abs(dist) < 0.0005) { current = end; render(); finalizeActive(); return; }
+    if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
 
-    animating = true;
-
-    // 时长按滑动距离自适应：单步利落，多步甩动有滑翔感
-    var duration = Math.min(720, 300 + Math.abs(dist) * 110);
+    var duration = 380;
     var t0 = performance.now();
 
     function frame(t) {
       var p = Math.min(1, (t - t0) / duration);
-      var eased = 1 - Math.pow(1 - p, 4);
+      var eased = 1 - Math.pow(1 - p, 3);
       current = start + dist * eased;
       render();
       if (p < 1) {
         rafId = requestAnimationFrame(frame);
-      } else {
-        animating = false;
-        finalizeActive();
       }
     }
 
     rafId = requestAnimationFrame(frame);
-  }
-
-  /* 动画结束后一次性把 is-active 落到正确的那张卡上。
-     动画期间 transform/opacity 已经让中心卡视觉突出，这里只做"收尾"。 */
-  function finalizeActive() {
-    var finalIdx = ((Math.round(current) % N) + N) % N;
-    cards.forEach(function (el, i) {
-      var want = i === finalIdx;
-      if (el._act !== want) {
-        el._act = want;
-        el.classList.toggle('is-active', want);
-      }
-    });
   }
 
   function stepBy(delta) {
@@ -2219,22 +2105,11 @@
     lastTime = performance.now();
     velocity = 0;
     cancelAnimationFrame(rafId);
-    animating = false;               /* 手指按下，惯性动画结束，恢复 class 切换 */
-    finalizeActive();                /* 用当前 current 值把 is-active 一次性落好 */
     stage.classList.add('is-dragging');
 
     if (stage.setPointerCapture) {
       try { stage.setPointerCapture(e.pointerId); } catch (err) {}
     }
-  }
-
-  var renderQueued = 0;
-  function scheduleRender() {
-    if (renderQueued) return;
-    renderQueued = requestAnimationFrame(function () {
-      renderQueued = 0;
-      render();
-    });
   }
 
   function onMove(e) {
@@ -2244,23 +2119,21 @@
     var dy = e.clientY - startY;
     moved = Math.max(moved, Math.hypot(dx, dy));
 
-    // 手机端恢复纵向滑动：内容跟随手指，上滑让下面的卡片进入中心；桌面端仍是横向
-    var delta = geometry.mobile ? (dy / 150) : (-dx / 190);
+    /* 基线手感：手机端纵向滑动 -dy/150，桌面横向 -dx/190 */
+    var delta = geometry.mobile ? (-dy / 150) : (-dx / 190);
     current = startCurrent + delta;
 
     var now = performance.now();
     var dt = now - lastTime;
     if (dt > 0) {
       var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
-      var inst = (geometry.mobile ? raw : -raw) / dt;
-      // EMA 平滑：抑制单点抖动导致的惯性忽大忽小；间隔过长视为停顿后重新起甩
-      velocity = dt < 64 ? (velocity * 0.35 + inst * 0.65) : inst;
+      velocity = -raw / dt;
     }
     lastX = e.clientX;
     lastY = e.clientY;
     lastTime = now;
 
-    scheduleRender();
+    render();
   }
 
   function onUp(e) {
@@ -2268,11 +2141,8 @@
     dragging = false;
     stage.classList.remove('is-dragging');
 
-    // 惯性投影：0.42 → 1.0，甩动更有力；封顶 ±3 张防止一次甩飞半个目录
-    var base = Math.round(current);
-    var projected = current + velocity * 1.0;
-    var deltaIdx = Math.max(-3, Math.min(3, Math.round(projected) - base));
-    animateTo(base + deltaIdx);
+    var projected = current + velocity * 0.42;
+    animateTo(Math.round(projected));
 
     if (moved < 8) {
       var el = document.elementFromPoint(e.clientX, e.clientY);
@@ -2371,21 +2241,13 @@
   init();
   maybeOpenHistoryFromUrl();
 
-  /* 轻微视差：让背后光晕随指针移动，产生空间纵深
-     性能注意：写根元素自定义属性会触发全文档样式重算，
-     因此拖动轮盘时跳过，并按帧节流（body::after 自带 .6s 过渡，无需逐事件更新） */
-  var parQueued = 0, parNX = 0, parNY = 0;
+  /* 轻微视差：让背后光晕随指针移动，产生空间纵深（基线行为） */
   window.addEventListener('pointermove', function (e) {
-    if (dragging) return;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    parNX = (e.clientX / window.innerWidth - 0.5) * 2;
-    parNY = (e.clientY / window.innerHeight - 0.5) * 2;
-    if (parQueued) return;
-    parQueued = requestAnimationFrame(function () {
-      parQueued = 0;
-      document.documentElement.style.setProperty('--par-x', parNX.toFixed(3));
-      document.documentElement.style.setProperty('--par-y', parNY.toFixed(3));
-    });
+    var nx = (e.clientX / window.innerWidth - 0.5) * 2;
+    var ny = (e.clientY / window.innerHeight - 0.5) * 2;
+    document.documentElement.style.setProperty('--par-x', nx.toFixed(3));
+    document.documentElement.style.setProperty('--par-y', ny.toFixed(3));
   }, { passive: true });
 
   stage.addEventListener('pointerdown', onDown);
