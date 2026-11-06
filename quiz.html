@@ -1178,6 +1178,9 @@
     }
     state.finished = false;
     state.result = null;
+    state._easter7shown = false;
+    state._hotStreak = 0;
+    state._stung = false;
     track('quiz_start', { quiz_type: state.slug });
     renderQuestion();
   }
