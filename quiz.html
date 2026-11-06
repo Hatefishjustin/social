@@ -1317,8 +1317,8 @@
   function onNext() {
     if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
     if (state.index < state.bank.questions.length - 1) {
-      // --- 答题进度彩蛋：state.index 还是"当前题目"时检查 ---
-      if (state.index === 6 && !state._easterHalfShown) {
+      // --- 答题进度彩蛋：state.index === 5 是 Q6/12 刚答完（0-based），12 题答了 6 题刚好一半
+      if (state.index === 5 && !state._easterHalfShown) {
         state._easterHalfShown = true;
         showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
       }
