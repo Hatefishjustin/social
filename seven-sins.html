@@ -14,6 +14,7 @@
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <link rel="apple-touch-icon" href="/assets/logo.png">
 <script src="/auth.js"></script>
+<script src="/qr-code.js"></script>
 <style>
 :root{
   --font-serif:-apple-system,'PingFang SC','Songti SC',serif;
@@ -1159,6 +1160,32 @@ function drawRadar(ctx, cx, cy, radius, D){
   ctx.restore();
 }
 
+/* 分享图品牌资源：同源预加载，未就绪时回退为文字，避免导出空白 */
+var SHARE_BRAND = { icon: null, text: null };
+(function preloadShareBrand(){
+  var icon = new Image(), text = new Image();
+  icon.onload = function(){ SHARE_BRAND.icon = icon; };
+  text.onload = function(){ SHARE_BRAND.text = text; };
+  icon.src = '/logo-icon.png';
+  text.src = '/logo-text.png';
+})();
+
+function drawBrandBlock(ctx, w, top){
+  var iconH = 42, textH = 15, gap = 18;
+  if (SHARE_BRAND.icon){
+    var iconW = Math.round(iconH * SHARE_BRAND.icon.width / SHARE_BRAND.icon.height);
+    var textW = SHARE_BRAND.text ? Math.round(textH * SHARE_BRAND.text.width / SHARE_BRAND.text.height) : 0;
+    var total = iconW + (textW ? gap + textW : 0);
+    var x = w / 2 - total / 2;
+    ctx.drawImage(SHARE_BRAND.icon, x, top, iconW, iconH);
+    if (textW) ctx.drawImage(SHARE_BRAND.text, x + iconW + gap, top + (iconH - textH) / 2, textW, textH);
+    return;
+  }
+  ctx.fillStyle = 'rgba(179,163,174,.92)';
+  ctx.font = '500 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('SOULMIRROR', w / 2, top + 34);
+}
+
 function downloadShareCard(r, btn){
   function draw(){
     var W = 1080, H = 1920;
@@ -1181,9 +1208,7 @@ function downloadShareCard(r, btn){
     ctx.fillRect(0,0,W,H);
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(179,163,174,.92)';
-    ctx.font = '500 30px "PingFang SC","Microsoft YaHei",sans-serif';
-    ctx.fillText('SOULMIRROR · 心镜', W/2, 120);
+    drawBrandBlock(ctx, W, 98);
 
     ctx.fillStyle = 'rgba(247,237,232,.96)';
     ctx.font = '700 62px "PingFang SC","Microsoft YaHei",sans-serif';
@@ -1216,7 +1241,7 @@ function downloadShareCard(r, btn){
     ctx.stroke();
 
     ctx.fillStyle = 'rgba(179,163,174,.86)';
-    ctx.font = '400 26px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.font = '400 22px "PingFang SC","Microsoft YaHei",sans-serif';
     ctx.fillText('娱乐性自我探索 · 非临床诊断 · 0–100 为相对强度', W/2, 1660);
     ctx.fillStyle = 'rgba(223,182,178,.90)';
     ctx.font = '500 26px "PingFang SC","Microsoft YaHei",sans-serif';
@@ -1225,6 +1250,13 @@ function downloadShareCard(r, btn){
     ctx.fillStyle = 'rgba(179,163,174,.66)';
     ctx.font = '400 22px "PingFang SC","Microsoft YaHei",sans-serif';
     ctx.fillText('建议 16 岁以上阅读 · 结果仅供自我探索', W/2, 1790);
+
+    // 二维码：指向当前页面地址（白底黑码，静区 4 模块）
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(820, 1660, 200, 200);
+    if (window.SMQR){
+      SMQR.draw(ctx, location.origin + '/seven-sins.html', 820, 1660, 200, { margin: 4, light: '#ffffff', dark: '#101010' });
+    }
 
     if (canvas.toBlob){
       canvas.toBlob(function(blob){

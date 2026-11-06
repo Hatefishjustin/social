@@ -14,6 +14,7 @@
 <link rel="icon" type="image/png" href="/assets/logo.png">
 <link rel="apple-touch-icon" href="/assets/logo.png">
 <script src="/auth.js"></script>
+<script src="/qr-code.js"></script>
 <style>
 /* 使用系统自带字体栈，不依赖外部字体服务（国内网络环境无法访问 Google Fonts，
    会导致页面因等待字体资源而卡死在加载状态），跨平台效果依然良好。
@@ -2788,6 +2789,32 @@ function exportResultAsImage(){
   }
 }
 
+/* 分享图品牌资源：同源预加载，未就绪时回退为文字，避免导出空白 */
+var SHARE_BRAND = { icon: null, text: null };
+(function preloadShareBrand(){
+  var icon = new Image(), text = new Image();
+  icon.onload = function(){ SHARE_BRAND.icon = icon; };
+  text.onload = function(){ SHARE_BRAND.text = text; };
+  icon.src = '/logo-icon.png';
+  text.src = '/logo-text.png';
+})();
+
+function drawCenterBrand(ctx, w, top){
+  var iconH = 42, textH = 15, gap = 18;
+  if (SHARE_BRAND.icon){
+    var iconW = Math.round(iconH * SHARE_BRAND.icon.width / SHARE_BRAND.icon.height);
+    var textW = SHARE_BRAND.text ? Math.round(textH * SHARE_BRAND.text.width / SHARE_BRAND.text.height) : 0;
+    var total = iconW + (textW ? gap + textW : 0);
+    var x = w / 2 - total / 2;
+    ctx.drawImage(SHARE_BRAND.icon, x, top, iconW, iconH);
+    if (textW) ctx.drawImage(SHARE_BRAND.text, x + iconW + gap, top + (iconH - textH) / 2, textW, textH);
+    return;
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 22px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillText('SOULMIRROR', w / 2, top + 34);
+}
+
 function generateShareImage(data){
   var canvas = document.createElement('canvas');
   var W = 750, H = 1000;
@@ -2809,17 +2836,9 @@ function generateShareImage(data){
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, 500);
 
-  // Logo
-  ctx.fillStyle = '#C4526E';
-  ctx.beginPath(); ctx.arc(375, 80, 6, 0, Math.PI*2); ctx.fill();
-  ctx.globalAlpha = 0.25;
-  ctx.beginPath(); ctx.arc(375, 80, 14, 0, Math.PI*2); ctx.fill();
-  ctx.globalAlpha = 1;
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 22px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+  // Logo（图片品牌标识）
   ctx.textAlign = 'center';
-  ctx.fillText('心镜', 375, 70);
+  drawCenterBrand(ctx, W, 38);
 
   // 标题
   ctx.font = 'bold 36px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -2847,14 +2866,15 @@ function generateShareImage(data){
   ctx.fillStyle = 'rgba(255,255,255,0.2)';
   ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('心镜 · 社交  —  找到最懂你的那个人', 375, 985);
+  ctx.fillText('SOULMIRROR · 社交  —  找到最懂你的那个人', 375, 985);
 
-  // QR code
-  var qrImg = new Image();
-  qrImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAACEklEQVR42u2cQY6EMAwEreUBeRJfz5N4AFIGErdjMpedue125xAhwBcoOe2Owdrno5qCFKQgBSlIQQpSEILMx3YdH9t9+p7KaWNqB27Ye9CPfTEU9DeCnIj+pm8YrqMTb/9wLMbRvE9EMBBxOAJIBZ4eOgK4sIkIQiIuDvpiYliDEioigpSILhxuBErzSUQQ64g5dUryOekIJiKi1hj54G1SrUFGxDKuteIMQMBBKln19P4/EV1K1uFHGAyIjkUJEI64WU+PgwiICSdinaqUJV2OyJmh+xGtuTNhuCAieJQlys3xzu1ZdTQHRKsGkR/hjsM1kCO85oR7aSKCKkeM131iESktWVIOyLyqp8fgUMGp3LH3Oa7W8Cg8g4gIolrDQkr60gEXu8NQRQSdjoi9T6waZtOoUI5gqzWyH5GrDvRHqPpkU5beJ5O6ImKbA1jIs6SrPgcM8fZRfXrbjPY+CXUEzlWIiTyZcgSVjoD3EBpz9aq0r0FVfc7GmLrUnKEs9yZlSeVHZMcaScFsLifY+BIRJDpidtmi7XL9VMNEBNWqEe1T3oM7N8fbc3NDRBA5VGFWu7IMLFxHaO+Tb9WAi90iUayGlYig8SMsfcyXmmXmkGfJSYR/91keXdlzP1Q5gpUIe2vNVlcdrY4oj57KZ5++cgRhrZH/FZFd7KQyRASTH6H/sShIQQpSkIIUpKDfBr0A86X9hrmnvO0AAAAASUVORK5CYII=';
-  qrImg.onload = function() { window._qrDrawn = true; ctx.drawImage(qrImg, 290, 790, 170, 170); showShareModal(canvas); };
-  qrImg.onerror = function() { showShareModal(canvas); };
-  setTimeout(function() { if(!window._qrDrawn) showShareModal(canvas); }, 500);
+  // QR code：指向当前页面地址（白底黑码，静区 4 模块）
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(290, 790, 170, 170);
+  if (window.SMQR) {
+    SMQR.draw(ctx, location.origin + '/match.html', 290, 790, 170, { margin: 4, light: '#ffffff', dark: '#101010' });
+  }
+  showShareModal(canvas);
 }
 
 function drawCard(ctx, label, title, desc, x, y, w, bgColor){
