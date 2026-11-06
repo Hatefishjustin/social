@@ -1761,6 +1761,7 @@
 
     state.slug = slug;
     state.bank = window.QUIZ_BANK[slug];
+    window.__quizState = state;   // 调试用：暴露到全局
     document.title = state.bank.title + ' · 心镜 SoulMirror';
 
     // ?reset=1 清掉本地进度和结果缓存
