@@ -1169,9 +1169,11 @@
   function startQuiz() {
     var bank = state.bank;
     var progress = readJSON(PROGRESS_KEY + state.slug);
+    var recovered = false;
     if (progress && Array.isArray(progress.answers) && progress.answers.length === bank.questions.length) {
       state.answers = progress.answers.slice();
       state.index = Math.min(Math.max(progress.index || 0, 0), bank.questions.length - 1);
+      recovered = true;
     } else {
       state.answers = new Array(bank.questions.length).fill(null);
       state.index = 0;
@@ -1181,6 +1183,10 @@
     state._easter7shown = false;
     state._hotStreak = 0;
     state._stung = false;
+    if (recovered) {
+      // 恢复的进度跳过的节点不触发彩蛋
+      if (state.index >= 6) state._easter7shown = true;
+    }
     track('quiz_start', { quiz_type: state.slug });
     renderQuestion();
   }
@@ -1756,6 +1762,12 @@
     state.slug = slug;
     state.bank = window.QUIZ_BANK[slug];
     document.title = state.bank.title + ' · 心镜 SoulMirror';
+
+    // ?reset=1 清掉本地进度和结果缓存
+    if (params.get('reset') === '1') {
+      removeKey(PROGRESS_KEY + slug);
+      removeKey(RESULT_KEY + slug);
+    }
 
     var saved = readJSON(RESULT_KEY + slug);
     if (saved && saved.result) {
