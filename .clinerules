@@ -244,3 +244,234 @@ AI负责：
 
 4. **发现旧代码存在问题时**：
    优先兼容修复，不直接重写。
+
+---
+
+## 14. 测评页面结构统一规范（标杆：match.html）
+
+所有"答题 → 出分 → 结果"类测评页面必须遵循以下结构统一规则。新增测评页时，以 `match.html`（心理测评匹配）为唯一真源做约束拷贝。
+
+### 14.1 Head 契约（逐字段对齐）
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SoulMirror 心镜 - {测评名}</title>
+
+  <meta name="description" content="{1-2 句详细描述，包含题目数/理论依据}">
+
+  <!-- OG 六件套（必须齐全，缺一个就是 BUG） -->
+  <meta property="og:title" content="SoulMirror 心镜 - {测评名}">
+  <meta property="og:description" content="{同上}">
+  <meta property="og:image" content="https://soulmirror-255.pages.dev/shareLOGO-icon.png">
+  <meta property="og:url" content="https://soulmirror-255.pages.dev/{filename}.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SoulMirror 心镜">
+
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="apple-touch-icon" href="/assets/logo.png">
+
+  <!-- 脚本加载顺序（严禁调整，auth.js 先于 track.js 先于 inline） -->
+  <script src="/auth.js"></script>
+  <style>/* 本页 CSS */</style>
+  <script src="/track.js"></script>
+  <script>/* 本页内联 JS */</script>
+</head>
+```
+
+### 14.2 CSS 变量体系（:root 必须有）
+
+以下 Design Tokens 是全站共享词汇表，所有测评页必须在 `:root` 中声明：
+
+```css
+:root {
+  /* 字体 */
+  --font-serif: -apple-system, 'PingFang SC', 'Songti SC', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+               'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', Arial, sans-serif;
+
+  /* 背景层次 */
+  --bg: #0d0710;           /* 最深层背景 */
+  --bg-elevated: #150c1c;  /* 次深层 */
+  --surface: #1a1122;      /* 卡片/面板 */
+  --surface-hover: #22162c;
+
+  /* 分割线 */
+  --hairline: rgba(255,255,255,0.08);
+  --hairline-strong: rgba(255,255,255,0.14);
+
+  /* 文字层次 */
+  --text-primary: #f7ede8;
+  --text-secondary: #b3a3ae;
+  --text-tertiary: #7c6c78;
+
+  /* 强调色（单一强调色贯穿全站，不再金/胭脂双色） */
+  --accent: #dfb6b2;
+  --accent-dim: #c9908c;
+  --accent-glow: rgba(82,43,91,0.32);
+  --accent-soft: rgba(223,182,178,0.09);
+
+  /* 兼容别名（向后兼容旧变量名，禁止在新代码中继续扩展） */
+  --ink: var(--bg);
+  --ink-deep: var(--bg-elevated);
+  --parchment: var(--text-primary);
+  --parchment-dim: var(--text-secondary);
+  --rouge: var(--accent);
+  --rouge-dim: var(--accent-dim);
+  --gold: var(--accent);
+  --line: var(--hairline);
+}
+```
+
+### 14.3 Body DOM 骨架（6 屏 hidden 切换）
+
+```html
+<body>
+  <!-- === 常驻顶栏 === -->
+  <div id="accountBar" class="account-bar">
+    <div class="account-bar-inner">
+      <div class="account-bar-logo">← 首页</div>     <!-- 带 logo icon -->
+      <button id="loginTriggerBtn" class="account-link">登录</button>
+    </div>
+  </div>
+
+  <!-- === 登录弹窗（hidden 默认） === -->
+  <div id="loginOverlay" class="login-overlay hidden">
+    <!-- email 输入 + 发送按钮 + 状态消息 -->
+  </div>
+
+  <!-- === 彩蛋/隐藏弹窗 === -->
+  <div id="eggOverlay" class="egg-overlay hidden"></div>
+
+  <!-- === 主舞台：6 屏 hidden 切换 === -->
+
+  <!-- 屏 1：欢迎页 Landing -->
+  <div id="landing" class="landing hidden">
+    <!-- 装饰 SVG / logo icon -->
+    <h1>{测评名}</h1>
+    <p>副标题（一句话说清这是什么测评）</p>
+    <p>详细说明（方法论 + 不提示测量维度的原因 + 答题方式说明）</p>
+    <div class="landing-tags">
+      <span>{理论/技术标签 1}</span>
+      <span>{理论/技术标签 2}</span>
+      ...
+    </div>
+    <div class="stats-row">
+      <div><strong>{N}</strong>道题</div>
+      <div><strong>{N}</strong>分钟</div>
+      <div><strong>AI</strong>深度解读</div>  <!-- 如有 AI -->
+    </div>
+    <div id="resumeBar" class="hidden">
+      <!-- localStorage 检测到未完成进度时显示 -->
+      <button onclick="resumeQuiz()">继续上次的测评</button>
+      <button onclick="discardProgress()">放弃，重新开始</button>
+    </div>
+    <button class="btn-primary" onclick="startQuiz()">开始测评</button>
+    <p class="disclaimer">
+      {免责声明：年龄限制 + 本地计算 + 结果仅供自我探索 + 不构成诊断}
+    </p>
+  </div>
+
+  <!-- 屏 2：答题页 Question -->
+  <div id="questionScreen" class="question-screen hidden">
+    <div class="progress-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="{N}" aria-valuenow="0">
+      <div class="progress-fill"></div>
+    </div>
+    <div>
+      <span class="section-tag">{第几部分}</span>
+      <span id="progressCount">01 / {N}</span>
+    </div>
+    <div id="qCard" class="q-card">{题目动态注入}</div>
+    <!-- 选项按钮组（inline 生成，不硬编码） -->
+  </div>
+
+  <!-- 屏 3：结果页 Result -->
+  <div id="resultScreen" class="result-screen hidden">
+    <!-- 分数/剖面/雷达图 -->
+    <div id="aiContent">
+      <div id="aiLoading">AI 解读加载中...</div>
+    </div>
+    <!-- 分享卡 + 分享按钮 -->
+  </div>
+
+  <!-- 屏 4：历史页 History（可选，有历史功能时必须有） -->
+  <div id="historyScreen" class="history-screen hidden"></div>
+</body>
+```
+
+**屏切换规则**：只通过 `classList.add('hidden')` / `classList.remove('hidden')` 切换，不销毁 DOM 节点。
+
+### 14.4 JS 契约
+
+```javascript
+/* === 数据格式 === */
+const QUESTIONS = [
+  {
+    id: 'attachment-q1',
+    section: 'attachment',          /* 理论/维度分组 */
+    text: '题目文本',
+    options: [
+      { value: 1, label: '选项 A' },
+      { value: 2, label: '选项 B' },
+      ...
+    ]
+  },
+  ...
+];
+
+/* === 全局状态 === */
+var currentIndex = 0;               /* 当前题目索引 */
+var answers = {};                    /* { questionId: value } */
+var progressKey = 'quiz-progress';   /* localStorage 键 */
+
+/* === 持久化（必须有） === */
+function saveProgress()    { /* 写入 localStorage */ }
+function loadProgress()    { /* 读 localStorage，未完成返回 null */ }
+function clearProgress()   { /* 放弃后清理 */ }
+function resumeQuiz()      { /* 从断点继续 */ }
+function discardProgress() { /* 放弃并重开 */ }
+
+/* === 生命周期 === */
+document.addEventListener('DOMContentLoaded', function () {
+  // 1. 先检查本地进度 → 有则显示 #resumeBar
+  // 2. 渲染欢迎页
+  // 3. 渲染统计条（总题数 / 估算时长 / AI 与否）
+});
+
+/* === auth.js / track.js 全局依赖 === */
+// showLoginPanel() / closeLoginPanel() —— 来自 /auth.js
+// track('quiz_action', { ... }) —— 来自 /track.js
+```
+
+### 14.5 新增测评页 Checklist
+
+每新增一个测评页，逐项确认：
+
+- [ ] viewport 含 `viewport-fit=cover`
+- [ ] title 格式 `SoulMirror 心镜 - {测评名}`
+- [ ] OG 六件套齐全（title / desc / **image** / **url** / type / site_name）
+- [ ] favicon + apple-touch-icon 存在
+- [ ] 脚本顺序：`auth.js` → `<style>` → `track.js` → inline `<script>`
+- [ ] `:root` CSS 变量完整（含兼容别名）
+- [ ] 有 `#accountBar` 顶栏（含登录按钮）
+- [ ] 有 `#loginOverlay` 登录弹窗（或确认不需要登录恢复）
+- [ ] 有 `#progressWrap` 进度条（含 sectionTag + progressCount）
+- [ ] 有 `#landing` 欢迎页（含标题/副标题/统计条/免责声明）
+- [ ] 有 `#questionScreen` 答题页（含 #qCard）
+- [ ] 有 `#resultScreen` 结果页（含 AI 解读区——如有）
+- [ ] localStorage 持久化 + resume/discard 恢复机制
+- [ ] 免责声明（年龄 + 本地计算 + 不构成诊断）
+
+### 14.6 现有测评页对齐状态（技术债）
+
+| 页面 | 对齐度 | 主要缺口 |
+|---|---|---|
+| `match.html`（标杆） | **100%** | — |
+| `sm-test.html` | ~80% | 缺 viewport-fit、缺 OG image/url、缺 account-bar/login-overlay |
+| `seven-sins.html` | ~75% | 缺 auth.js（无登录）、缺 account-bar/login-overlay、缺 AI 解读区 |
+| `quiz.html`（通用答题器） | ~40% | 缺完整 DOM 骨架、缺 OG image/url、脚本顺序混乱、缺兼容别名变量 |
+
+**对齐策略**：优先保证"新增页面照 match.html 模板"，存量页面按实际使用频率逐个对齐。`quiz.html` 作为通用答题器，结构可适度简化，但必须补齐 OG、脚本顺序、CSS 变量兼容别名这三项。
