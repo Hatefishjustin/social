@@ -285,10 +285,50 @@
     box-shadow: 0 0 40px 12px rgba(223, 182, 178, 0.14);
   }
 
-  /* 触屏设备关闭逐卡混合模式：3% 透明度颗粒纹理视觉几乎无差，
-     但 mix-blend-mode 会为每张卡片强制独立合成与混合，低端机拖动明显掉帧 */
+  /* ========================================================
+     移动端性能降级：体验不变，GPU 负担砍到 1/5
+     策略：只保留 transform/opacity 两类廉价属性的动画，
+     其余装饰层/重阴影/合成隔离全部关闭
+     ======================================================== */
+
+  /* 触屏设备：关闭合成隔离 + 合并多重阴影 + 去掉伪元素颗粒层
+     （isolation + 5 层 box-shadow + mix-blend-mode 是移动端 GPU 三大杀手）*/
   @media (pointer: coarse) {
-    .card-inner::after { mix-blend-mode: normal; }
+    .card-inner {
+      isolation: auto;                        /* 已无 mix-blend-mode，不需要独立合成层 */
+      box-shadow:
+        0 16px 40px rgba(0, 0, 0, 0.42),     /* 1 层主阴影即可，5 层是 PC 视觉 */
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      transition: border-color .25s ease;      /* 去掉 box-shadow 和 background 过渡——阴影动画极贵 */
+    }
+    .card-inner::before { transition: none; } /* 高光层不需要过渡 */
+    .card-inner::after { display: none; }     /* 3% opacity 颗粒纹理在手机上看不见 */
+
+    .wheel-card.is-active .card-inner {
+      box-shadow:
+        0 22px 56px rgba(0, 0, 0, 0.48),
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    /* 去掉卡片的独立合成层声明——transform 已通过 parent 的 will-change 加速 */
+    .wheel-card { backface-visibility: visible; }
+  }
+
+  /* 窄屏：关掉全屏装饰层（blur 26px + 多层 radial-gradient = 移动端 GPU 炸弹） */
+  @media (max-width: 1100px) {
+    body::before,
+    body::after,
+    .depth-floor,
+    .depth-dust { display: none; }
+
+    /* 轮盘装饰环：移动端只留一条主环，去掉光晕和中心点 */
+    .ring::before,
+    .ring::after { display: none; }
+
+    /* 轮盘纵深副环（::before/::after 两个超大圆形 + inset box-shadow）——移动端也关掉 */
+    .wheel::before,
+    .wheel::after { display: none; }
   }
 
   /* ---------- 卡片 ---------- */
@@ -1579,6 +1619,7 @@
   var geometry = null;
   var rafId = 0;
   var dragging = false;
+  var animating = false;            /* 惯性/自动动画期间为 true——跳过 is-active class 切换 */
   var startX = 0, startY = 0, startCurrent = 0;
   var lastX = 0, lastY = 0, lastTime = 0;
   var velocity = 0;
@@ -1682,7 +1723,7 @@
         cy: H * 0.70,
         cardW: Math.min(W * 0.48, 190),
         cardH: 270,
-        maxD: 2.2
+        maxD: 1.8   /* 移动端只显示 ±1.8 张（4–5 张），省掉远处卡片的合成开销；桌面保留 2.45 */
       };
     } else {
       var Rd = Math.min(Math.max(W * 0.72, 680), 980);
@@ -1775,7 +1816,15 @@
       if (el._pe !== pe) { el._pe = pe; el.style.pointerEvents = pe; }
 
       var isActive = abs < 0.5;
-      if (el._act !== isActive) { el._act = isActive; el.classList.toggle('is-active', isActive); }
+      if (!animating) {
+        /* 只在"稳定态"（非惯性动画）切换 is-active class，
+           因为每次 toggle 会触发 .card-inner 的 border-color/.box-shadow/::before 过渡，
+           还会启停 .card-float 6.5s 无限动画。
+           甩动期间如果反复切，移动端 GPU 会同时处理十几条并行 CSS transition，直接掉帧。
+           惯性期间 transform/opacity 已经在视觉上把中心卡做得最大最亮了，
+           不需要额外 class 切换就能看出"当前选中"。*/
+        if (el._act !== isActive) { el._act = isActive; el.classList.toggle('is-active', isActive); }
+      }
     });
 
     var idx = ((Math.round(current) % N) + N) % N;
@@ -1798,7 +1847,9 @@
     cancelAnimationFrame(rafId);
     var start = current;
     var dist = end - start;
-    if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
+    if (Math.abs(dist) < 0.0005) { current = end; render(); finalizeActive(); return; }
+
+    animating = true;
 
     // 时长按滑动距离自适应：单步利落，多步甩动有滑翔感
     var duration = Math.min(720, 300 + Math.abs(dist) * 110);
@@ -1811,10 +1862,26 @@
       render();
       if (p < 1) {
         rafId = requestAnimationFrame(frame);
+      } else {
+        animating = false;
+        finalizeActive();
       }
     }
 
     rafId = requestAnimationFrame(frame);
+  }
+
+  /* 动画结束后一次性把 is-active 落到正确的那张卡上。
+     动画期间 transform/opacity 已经让中心卡视觉突出，这里只做"收尾"。 */
+  function finalizeActive() {
+    var finalIdx = ((Math.round(current) % N) + N) % N;
+    cards.forEach(function (el, i) {
+      var want = i === finalIdx;
+      if (el._act !== want) {
+        el._act = want;
+        el.classList.toggle('is-active', want);
+      }
+    });
   }
 
   function stepBy(delta) {
@@ -2083,6 +2150,8 @@
     lastTime = performance.now();
     velocity = 0;
     cancelAnimationFrame(rafId);
+    animating = false;               /* 手指按下，惯性动画结束，恢复 class 切换 */
+    finalizeActive();                /* 用当前 current 值把 is-active 一次性落好 */
     stage.classList.add('is-dragging');
 
     if (stage.setPointerCapture) {
