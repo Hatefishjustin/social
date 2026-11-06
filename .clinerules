@@ -328,26 +328,20 @@ AI负责：
 
 ### 14.3 Body DOM 骨架（6 屏 hidden 切换）
 
+**顶栏只保留账户栏**——用 `.account-bar` + `.account-bar-inner` + `.account-bar-logo` + `.nav-home-link` + `.auth-login-btn` 这套 seven-sins 风格。登录弹窗由 `/auth.js` 自动注入，**严禁自己再写一套 login-overlay / egg-overlay HTML + CSS**（auth.js 全局处理登录态切换，已登录按钮自动变用户菜单）。
+
 ```html
 <body>
-  <!-- === 常驻顶栏 === -->
+  <!-- === 账户栏（必须，仅此一套，auth.js 自动接管登录按钮） === -->
   <div id="accountBar" class="account-bar">
-    <div class="account-bar-inner">
-      <div class="account-bar-logo">← 首页</div>     <!-- 带 logo icon -->
-      <button id="loginTriggerBtn" class="account-link">登录</button>
+    <div class="account-bar-inner" id="accountBarInner">
+      <img class="account-bar-logo" src="/logo-icon.png" alt="SoulMirror">
+      <a href="/assess.html" class="nav-home-link" style="margin-right:auto">← 测评中心</a>
+      <button class="auth-login-btn">登录</button>
     </div>
   </div>
 
-  <!-- === 登录弹窗（hidden 默认） === -->
-  <div id="loginOverlay" class="login-overlay hidden">
-    <!-- email 输入 + 发送按钮 + 状态消息 -->
-  </div>
-
-  <!-- === 彩蛋/隐藏弹窗 === -->
-  <div id="eggOverlay" class="egg-overlay hidden"></div>
-
-  <!-- === 主舞台：6 屏 hidden 切换 === -->
-
+  <!-- === 主舞台：屏间通过 hidden 切换 === -->
   <!-- 屏 1：欢迎页 Landing -->
   <div id="landing" class="landing hidden">
     <!-- 装饰 SVG / logo icon -->
@@ -404,6 +398,15 @@ AI负责：
 
 **屏切换规则**：只通过 `classList.add('hidden')` / `classList.remove('hidden')` 切换，不销毁 DOM 节点。
 
+**账户栏 CSS 模板**（从 seven-sins.html 拷贝，放在 :root 之后）：
+```css
+.account-bar{display:flex;justify-content:flex-end;padding:14px 0 0;}
+.account-bar-inner{display:flex;align-items:center;gap:12px;font-size:12.5px;width:100%;max-width:640px;margin:0 auto;padding:0 24px;}
+.account-bar-logo{width:20px;height:20px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(223,182,178,.35));flex-shrink:0;}
+.nav-home-link{font-size:13px;color:var(--text-tertiary);text-decoration:none;display:inline-flex;align-items:center;gap:2px;transition:color .2s}
+.nav-home-link:hover{color:var(--text-primary);}
+```
+
 ### 14.4 JS 契约
 
 ```javascript
@@ -442,8 +445,11 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* === auth.js / track.js 全局依赖 === */
-// showLoginPanel() / closeLoginPanel() —— 来自 /auth.js
-// track('quiz_action', { ... }) —— 来自 /track.js
+// 登录：只用 <button class="auth-login-btn"> 让 auth.js 自动接管
+//      —— 未登录 → 点击弹出底部 sheet；已登录 → 自动变用户菜单下拉
+//      —— 严禁自己写 showLoginPanel / login-overlay / egg-overlay
+// 调用 API：Auth.showLoginModal() / Auth.requestLogin(email) —— 高级场景
+// 埋点：track('quiz_action', { ... }) —— 来自 /track.js
 ```
 
 ### 14.5 新增测评页 Checklist
@@ -456,22 +462,25 @@ document.addEventListener('DOMContentLoaded', function () {
 - [ ] favicon + apple-touch-icon 存在
 - [ ] 脚本顺序：`auth.js` → `<style>` → `track.js` → inline `<script>`
 - [ ] `:root` CSS 变量完整（含兼容别名）
-- [ ] 有 `#accountBar` 顶栏（含登录按钮）
-- [ ] 有 `#loginOverlay` 登录弹窗（或确认不需要登录恢复）
-- [ ] 有 `#progressWrap` 进度条（含 sectionTag + progressCount）
+- [ ] `.account-bar` 账户栏三件套（logo + ← 测评中心 + `.auth-login-btn`）
+- [ ] **严禁** 自己写 login-overlay / egg-overlay HTML+CSS（auth.js 自动注入）
+- [ ] 有 `.progress-wrap` 进度条（含 sectionTag + progressCount）
 - [ ] 有 `#landing` 欢迎页（含标题/副标题/统计条/免责声明）
 - [ ] 有 `#questionScreen` 答题页（含 #qCard）
 - [ ] 有 `#resultScreen` 结果页（含 AI 解读区——如有）
 - [ ] localStorage 持久化 + resume/discard 恢复机制
 - [ ] 免责声明（年龄 + 本地计算 + 不构成诊断）
+- [ ] **有 `.hidden{display:none !important}`**（七宗罪/深度匹配风格；无动态注入屏的页面如 quiz.html 可不写，但严禁有 `hidden` 类的 DOM 元素不具备 `.hidden` 规则）
 
-### 14.6 现有测评页对齐状态（技术债）
+### 14.6 现有测评页对齐状态（2026-11-06 更新）
 
-| 页面 | 对齐度 | 主要缺口 |
+| 页面 | 对齐度 | 主要备注 |
 |---|---|---|
-| `match.html`（标杆） | **100%** | — |
-| `sm-test.html` | ~80% | 缺 viewport-fit、缺 OG image/url、缺 account-bar/login-overlay |
-| `seven-sins.html` | ~75% | 缺 auth.js（无登录）、缺 account-bar/login-overlay、缺 AI 解读区 |
-| `quiz.html`（通用答题器） | ~40% | 缺完整 DOM 骨架、缺 OG image/url、脚本顺序混乱、缺兼容别名变量 |
+| `match.html`（标杆） | **95%** | 账户栏已用 auth-login-btn；内部有自定义 loginOverlay（完整屏切换逻辑，非技术债） |
+| `seven-sins.html` | **95%** | 账户栏/登录已统一 auth.js；缺 AI 解读区（产品设计即如此） |
+| `sm-test.html` | **95%** | 账户栏/登录已统一 auth.js；缺 AI 解读区（产品设计即如此） |
+| `quiz.html`（通用答题器） | **90%** | 账户栏已用 seven-sins 同款结构；无 `.hidden` 规则（纯动态注入，无静态屏） |
 
-**对齐策略**：优先保证"新增页面照 match.html 模板"，存量页面按实际使用频率逐个对齐。`quiz.html` 作为通用答题器，结构可适度简化，但必须补齐 OG、脚本顺序、CSS 变量兼容别名这三项。
+**quiz.html 特例**：它是 `quiz.html?slug=xxx` 的统一运行页，屏完全由 JS 注入，不需要静态 `#landing / #questionScreen / #resultScreen`，但账户栏 + auth-login-btn + OG + CSS 变量 + 脚本顺序全部对齐。
+
+**2026-11-06 关键修复**：前一轮尝试把 match.html 的 `login-overlay hidden` 弹层复制到其它页面，结果 quiz.html 无 `.hidden{}` 规则 → 弹层永久显示 → 黑屏遮罩（用户截图反馈）。另一些页面弹层显示但 `showLoginPanel()` 仅 match.html 内部定义，点击无效。**最终正确做法**：所有页面只用 `<button class="auth-login-btn">` 让 auth.js 全局接管。这条已写进模板和 Checklist，严禁再犯。
