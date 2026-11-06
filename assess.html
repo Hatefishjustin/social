@@ -322,6 +322,9 @@
     .depth-floor,
     .depth-dust { display: none; }
 
+    /* 手机端轮盘纵向铺满一屏，开场大标题会让位，避免压在卡片上 */
+    .intro { display: none; }
+
     /* 轮盘装饰环：移动端只留一条主环，去掉光晕和中心点 */
     .ring::before,
     .ring::after { display: none; }
@@ -843,16 +846,16 @@
   .btn.primary:hover { background: #ecc9c5; border-color: #ecc9c5; }
 
   /* ---------- 3D 翻转详情层 ---------- */
+  /* 翻牌层走正常文档流：内容变高时由页面层滚动承担，卡片内部不再生成滚动容器 */
   .flip-layer {
-    position: fixed;
-    inset: 0;
+    position: relative;
     z-index: 300;
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
     padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
     background: rgba(6, 3, 9, 0.62);
     -webkit-backdrop-filter: blur(6px);
@@ -866,11 +869,15 @@
 
   .flip-layer.is-open { opacity: 1; visibility: visible; }
 
+  /* 翻牌态解除轮盘页的 overflow:hidden，滚动交还页面层 */
+  html.flip-open { height: auto; overflow-x: hidden; overflow-y: auto; }
+  html.flip-open body { height: auto; overflow: visible; }
+
   .flip-stage {
     position: relative;
     flex: 0 0 auto;
     width: min(420px, 86vw);
-    height: min(560px, calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+    height: auto;
     margin: auto 0;
     transform-style: preserve-3d;
     will-change: transform;
@@ -901,9 +908,6 @@
     display: flex;
     flex-direction: column;
     padding: 32px 32px calc(24px + env(safe-area-inset-bottom));
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
     touch-action: pan-y;
     background:
       linear-gradient(155deg, rgba(255, 255, 255, 0.13) 0%, rgba(32, 22, 42, 0.97) 40%, rgba(14, 9, 20, 0.99) 100%);
@@ -1042,16 +1046,12 @@
   }
 
   .flip-foot {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
     margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding-top: 10px;
     padding-bottom: max(2px, env(safe-area-inset-bottom));
-    background: linear-gradient(180deg, rgba(20, 11, 28, 0) 0%, rgba(20, 11, 28, 0.94) 34%, #140b1c 100%);
   }
 
   .flip-note {
@@ -1066,8 +1066,13 @@
     justify-content: flex-end;
   }
 
+  /* 测高态：两面叠放改成正常流，让 .flip-back 的自然高度直接决定卡片高度 */
+  .flip-stage.is-measuring { height: auto; }
+  .flip-stage.is-measuring .flip-front { display: none; }
+  .flip-stage.is-measuring .flip-back { position: relative; inset: auto; transform: none; }
+
   @media (max-width: 1100px) {
-    .flip-stage { width: min(340px, 84vw); height: min(500px, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); }
+    .flip-stage { width: min(340px, 84vw); }
     .flip-back { padding: 24px 24px calc(20px + env(safe-area-inset-bottom)); }
     .flip-back h2 { font-size: 26px; }
     .flip-desc { font-size: 12.5px; line-height: 1.65; }
@@ -1727,25 +1732,55 @@
     return d;
   }
 
+  /* 可见窗口：宽度 4 格（-2.5 ~ +1.5），任何时刻恰好 4 张。
+     多出来的那张放在负方向（竖屏即下方），避免正方向卡片在置中后继续挡住视线 */
+  function inView(d) {
+    return d > -2.5 && d < 1.5;
+  }
+
   function layout() {
     var W = stage.clientWidth;
     var H = stage.clientHeight;
     var mobile = W <= 1100;
 
     if (mobile) {
-      var mCardW = Math.min(W * 0.46, 170);
-      var mCardH = Math.min(300, Math.max(210, H * 0.42));
-      geometry = {
-        mobile: true,
-        R: Math.max(300, H * 0.36),   /* 只用于背后装饰环，不参与卡片定位 */
-        step: 19 * Math.PI / 180,
-        cx: W * 0.5,
-        cy: Math.min(H * 0.54, H - mCardH / 2 - 84),
-        cardW: mCardW,
-        cardH: mCardH,
-        gap: mCardW * 0.62,            /* 相邻卡片水平间距：5 张扇形铺开，避免叠成一摞 */
-        maxD: 2   /* 移动端显示中心 ±2 张，共 5 张；更远的卡片不渲染，省合成开销 */
-      };
+      /* 手机端布局自成一套，不复用桌面弧线：竖屏纵向风扇、横屏横向铺开 */
+      if (W > H) {
+        /* 横屏：宽度富余，横向排开 4 张，几乎不互相压住 */
+        var lCardW = Math.min(W * 0.30, 200);
+        var lCardH = Math.max(190, Math.min(300, H - 150));
+        var lGap = lCardW * 0.92;
+        geometry = {
+          mobile: true,
+          horizontal: true,
+          R: Math.max(300, W * 0.36),   /* 只用于背后装饰环 */
+          step: 19 * Math.PI / 180,
+          cx: W * 0.5,                  /* 当前卡居中，窗口多出的一张落在左侧 */
+          cy: H * 0.5 + 26,
+          cardW: lCardW,
+          cardH: lCardH,
+          gapX: lGap,
+          gapY: 0
+        };
+      } else {
+        /* 竖屏：卡片纵向排开，与纵向滑动手势一致；4 张窗口纵向铺满一屏 */
+        var mCardW = Math.min(W * 0.46, 176);
+        var mCardH = Math.min(280, Math.max(210, H * 0.34));
+        var mGapY = Math.min(H * 0.215, mCardH * 0.64);
+        geometry = {
+          mobile: true,
+          horizontal: false,
+          R: Math.max(300, H * 0.36),   /* 只用于背后装饰环 */
+          step: 19 * Math.PI / 180,
+          cx: W * 0.5,
+          /* 4 张纵向铺满一屏，整体再下移一点，让最上面那张避开顶栏按钮 */
+          cy: H * 0.5 - mGapY * 0.5 + Math.min(56, H * 0.075),
+          cardW: mCardW,
+          cardH: mCardH,
+          gapX: mCardW * 0.14,          /* 轻微水平错位，避免完全叠死 */
+          gapY: mGapY
+        };
+      }
     } else {
       var Rd = Math.min(Math.max(W * 0.72, 680), 980);
       var RdH = Math.min(352, Math.max(300, H * 0.44));
@@ -1756,14 +1791,9 @@
         cx: W * 0.63,
         cy: H * 0.46,
         cardW: Math.min(272, Math.max(236, RdH * 0.78)),
-        cardH: RdH,
-        maxD: 2.45
+        cardH: RdH
       };
     }
-
-    // 5 条以内全部显示；超过 5 条时只渲染中心 ±2（5 张），轮盘仍可无限循环
-    var showAll = N > 0 && N <= 5;
-    if (showAll) geometry.maxD = Math.max(geometry.maxD, Math.ceil(N / 2));
 
     stage.style.setProperty('--card-w', geometry.cardW + 'px');
     stage.style.setProperty('--card-h', geometry.cardH + 'px');
@@ -1793,8 +1823,9 @@
       var d = shortestBetween(i, current);
       var abs = Math.abs(d);
 
-      // 只渲染可视范围内的卡片，避免半张卡露出、顶部信息被裁掉
-      if (abs > geometry.maxD) {
+      /* 可见窗口宽度固定 4 格：d∈(-2.5, 1.5) 恒含 4 张卡，
+         静止与滑动过程中都正好 4 张，不会多一张少一张 */
+      if (!inView(d)) {
         if (el._vis !== 0) {
           el._vis = 0;
           el.style.opacity = '0';
@@ -1809,10 +1840,12 @@
       var x, y;
 
       if (geometry.mobile) {
-        /* 手机端改成平铺扇形：相邻卡按固定像素间距排开，
-           半径公式在中心附近的位移太小，5 张会挤成一摞 */
-        x = geometry.cx + d * geometry.gap;
-        y = geometry.cy + Math.abs(d) * 14;
+        /* 手机端独立坐标：竖屏纵向风扇（负 d 在下、正 d 在上，手指上滑 content 跟着上移），
+           横屏横向铺开 */
+        x = geometry.cx + d * geometry.gapX;
+        y = geometry.horizontal
+          ? geometry.cy + Math.abs(d) * 10
+          : geometry.cy - d * geometry.gapY;
       } else {
         x = geometry.cx + geometry.R * Math.sin(angle);
         y = geometry.cy + geometry.R * (1 - Math.cos(angle));
@@ -1834,8 +1867,7 @@
       var o = String(opacity);
       if (el._o !== o) { el._o = o; el.style.opacity = o; }
       if (el._z !== z) { el._z = z; el.style.zIndex = String(z); }
-      var pe = abs <= geometry.maxD ? 'auto' : 'none';
-      if (el._pe !== pe) { el._pe = pe; el.style.pointerEvents = pe; }
+      if (el._pe !== 'auto') { el._pe = 'auto'; el.style.pointerEvents = 'auto'; }
 
       var isActive = abs < 0.5;
       if (!animating) {
@@ -1936,11 +1968,8 @@
     var vh = vv && vv.height ? vv.height : window.innerHeight;
     var narrow = vw <= 1100;
     var targetW = Math.min(narrow ? 340 : 420, vw * 0.86);
-    var maxH = Math.min(narrow ? 500 : 560, vh - 32);
-    var targetH = maxH;
 
     flipStage.style.width = targetW + 'px';
-    flipStage.style.height = '1px';
     flipFront.innerHTML = inner.outerHTML;
 
     flipCat.textContent = test.cat;
@@ -1963,10 +1992,16 @@
     var durationLabel = test.meta[1] || (test.durationMinutes ? test.durationMinutes + ' 分钟' : '几分钟');
     flipNote.textContent = '约 ' + durationLabel + ' · 仅供自我探索，不构成诊断';
 
-    // 高度按背面内容自适应：内容少时收紧，超出可用高度时由 .flip-back 内部滚动，按钮始终可达
-    var contentH = flipBack.scrollHeight;
-    targetH = Math.min(Math.max(contentH, 320), maxH);
+    /* 卡片高度完全随内容自适应，不设上限、不在卡内滚动；
+       内容超过一屏时由页面层滚动承担，主按钮始终可滚到 */
+    flipStage.classList.add('is-measuring');
+    flipStage.style.height = 'auto';
+    var contentH = flipBack.offsetHeight;
+    flipStage.classList.remove('is-measuring');
+    var targetH = Math.max(contentH, 320);
     flipStage.style.height = targetH + 'px';
+    document.documentElement.classList.add('flip-open');
+    window.scrollTo(0, 0);
 
     flipLayer.classList.add('is-open');
     flipLayer.setAttribute('aria-hidden', 'false');
@@ -2022,6 +2057,8 @@
         flipLayer.classList.remove('is-open');
         flipLayer.classList.remove('is-closing');
         flipLayer.setAttribute('aria-hidden', 'true');
+        document.documentElement.classList.remove('flip-open');
+        window.scrollTo(0, 0);
         closing = false;
         openedIndex = -1;
         openedCard = null;
@@ -2060,6 +2097,8 @@
     flipLayer.classList.remove('is-open');
     flipLayer.classList.remove('is-closing');
     flipLayer.setAttribute('aria-hidden', 'true');
+    document.documentElement.classList.remove('flip-open');
+    window.scrollTo(0, 0);
     flipStage.style.transform = '';
     flipFront.innerHTML = '';
     modal.classList.remove('is-open');
@@ -2205,15 +2244,15 @@
     var dy = e.clientY - startY;
     moved = Math.max(moved, Math.hypot(dx, dy));
 
-    // 手机端为横向扇形轮盘：左滑让后面的卡片进入中心，手势方向与桌面一致
-    var delta = geometry.mobile ? (-dx / 130) : (-dx / 190);
+    // 手机端恢复纵向滑动：内容跟随手指，上滑让下面的卡片进入中心；桌面端仍是横向
+    var delta = geometry.mobile ? (dy / 150) : (-dx / 190);
     current = startCurrent + delta;
 
     var now = performance.now();
     var dt = now - lastTime;
     if (dt > 0) {
-      var raw = e.clientX - lastX;
-      var inst = -raw / dt;
+      var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
+      var inst = (geometry.mobile ? raw : -raw) / dt;
       // EMA 平滑：抑制单点抖动导致的惯性忽大忽小；间隔过长视为停顿后重新起甩
       velocity = dt < 64 ? (velocity * 0.35 + inst * 0.65) : inst;
     }
