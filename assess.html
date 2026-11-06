@@ -2119,15 +2119,16 @@
     var dy = e.clientY - startY;
     moved = Math.max(moved, Math.hypot(dx, dy));
 
-    /* 基线手感：手机端纵向滑动 -dy/150，桌面横向 -dx/190 */
-    var delta = geometry.mobile ? (-dy / 150) : (-dx / 190);
+    /* 手机端纵向轮盘：内容跟随手指，上滑(dy<0)让下方卡片进中心（current 减小）；
+       桌面端横向 -dx/190 不变 */
+    var delta = geometry.mobile ? (dy / 150) : (-dx / 190);
     current = startCurrent + delta;
 
     var now = performance.now();
     var dt = now - lastTime;
     if (dt > 0) {
       var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
-      velocity = -raw / dt;
+      velocity = geometry.mobile ? (raw / dt) : (-raw / dt);
     }
     lastX = e.clientX;
     lastY = e.clientY;
