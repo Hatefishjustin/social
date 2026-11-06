@@ -1,13 +1,52 @@
 /**
  * Cloudflare Pages Function
- * 全局中间件：旧域名跳转 + 统一安全响应头
+ * 全局中间件：内部路径拦截 + 旧域名跳转 + 统一安全响应头
  */
+
+// 内部路径黑名单：文档、笔记、数据库结构、迁移、工具残留，一律不对公网提供服务
+const PROTECTED_EXACT = new Set([
+  '/交接文档.md',
+  '/.clinerules',
+  '/schema.sql',
+  '/mail-draft-update',
+  '/mail-draft-update.html',
+  '/test-visibility-auth.js',
+  '/make_share_cover.js',
+  '/make_share_cover.py',
+]);
+const PROTECTED_PREFIXES = [
+  '/docs',
+  '/.workbuddy',
+  '/backups',
+];
+
+function isProtected(pathname) {
+  let path = pathname;
+  try {
+    path = decodeURIComponent(pathname);
+  } catch (e) {
+    // 保留原始路径
+  }
+  if (PROTECTED_EXACT.has(path)) return true;
+  return PROTECTED_PREFIXES.some(
+    (p) => path === p || path.startsWith(p + '/') || path.startsWith(p + '.')
+  );
+}
+
 export const onRequest = async (context) => {
   const url = new URL(context.request.url);
 
   // 历史遗留域名 → 主域名
   if (url.hostname === 'soulmirror.disabled.pages.dev') {
     return Response.redirect('https://soulmirror-255.pages.dev' + url.pathname + url.search, 301);
+  }
+
+  // 内部路径：返回 404（不暴露"存在但拒绝"的信号）
+  if (isProtected(url.pathname)) {
+    return new Response('Not found', {
+      status: 404,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Content-Type-Options': 'nosniff' },
+    });
   }
 
   const res = await context.next();

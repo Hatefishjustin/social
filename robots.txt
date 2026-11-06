@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /docs/
+Disallow: /.workbuddy/
+Disallow: /backups/
+Disallow: /schema.sql
+Disallow: /admin.html
+Disallow: /new_admin.html
+Disallow: /admin-support.html
+Disallow: /交接文档.md
+Disallow: /.clinerules
