@@ -1181,11 +1181,11 @@
     state.finished = false;
     state.result = null;
     state._easter7shown = false;
+    state._easterHalfShown = false;
     state._hotStreak = 0;
     state._stung = false;
     if (recovered) {
-      // 恢复的进度跳过的节点不触发彩蛋
-      if (state.index >= 6) state._easter7shown = true;
+      if (state.index >= 6) { state._easterHalfShown = true; }
     }
     track('quiz_start', { quiz_type: state.slug });
     renderQuestion();
@@ -1250,12 +1250,19 @@
     if (backBtn) backBtn.addEventListener('click', onBack);
     if (nextBtn) nextBtn.addEventListener('click', onNext);
 
-    // --- 第 7 题彩蛋浮动提示 ---
-    if (index === 6 && !state._easter7shown) {
+    // --- 答题过程中彩蛋提示 ---
+    if (index === 0 && !state._easter7shown) {
+      // Q1 弹一个欢迎彩蛋，确认 showEaster 能工作
       state._easter7shown = true;
       setTimeout(function () {
+        showEaster('欢迎来测～12 题大概 3 分钟，每题按第一反应选就好 🎯');
+      }, 400);
+    }
+    if (index === 6 && !state._easterHalfShown) {
+      state._easterHalfShown = true;
+      setTimeout(function () {
         showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
-      }, 600);
+      }, 400);
     }
   }
 
