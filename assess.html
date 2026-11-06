@@ -69,6 +69,7 @@
       radial-gradient(1000px 740px at 62% 58%, rgba(82, 43, 91, 0.10), transparent 74%);
     transform: translate3d(calc(var(--par-x, 0) * 10px), calc(var(--par-y, 0) * 8px), 0);
     transition: transform .6s cubic-bezier(.22, .61, .36, 1);
+    will-change: transform;
   }
 
   .depth-floor {
@@ -282,6 +283,12 @@
     background: var(--accent);
     opacity: 0.25;
     box-shadow: 0 0 40px 12px rgba(223, 182, 178, 0.14);
+  }
+
+  /* 触屏设备关闭逐卡混合模式：3% 透明度颗粒纹理视觉几乎无差，
+     但 mix-blend-mode 会为每张卡片强制独立合成与混合，低端机拖动明显掉帧 */
+  @media (pointer: coarse) {
+    .card-inner::after { mix-blend-mode: normal; }
   }
 
   /* ---------- 卡片 ---------- */
@@ -1726,11 +1733,15 @@
 
       // 只渲染可视范围内的卡片，避免半张卡露出、顶部信息被裁掉
       if (abs > geometry.maxD) {
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        el.style.zIndex = '1';
+        if (el._vis !== 0) {
+          el._vis = 0;
+          el.style.opacity = '0';
+          el.style.pointerEvents = 'none';
+          el.style.zIndex = '1';
+        }
         return;
       }
+      el._vis = 1;
 
       var angle = d * geometry.step;
       var x, y;
@@ -1747,18 +1758,24 @@
       var baseScale = geometry.mobile ? 1.02 : 1.06;
       var scale = Math.max(0.86, baseScale - abs * 0.06);
       var rotation = d * (geometry.mobile ? -14 : 12);
-      var opacity = Math.max(0.55, 1 - abs * 0.15);
+      // 透明度量化到 1/50，减少拖动中的无谓样式写入
+      var opacity = Math.round(Math.max(0.55, 1 - abs * 0.15) * 50) / 50;
       var z = Math.round(120 - abs * 12);
 
-      el.style.transform =
-        'translate3d(calc(-50% + ' + Math.round(x) + 'px), calc(-50% + ' + Math.round(y) + 'px), 0) ' +
-        'rotate(' + rotation + 'deg) scale(' + scale.toFixed(3) + ')';
-      el.style.opacity = String(opacity);
-      el.style.zIndex = String(z);
-      el.style.pointerEvents = abs <= geometry.maxD ? 'auto' : 'none';
+      // 纯数值 translate3d：不再逐帧拼 calc()，省去每帧样式解析；
+      // 所有写入先与缓存比对，值没变就不碰 DOM
+      var tx = Math.round(x - geometry.cardW / 2);
+      var ty = Math.round(y - geometry.cardH / 2);
+      var t = 'translate3d(' + tx + 'px,' + ty + 'px,0) rotate(' + rotation.toFixed(2) + 'deg) scale(' + scale.toFixed(3) + ')';
+      if (el._t !== t) { el._t = t; el.style.transform = t; }
+      var o = String(opacity);
+      if (el._o !== o) { el._o = o; el.style.opacity = o; }
+      if (el._z !== z) { el._z = z; el.style.zIndex = String(z); }
+      var pe = abs <= geometry.maxD ? 'auto' : 'none';
+      if (el._pe !== pe) { el._pe = pe; el.style.pointerEvents = pe; }
 
       var isActive = abs < 0.5;
-      el.classList.toggle('is-active', isActive);
+      if (el._act !== isActive) { el._act = isActive; el.classList.toggle('is-active', isActive); }
     });
 
     var idx = ((Math.round(current) % N) + N) % N;
@@ -1783,12 +1800,13 @@
     var dist = end - start;
     if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
 
-    var duration = 380;
+    // 时长按滑动距离自适应：单步利落，多步甩动有滑翔感
+    var duration = Math.min(720, 300 + Math.abs(dist) * 110);
     var t0 = performance.now();
 
     function frame(t) {
       var p = Math.min(1, (t - t0) / duration);
-      var eased = 1 - Math.pow(1 - p, 3);
+      var eased = 1 - Math.pow(1 - p, 4);
       current = start + dist * eased;
       render();
       if (p < 1) {
@@ -2097,7 +2115,9 @@
     var dt = now - lastTime;
     if (dt > 0) {
       var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
-      velocity = geometry.mobile ? (raw / dt) : (-raw / dt);
+      var inst = geometry.mobile ? (raw / dt) : (-raw / dt);
+      // EMA 平滑：抑制单点抖动导致的惯性忽大忽小；间隔过长视为停顿后重新起甩
+      velocity = dt < 64 ? (velocity * 0.35 + inst * 0.65) : inst;
     }
     lastX = e.clientX;
     lastY = e.clientY;
@@ -2111,8 +2131,11 @@
     dragging = false;
     stage.classList.remove('is-dragging');
 
-    var projected = current + velocity * 0.42;
-    animateTo(Math.round(projected));
+    // 惯性投影：0.42 → 1.0，甩动更有力；封顶 ±3 张防止一次甩飞半个目录
+    var base = Math.round(current);
+    var projected = current + velocity * 1.0;
+    var deltaIdx = Math.max(-3, Math.min(3, Math.round(projected) - base));
+    animateTo(base + deltaIdx);
 
     if (moved < 8) {
       var el = document.elementFromPoint(e.clientX, e.clientY);
