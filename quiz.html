@@ -1290,9 +1290,7 @@
         state._hotStreak = (state._hotStreak || 0) + 1;
         if (state._hotStreak === 3 && !state._stung) {
           state._stung = true;
-          setTimeout(function () {
-            showEaster('别慌，我们这题故意设了陷阱题——你发现了吗？👀 （开玩笑的，没有陷阱，你就是上头了）');
-          }, 300);
+          showEaster('别慌，我们这题故意设了陷阱题——你发现了吗？👀 （开玩笑的，没有陷阱，你就是上头了）');
         }
       } else {
         state._hotStreak = 0;
