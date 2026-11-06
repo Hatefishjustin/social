@@ -15,6 +15,7 @@
 <link rel="apple-touch-icon" href="/assets/logo.png">
 <script src="/auth.js"></script>
 <script src="/quiz-data.js"></script>
+<script src="/qr-code.js"></script>
 <style>
   /* 设计基线：与 assess.html 共用同一套色板 / 字体 / 圆角 / 阴影 */
   :root {
@@ -626,6 +627,36 @@
     margin-top: 7px;
   }
 
+  .dim-list {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    margin-top: 4px;
+  }
+  .dim-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 7px;
+  }
+  .dim-head span:last-child {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+  .dim-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .dim-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--purple), var(--accent));
+  }
+
   .pair-block {
     display: flex;
     flex-direction: column;
@@ -824,7 +855,7 @@
 (function () {
   'use strict';
 
-  var QR_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZoAAAGaAQAAAAAefbjOAAACEklEQVR42u2cQY6EMAwEreUBeRJfz5N4AFIGErdjMpedue125xAhwBcoOe2Owdrno5qCFKQgBSlIQQpSEILMx3YdH9t9+p7KaWNqB27Ye9CPfTEU9DeCnIj+pm8YrqMTb/9wLMbRvE9EMBBxOAJIBZ4eOgK4sIkIQiIuDvpiYliDEioigpSILhxuBErzSUQQ64g5dUryOekIJiKi1hj54G1SrUFGxDKuteIMQMBBKln19P4/EV1K1uFHGAyIjkUJEI64WU+PgwiICSdinaqUJV2OyJmh+xGtuTNhuCAieJQlys3xzu1ZdTQHRKsGkR/hjsM1kCO85oR7aSKCKkeM131iESktWVIOyLyqp8fgUMGp3LH3Oa7W8Cg8g4gIolrDQkr60gEXu8NQRQSdjoi9T6waZtOoUI5gqzWyH5GrDvRHqPpkU5beJ5O6ImKbA1jIs6SrPgcM8fZRfXrbjPY+CXUEzlWIiTyZcgSVjoD3EBpz9aq0r0FVfc7GmLrUnKEs9yZlSeVHZMcaScFsLifY+BIRJDpidtmi7XL9VMNEBNWqEe1T3oM7N8fbc3NDRBA5VGFWu7IMLFxHaO+Tb9WAi90iUayGlYig8SMsfcyXmmXmkGfJSYR/91keXdlzP1Q5gpUIe2vNVlcdrY4oj57KZ5++cgRhrZH/FZFd7KQyRASTH6H/sShIQQpSkIIUpKDfBr0A86X9hrmnvO0AAAAASUVORK5CYII=';
+  /* 分享卡二维码：改由 /qr-code.js 按当前 slug 动态生成，不再写死固定码 */
 
   var app = document.getElementById('app');
   var shareLayer = document.getElementById('shareLayer');
@@ -893,6 +924,21 @@
   }
 
   /* ---------- 计分 ---------- */
+  function levelOf(pct) { return pct >= 60 ? '高' : pct >= 35 ? '中' : '低'; }
+
+  function dimsOf(bank, ranked, limit) {
+    return ranked.slice(0, limit || 4).map(function (item) {
+      var info = (bank.dimensions && bank.dimensions[item.dim]) || {};
+      var pct = Math.round(item.percent * 100);
+      return {
+        key: item.dim,
+        name: info.short || info.name || item.dim,
+        percent: pct,
+        level: levelOf(pct)
+      };
+    });
+  }
+
   function computeTypeResult(bank) {
     var dims = Object.keys(bank.dimensions || {});
     var raw = {};
@@ -957,7 +1003,8 @@
       groupLine: picked.groupLine || '',
       energyStable: typeof picked.energyStable === 'number' ? picked.energyStable : null,
       energyDrain: typeof picked.energyDrain === 'number' ? picked.energyDrain : null,
-      percent: Math.round(top.percent * 100)
+      percent: Math.round(top.percent * 100),
+      dims: dimsOf(bank, ranked, 4)
     };
     return result;
   }
@@ -1006,7 +1053,8 @@
       strengths: picked.strengths || [],
       growth: picked.growth || [],
       tip: picked.tip || '',
-      percent: Math.round(top.percent * 100)
+      percent: Math.round(top.percent * 100),
+      dims: dimsOf(bank, ranked, 4)
     };
   }
 
@@ -1045,6 +1093,12 @@
 
     state.mouthPct = mouthPct;
 
+    var bandDims = [
+      { key: 'heat', name: '上头指数', percent: percent, level: levelOf(percent) },
+      { key: 'mouth', name: '嘴硬指数', percent: mouthPct, level: levelOf(mouthPct) },
+      { key: 'sanity', name: '理智余额', percent: Math.max(0, 100 - percent), level: levelOf(Math.max(0, 100 - percent)) }
+    ];
+
     return {
       key: 'band-' + percent,
       name: band.name || bank.title,
@@ -1058,7 +1112,10 @@
       quote: band.quote || '',
       antiTagline: band.antiTagline || '',
       percent: percent,
-      mouthPct: mouthPct
+      mouthPct: mouthPct,
+      partner: band.partner || '',
+      clash: band.clash || '',
+      dims: bandDims
     };
   }
 
@@ -1198,7 +1255,35 @@
     });
   }
 
+  /* 选完自动跳下一题：保留 260ms 选中反馈，期间忽略重复点击 */
+  var advanceTimer = null;
+  var ADVANCE_DELAY = 260;
+
+  function clearAdvance() {
+    if (advanceTimer) {
+      clearTimeout(advanceTimer);
+      advanceTimer = null;
+    }
+  }
+
+  function goNext() {
+    if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
+    if (state.index < state.bank.questions.length - 1) {
+      // --- 答题进度彩蛋：state.index === 5 是 Q6/12 刚答完（0-based），12 题答了 6 题刚好一半
+      if (state.index === 5 && !state._easterHalfShown) {
+        state._easterHalfShown = true;
+        showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
+      }
+      state.index += 1;
+      saveProgress();
+      renderQuestion();
+      return;
+    }
+    finishQuiz();
+  }
+
   function renderQuestion() {
+    clearAdvance();
     var bank = state.bank;
     var index = state.index;
     var total = bank.questions.length;
@@ -1265,6 +1350,7 @@
   }
 
   function onSelectOption(e) {
+    if (advanceTimer) return; // 自动切题进行中：忽略重复/连点
     var el = e.currentTarget;
     var value;
     if (el.hasAttribute('data-index')) {
@@ -1299,9 +1385,17 @@
 
     var nextBtn = document.getElementById('nextBtn');
     if (nextBtn) nextBtn.disabled = false;
+
+    // 自动进入下一题（最后一题则直接出结果）
+    clearAdvance();
+    advanceTimer = setTimeout(function () {
+      advanceTimer = null;
+      goNext();
+    }, ADVANCE_DELAY);
   }
 
   function onBack() {
+    clearAdvance();
     if (state.index <= 0) return;
     state.index -= 1;
     saveProgress();
@@ -1309,19 +1403,8 @@
   }
 
   function onNext() {
-    if (state.answers[state.index] === null || state.answers[state.index] === undefined) return;
-    if (state.index < state.bank.questions.length - 1) {
-      // --- 答题进度彩蛋：state.index === 5 是 Q6/12 刚答完（0-based），12 题答了 6 题刚好一半
-      if (state.index === 5 && !state._easterHalfShown) {
-        state._easterHalfShown = true;
-        showEaster('已经答了一半啦 · 这题故意没设陷阱，放心选 🫣');
-      }
-      state.index += 1;
-      saveProgress();
-      renderQuestion();
-      return;
-    }
-    finishQuiz();
+    clearAdvance();
+    goNext();
   }
 
   function finishQuiz() {
@@ -1355,6 +1438,29 @@
     return '<div class="pair-row"><span class="pair-key">' + esc(key) + '</span><span class="pair-val">' + esc(value) + '</span></div>';
   }
 
+  // 具体表现里兜底的那一条：跟着答案/副维度变化
+  function mixLine(bank, result) {
+    if (bank.mode === 'score') {
+      var m = Number(result.mouthPct) || 0;
+      if (m >= 70) return '嘴硬指数 ' + m + '%：嘴上说“无所谓”，手指已经在刷新 TA 的主页。';
+      if (m >= 40) return '嘴硬指数 ' + m + '%：会先装淡定，撑不住的时候才承认在意。';
+      return '嘴硬指数 ' + m + '%：喜欢就说喜欢，不太需要靠猜。';
+    }
+    var second = (result.dims || [])[1];
+    if (!second) return '';
+    if (second.percent >= 60) return '副维度「' + second.name + '」也拉满（' + second.percent + '%）：两套模式同时开着，具体表现会随场合切换。';
+    if (second.percent >= 35) return '副维度「' + second.name + '」还有 ' + second.percent + '%：关键时刻会从主模式切到它。';
+    return '副维度「' + second.name + '」只有 ' + second.percent + '%：这部分你基本不营业。';
+  }
+
+  function clashLine(bank, result) {
+    if (result.clash) return result.clash;
+    var list = (result.dims || []).slice().sort(function (a, b) { return a.percent - b.percent; });
+    var low = list[0];
+    if (!low) return '';
+    return '和「' + low.name + '」浓度拉满的人长期同处，你会持续掉电——不是你不行，是配比不对。';
+  }
+
   function renderResult(result, restored) {
     var bank = state.bank;
     var isScore = bank.mode === 'score';
@@ -1371,9 +1477,23 @@
     }
 
     var symptomsHtml = '';
-    if (result.symptoms && result.symptoms.length) {
-      symptomsHtml = '<div class="result-card"><h3>你的典型状态</h3>' +
-        '<ul class="symptom-list">' + listHtml(result.symptoms) + '</ul></div>';
+    var symptoms = (result.symptoms || []).slice();
+    var mix = mixLine(bank, result);
+    if (mix) symptoms.push(mix);
+    if (symptoms.length) {
+      symptomsHtml = '<div class="result-card"><h3>具体表现</h3>' +
+        '<ul class="symptom-list">' + listHtml(symptoms) + '</ul></div>';
+    }
+
+    var dimsHtml = '';
+    if (result.dims && result.dims.length) {
+      dimsHtml = '<div class="result-card"><h3>维度拆解</h3><div class="dim-list">' +
+        result.dims.map(function (d) {
+          return '<div class="dim-row">' +
+            '<div class="dim-head"><span>' + esc(d.name) + '</span><span>' + d.percent + '% · ' + esc(d.level) + '</span></div>' +
+            '<div class="dim-track"><div class="dim-fill" style="width:' + d.percent + '%"></div></div>' +
+          '</div>';
+        }).join('') + '</div></div>';
     }
 
     var energyHtml = '';
@@ -1405,13 +1525,15 @@
     if (result.minefield) pairParts += pairRow('你的雷区', result.minefield);
     if (result.bestMatch) pairParts += pairRow('最佳搭子', result.bestMatch);
     if (result.partner && !result.bestMatch) pairParts += pairRow('适合相处', result.partner);
+    var clash = clashLine(bank, result);
+    if (clash) pairParts += pairRow('容易崩的搭子', clash);
     if (result.groupLine) pairParts += pairRow('群聊宣言', result.groupLine);
     if (pairParts) {
-      pairHtml = '<div class="result-card"><h3>关系说明书</h3><div class="pair-block">' + pairParts + '</div></div>';
+      pairHtml = '<div class="result-card"><h3>相性说明书</h3><div class="pair-block">' + pairParts + '</div></div>';
     }
 
     var mouthHtml = '';
-    if (result.mouthPct !== null && result.mouthPct !== undefined) {
+    if (!isScore && result.mouthPct !== null && result.mouthPct !== undefined) {
       var mouth = Number(result.mouthPct) || 0;
       mouthHtml = '<div class="result-card"><h3>附加指标</h3>' +
         '<div class="energy-head"><span>嘴硬指数</span><span>' + mouth + '%</span></div>' +
@@ -1437,12 +1559,13 @@
         (result.antiTagline ? '<p class="result-anti">' + esc(result.antiTagline) + '</p>' : '') +
         scoreHtml +
         '<div class="result-card"><p class="lead">' + esc(result.desc) + '</p></div>' +
+        dimsHtml +
         symptomsHtml +
         energyHtml +
         mouthHtml +
+        pairHtml +
         strengthsHtml +
         growthHtml +
-        pairHtml +
         quoteHtml +
         tipHtml +
         '<div class="result-actions">' +
@@ -1483,6 +1606,36 @@
   }
 
   /* ---------- 分享 ---------- */
+  // 分享图二维码指向当前测评的可访问地址（同源域名，线上 /quiz?slug= 实测 200）
+  function shareUrl() {
+    return location.origin + '/quiz?slug=' + encodeURIComponent(state.slug);
+  }
+
+  // 分享卡品牌区：优先用 logo 图片（白色透明底，适配深色卡面），失败时退回文字
+  function drawShareBrand(ctx, brand) {
+    var iconH = 42;
+    var top = 40;
+    ctx.textAlign = 'left';
+    if (brand && brand.icon) {
+      var iconW = Math.round(iconH * brand.icon.width / brand.icon.height);
+      ctx.drawImage(brand.icon, 52, top, iconW, iconH);
+      var x = 52 + iconW + 18;
+      if (brand.text) {
+        var textH = 15;
+        var textW = Math.round(textH * brand.text.width / brand.text.height);
+        ctx.drawImage(brand.text, x, top + (iconH - textH) / 2, textW, textH);
+        x += textW + 10;
+      }
+      ctx.fillStyle = 'rgba(247,237,232,0.42)';
+      ctx.font = '15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText('· 测评', x, top + 34);
+    } else {
+      ctx.fillStyle = '#f7ede8';
+      ctx.font = '600 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+      ctx.fillText('SOULMIRROR', 52, top + 34);
+    }
+  }
+
   function buildCaption(result) {
     var template = (state.bank.share && state.bank.share.caption) || '我的{name}结果：{tagline}';
     return template
@@ -1490,7 +1643,7 @@
       .replace(/{tagline}/g, result.tagline || '')
       .replace(/{score}/g, String(result.percent === null || result.percent === undefined ? '' : result.percent))
       .replace(/{mouth}/g, String(result.mouthPct === null || result.mouthPct === undefined ? '' : result.mouthPct))
-      + '\nhttps://soulmirror-255.pages.dev/quiz.html?slug=' + state.slug;
+      + '\n' + shareUrl();
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -1540,6 +1693,26 @@
     canvas.height = H;
     var ctx = canvas.getContext('2d');
 
+    // 品牌 logo：同源预加载（不污染 canvas），落定后再出图；失败降级为文字
+    var brand = { icon: null, text: null };
+    var pending = 2;
+    var painted = false;
+    function startPaint() {
+      if (painted || pending > 0) return;
+      painted = true;
+      paint();
+    }
+    function loadLogo(key, src) {
+      var img = new Image();
+      img.onload = function () { brand[key] = img; pending -= 1; startPaint(); };
+      img.onerror = function () { pending -= 1; startPaint(); };
+      img.src = src;
+    }
+    loadLogo('icon', '/logo-icon.png');
+    loadLogo('text', '/logo-text.png');
+    setTimeout(function () { if (!painted) { painted = true; paint(); } }, 800);
+
+    function paint() {
     // 背景与光晕
     var bg = ctx.createLinearGradient(0, 0, W, H);
     bg.addColorStop(0, '#1c1224');
@@ -1554,18 +1727,8 @@
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, 520);
 
-    // 品牌
-    ctx.fillStyle = '#dfb6b2';
-    ctx.beginPath();
-    ctx.arc(56, 68, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f7ede8';
-    ctx.font = '600 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('心镜', 76, 76);
-    ctx.fillStyle = 'rgba(247,237,232,0.42)';
-    ctx.font = '15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('SOULMIRROR · 测评', 148, 75);
+    // 品牌（图片 logo）
+    drawShareBrand(ctx, brand);
 
     // 小标题
     ctx.fillStyle = 'rgba(223,182,178,0.82)';
@@ -1622,7 +1785,7 @@
     var chips = [];
     if (result.symptoms && result.symptoms.length) chips = result.symptoms.slice(0, 3);
     else if (result.strengths && result.strengths.length) chips = result.strengths.slice(0, 3);
-    var cardY = 650;
+    var cardY = 640;
     if (chips.length) {
       ctx.fillStyle = 'rgba(255,255,255,0.045)';
       roundRect(ctx, 40, cardY, W - 80, 104, 18);
@@ -1649,39 +1812,30 @@
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(247,237,232,0.34)';
     ctx.font = '15px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('心镜 · 测评 — 看见自己，也看见彼此', W / 2, 928);
+    ctx.fillText('SOULMIRROR · 看见自己，也看见彼此', W / 2, 928);
     ctx.fillStyle = 'rgba(247,237,232,0.34)';
     ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('纯属娱乐 · 非医学诊断', W / 2, 952);
 
-    // 二维码：白底 + 静区
+    // 二维码：按当前测评的页面地址动态生成（白底黑码，静区 4 模块）
     ctx.fillStyle = '#ffffff';
-    roundRect(ctx, 560, 766, 132, 132, 12);
+    roundRect(ctx, 540, 750, 164, 164, 14);
     ctx.fill();
-
-    var qrImg = new Image();
-    var done = false;
-    function finishCard() {
-      if (done) return;
-      done = true;
-      var dataUrl = canvas.toDataURL('image/png');
-      state.shareDataUrl = dataUrl;
-      var caption = buildCaption(result);
-      state.shareCaption = caption;
-      showShareLayer(dataUrl, caption);
-      track('share', { quiz_type: state.slug, share_type: 'card' });
+    if (window.SMQR) {
+      SMQR.draw(ctx, shareUrl(), 540, 750, 164, { margin: 4, light: '#ffffff', dark: '#101010' });
     }
-    qrImg.onload = function () {
-      // 132 白底内放 104 二维码，四周留 14px 静区
-      ctx.drawImage(qrImg, 574, 780, 104, 104);
-      finishCard();
-    };
-    qrImg.onerror = finishCard;
-    qrImg.src = QR_BASE64;
-    setTimeout(function () {
-      if (!done) { finishCard(); }
-    }, 600);
+
+    var dataUrl = canvas.toDataURL('image/png');
+    state.shareDataUrl = dataUrl;
+    var caption = buildCaption(result);
+    state.shareCaption = caption;
+    showShareLayer(dataUrl, caption);
+    track('share', { quiz_type: state.slug, share_type: 'card' });
+    }
+
+    // 兜底：极端情况下（logo 迟迟未响应）也要出图，品牌区自动回退为文字
   }
+
 
   function showShareLayer(dataUrl, caption) {
     if (dataUrl) sharePreview.src = dataUrl;
