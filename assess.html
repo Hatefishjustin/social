@@ -848,8 +848,15 @@
     inset: 0;
     z-index: 300;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+    background: rgba(6, 3, 9, 0.62);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     perspective: 1400px;
     perspective-origin: 50% 50%;
     opacity: 0;
@@ -859,19 +866,12 @@
 
   .flip-layer.is-open { opacity: 1; visibility: visible; }
 
-  .flip-layer::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: rgba(6, 3, 9, 0.62);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-  }
-
   .flip-stage {
     position: relative;
+    flex: 0 0 auto;
     width: min(420px, 86vw);
-    height: min(560px, 78vh);
+    height: min(560px, calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+    margin: auto 0;
     transform-style: preserve-3d;
     will-change: transform;
     transform-origin: 50% 50%;
@@ -900,7 +900,11 @@
     transform: rotateY(180deg);
     display: flex;
     flex-direction: column;
-    padding: 32px;
+    padding: 32px 32px calc(24px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     background:
       linear-gradient(155deg, rgba(255, 255, 255, 0.13) 0%, rgba(32, 22, 42, 0.97) 40%, rgba(14, 9, 20, 0.99) 100%);
     background-color: #181020;
@@ -1038,10 +1042,16 @@
   }
 
   .flip-foot {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
     margin-top: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-top: 10px;
+    padding-bottom: max(2px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(20, 11, 28, 0) 0%, rgba(20, 11, 28, 0.94) 34%, #140b1c 100%);
   }
 
   .flip-note {
@@ -1057,8 +1067,8 @@
   }
 
   @media (max-width: 1100px) {
-    .flip-stage { width: min(340px, 84vw); height: min(500px, 70vh); }
-    .flip-back { padding: 24px; }
+    .flip-stage { width: min(340px, 84vw); height: min(500px, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); }
+    .flip-back { padding: 24px 24px calc(20px + env(safe-area-inset-bottom)); }
     .flip-back h2 { font-size: 26px; }
     .flip-desc { font-size: 12.5px; line-height: 1.65; }
     .flip-points { gap: 8px; margin-bottom: 16px; }
@@ -1111,6 +1121,14 @@
     .hud { bottom: max(18px, env(safe-area-inset-bottom)); }
     .hint { font-size: 10.5px; }
     .proto-flag { display: none; }
+  }
+
+  /* 横屏手机：高度不足以同时容纳标题、描述和按钮，隐藏非必要文案，避免裁切与标题压卡 */
+  @media (max-width: 1100px) and (max-height: 520px) {
+    .intro { display: none; }
+    .card-desc,
+    .card-meta { display: none; }
+    .card-details { padding-top: 10px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1610,6 +1628,7 @@
   var flipTags = document.getElementById('flipTags');
   var flipPoints = document.getElementById('flipPoints');
   var flipNote = document.getElementById('flipNote');
+  var flipBack = flipStage.querySelector('.flip-back');
   var historyLayer = document.getElementById('historyLayer');
   var historyListEl = document.getElementById('historyList');
   var historyBtn = document.getElementById('historyBtn');
@@ -1714,16 +1733,18 @@
     var mobile = W <= 1100;
 
     if (mobile) {
-      var R = Math.max(340, H * 0.42);
+      var mCardW = Math.min(W * 0.46, 170);
+      var mCardH = Math.min(300, Math.max(210, H * 0.42));
       geometry = {
         mobile: true,
-        R: R,
-        step: 25 * Math.PI / 180,
-        cx: W * 0.62 + R,
-        cy: H * 0.70,
-        cardW: Math.min(W * 0.48, 190),
-        cardH: 270,
-        maxD: 1.8   /* 移动端只显示 ±1.8 张（4–5 张），省掉远处卡片的合成开销；桌面保留 2.45 */
+        R: Math.max(300, H * 0.36),   /* 只用于背后装饰环，不参与卡片定位 */
+        step: 19 * Math.PI / 180,
+        cx: W * 0.5,
+        cy: Math.min(H * 0.54, H - mCardH / 2 - 84),
+        cardW: mCardW,
+        cardH: mCardH,
+        gap: mCardW * 0.62,            /* 相邻卡片水平间距：5 张扇形铺开，避免叠成一摞 */
+        maxD: 2   /* 移动端显示中心 ±2 张，共 5 张；更远的卡片不渲染，省合成开销 */
       };
     } else {
       var Rd = Math.min(Math.max(W * 0.72, 680), 980);
@@ -1740,8 +1761,8 @@
       };
     }
 
-    // 卡片少时全部显示；卡片多时只渲染附近几张，轮盘仍可无限循环
-    var showAll = N > 0 && N <= (mobile ? 5 : 7);
+    // 5 条以内全部显示；超过 5 条时只渲染中心 ±2（5 张），轮盘仍可无限循环
+    var showAll = N > 0 && N <= 5;
     if (showAll) geometry.maxD = Math.max(geometry.maxD, Math.ceil(N / 2));
 
     stage.style.setProperty('--card-w', geometry.cardW + 'px');
@@ -1788,9 +1809,10 @@
       var x, y;
 
       if (geometry.mobile) {
-        var a = Math.PI + angle;
-        x = geometry.cx + geometry.R * Math.cos(a);
-        y = geometry.cy + geometry.R * Math.sin(a);
+        /* 手机端改成平铺扇形：相邻卡按固定像素间距排开，
+           半径公式在中心附近的位移太小，5 张会挤成一摞 */
+        x = geometry.cx + d * geometry.gap;
+        y = geometry.cy + Math.abs(d) * 14;
       } else {
         x = geometry.cx + geometry.R * Math.sin(angle);
         y = geometry.cy + geometry.R * (1 - Math.cos(angle));
@@ -1798,7 +1820,7 @@
 
       var baseScale = geometry.mobile ? 1.02 : 1.06;
       var scale = Math.max(0.86, baseScale - abs * 0.06);
-      var rotation = d * (geometry.mobile ? -14 : 12);
+      var rotation = d * (geometry.mobile ? -9 : 12);
       // 透明度量化到 1/50，减少拖动中的无谓样式写入
       var opacity = Math.round(Math.max(0.55, 1 - abs * 0.15) * 50) / 50;
       var z = Math.round(120 - abs * 12);
@@ -1910,12 +1932,15 @@
 
     var rect = card.getBoundingClientRect();
     var vw = window.innerWidth;
-    var vh = window.innerHeight;
-    var targetW = Math.min(420, vw * 0.86);
-    var targetH = Math.min(560, vh * 0.78);
+    var vv = window.visualViewport;
+    var vh = vv && vv.height ? vv.height : window.innerHeight;
+    var narrow = vw <= 1100;
+    var targetW = Math.min(narrow ? 340 : 420, vw * 0.86);
+    var maxH = Math.min(narrow ? 500 : 560, vh - 32);
+    var targetH = maxH;
 
     flipStage.style.width = targetW + 'px';
-    flipStage.style.height = targetH + 'px';
+    flipStage.style.height = '1px';
     flipFront.innerHTML = inner.outerHTML;
 
     flipCat.textContent = test.cat;
@@ -1937,6 +1962,11 @@
 
     var durationLabel = test.meta[1] || (test.durationMinutes ? test.durationMinutes + ' 分钟' : '几分钟');
     flipNote.textContent = '约 ' + durationLabel + ' · 仅供自我探索，不构成诊断';
+
+    // 高度按背面内容自适应：内容少时收紧，超出可用高度时由 .flip-back 内部滚动，按钮始终可达
+    var contentH = flipBack.scrollHeight;
+    targetH = Math.min(Math.max(contentH, 320), maxH);
+    flipStage.style.height = targetH + 'px';
 
     flipLayer.classList.add('is-open');
     flipLayer.setAttribute('aria-hidden', 'false');
@@ -2175,16 +2205,15 @@
     var dy = e.clientY - startY;
     moved = Math.max(moved, Math.hypot(dx, dy));
 
-    // 移动端为纵向轮盘（索引大的卡片在中心上方），内容跟随手指：
-    // 上滑(dy<0)应让 current 减小；桌面端横向轮盘方向不变
-    var delta = geometry.mobile ? (dy / 150) : (-dx / 190);
+    // 手机端为横向扇形轮盘：左滑让后面的卡片进入中心，手势方向与桌面一致
+    var delta = geometry.mobile ? (-dx / 130) : (-dx / 190);
     current = startCurrent + delta;
 
     var now = performance.now();
     var dt = now - lastTime;
     if (dt > 0) {
-      var raw = geometry.mobile ? (e.clientY - lastY) : (e.clientX - lastX);
-      var inst = geometry.mobile ? (raw / dt) : (-raw / dt);
+      var raw = e.clientX - lastX;
+      var inst = -raw / dt;
       // EMA 平滑：抑制单点抖动导致的惯性忽大忽小；间隔过长视为停顿后重新起甩
       velocity = dt < 64 ? (velocity * 0.35 + inst * 0.65) : inst;
     }

@@ -485,6 +485,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
 **2026-11-06 关键修复**：前一轮尝试把 match.html 的 `login-overlay hidden` 弹层复制到其它页面，结果 quiz.html 无 `.hidden{}` 规则 → 弹层永久显示 → 黑屏遮罩（用户截图反馈）。另一些页面弹层显示但 `showLoginPanel()` 仅 match.html 内部定义，点击无效。**最终正确做法**：所有页面只用 `<button class="auth-login-btn">` 让 auth.js 全局接管。这条已写进模板和 Checklist，严禁再犯。
 
+### 14.7 移动端契约（2026-11-06 新增，强制）
+
+适用：所有测评页、测评中心轮盘（`assess.html`）、翻牌/展开详情、弹层与抽屉。
+
+**A. 主操作按钮必须可达**
+
+- 翻牌 / 展开 / 弹层态下，主按钮（开始测评、提交、保存）必须在视口内可见，或能通过一次自然的纵向滚动到达；优先用 `position: sticky; bottom: 0` 常驻，或把按钮放在正常文档流末尾，禁止用绝对定位把按钮钉在会被裁切的容器底部。
+- 验收坐标：`375×667`、`390×844`、`844×390`（横屏）。按钮 `getBoundingClientRect()` 必须满足 `top >= 0` 且 `bottom <= visualViewport.height`（无 `visualViewport` 时用 `innerHeight`）。
+
+**B. 任何滚动锁定必须能自动解除**
+
+- 禁止只写 `overflow: hidden` 把内容锁死却不开滚动通道。
+- 固定层 / 弹层的滚动容器必须同时具备：`overflow-y: auto`、`overscroll-behavior: contain`、`-webkit-overflow-scrolling: touch`。
+- 滚动容器不能被 `touch-action: none` 或 3D transform 阻断；需要纵向滚动时显式写 `touch-action: pan-y`。
+- 页面级 `html, body { overflow: hidden }` 只允许用于轮盘舞台这类全屏固定布局；其上的弹层必须自带滚动通道，内容溢出时自动可滚。
+
+**C. 禁止用固定 vh 定高容纳可变内容**
+
+- 高度上限必须用 `100dvh`、`min(…, calc(100dvh - …))` 或运行时 `visualViewport.height`，禁止用 `100vh` 或写死像素高度去容纳长度会变的文案。
+- 底部内边距必须叠加 `env(safe-area-inset-bottom)`（如 `padding-bottom: calc(16px + env(safe-area-inset-bottom))`），顶部同理考虑 `safe-area-inset-top`。
+- 内容高度应自适应：先测量内容，再取 `min(内容高, 视口上限)`；超出上限时交给滚动，不要裁切。
+
+**D. 轮盘可见卡片数**
+
+- 同时可见 4–5 张；≤5 条目录全部渲染，超过 5 条渲染中心 ±2（共 5 张），轮盘仍按总数循环。
+- 移动端不允许直接复用桌面大半径弧线公式：弧线在中心附近位移趋近 0，5 张会叠成一摞。移动端必须用固定像素间距（如 `gap = cardW × 0.62`）铺开成扇形，必要时放宽卡片高度避免 CTA 被卡边裁切。
+- 中心卡层级最高、不被遮挡、点击命中正确；两侧卡可拖动到中心，允许其文字被邻卡部分覆盖（coverflow 语义），但中心卡内容必须完整。
+- 保留既有的滑动性能优化：纯数值 `transform`、样式写缓存、`rAF` 合帧、惯性；不得改回逐帧读取布局或给卡片加高开销阴影动画。
+
+**E. 自检清单（改完必须逐项过）**
+
+- [ ] 375 / 390 / 横屏三种尺寸下，中心卡完整可见、CTA 不被裁切
+- [ ] 6 条目录时轮盘同时可见 4–5 张，中心卡不被遮挡
+- [ ] 长内容翻牌面内容溢出时可滚动，按钮 sticky 常驻视口内
+- [ ] 拖动可切换、点击侧卡可切中心、点击中心卡可翻牌、点击主按钮可跳转
+- [ ] 横屏短视口（高度 ≤520px）标题不压卡、非必要文案已收敛
+
 ---
 
 ## 15. 测评文案口径（2026-11-06）
