@@ -249,7 +249,13 @@ AI负责：
 
 ## 14. 测评页面结构统一规范（标杆：match.html）
 
-所有"答题 → 出分 → 结果"类测评页面必须遵循以下结构统一规则。新增测评页时，以 `match.html`（心理测评匹配）为唯一真源做约束拷贝。
+所有"答题 → 出分 → 结果"类测评页面必须**直接套用 `match.html`（深度匹配测评）的模板**，不是模仿、不是参考，是拷贝同一份骨架后只换数据与文案。新增测评页时，以 `match.html` 为唯一真源做约束拷贝。
+
+**强制要求**：
+- 页面 DOM 骨架必须与 `match.html` 一致：`账户栏 → .progress-wrap → #landing → #questionScreen → #resultScreen`（四屏 `hidden` 切换）。
+- CSS 变量、账户栏、进度条、按钮、卡片、免责声明等组件样式直接从 `match.html` 拷贝，不允许自创一套。
+- 答题流程（startQuiz → renderQuestion → onSelectOption → onNext → renderResult）与 `match.html` 同构，屏切换只通过 `classList.add/remove('hidden')`。
+- 通用答题器 `quiz.html` 也必须用静态屏结构，禁止再用单一 `<main id="app">` 全量动态注入。
 
 ### 14.1 Head 契约（逐字段对齐）
 

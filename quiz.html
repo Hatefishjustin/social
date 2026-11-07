@@ -822,9 +822,83 @@
     .score-num { font-size: 48px; }
     .q-nav { margin-top: 20px; }
   }
+
+  /* ===== 套用 match.html 模板的布局容器 ===== */
+  .stage {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 24px;
+  }
+  .hidden { display: none !important; }
+  .progress-wrap {
+    position: sticky;
+    top: 0;
+    padding: 18px 0 12px;
+    background: linear-gradient(var(--ink, #0f0e0c) 80%, transparent);
+    z-index: 10;
+  }
+  .progress-track {
+    height: 1px;
+    background: var(--line, rgba(255,255,255,0.12));
+    position: relative;
+    overflow: visible;
+  }
+  .progress-fill {
+    height: 1px;
+    background: var(--rouge, #d14545);
+    width: 0%;
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -3px; top: 50%;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--rouge, #d14545);
+    transform: translateY(-50%);
+    box-shadow: 0 0 8px var(--rouge, #d14545);
+  }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--parchment-dim, rgba(255,255,255,0.55));
+    margin-top: 10px;
+  }
+  .progress-meta .section-tag { color: var(--gold, #d4a44a); }
+  .landing {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 0 80px;
+    animation: fadeUp .8s cubic-bezier(.16,1,.3,1) both;
+  }
+  .question-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 0 60px;
+    min-height: 70vh;
+  }
+  .q-card { animation: fadeUp .45s cubic-bezier(.16,1,.3,1) both; }
+  .result-screen {
+    flex: 1;
+    padding: 40px 0 80px;
+    animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+  }
 </style>
 </head>
 <body>
+
+<div class="stage">
 
 <div class="account-bar" id="accountBar">
   <div class="account-bar-inner">
@@ -834,7 +908,27 @@
   </div>
 </div>
 
-<main id="app" class="shell" aria-live="polite"></main>
+<!-- 进度条（答题时显示） -->
+<div class="progress-wrap hidden" id="progressWrap">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-meta">
+    <span class="section-tag" id="sectionTag"></span>
+    <span id="progressCount">0 / 0</span>
+  </div>
+</div>
+
+<!-- 欢迎页 -->
+<div class="landing" id="landing"></div>
+
+<!-- 答题页 -->
+<div class="question-screen hidden" id="questionScreen">
+  <div class="q-card" id="qCard"></div>
+</div>
+
+<!-- 结果页 -->
+<div class="result-screen hidden" id="resultScreen"></div>
+
+</div>
 
 <div id="shareLayer" class="share-layer" aria-hidden="true" role="dialog" aria-modal="true" aria-label="分享结果">
   <div class="share-card">
@@ -857,13 +951,28 @@
 
   /* 分享卡二维码：改由 /qr-code.js 按当前 slug 动态生成，不再写死固定码 */
 
-  var app = document.getElementById('app');
+  var landingEl = document.getElementById('landing');
+  var questionScreen = document.getElementById('questionScreen');
+  var qCard = document.getElementById('qCard');
+  var resultScreen = document.getElementById('resultScreen');
+  var progressWrap = document.getElementById('progressWrap');
+  var progressFill = document.getElementById('progressFill');
+  var progressCount = document.getElementById('progressCount');
+  var sectionTag = document.getElementById('sectionTag');
   var shareLayer = document.getElementById('shareLayer');
   var sharePreview = document.getElementById('sharePreview');
   var captionBox = document.getElementById('captionBox');
   var saveImageBtn = document.getElementById('saveImageBtn');
   var copyTextBtn = document.getElementById('copyTextBtn');
   var shareCloseBtn = document.getElementById('shareCloseBtn');
+
+  /* 屏切换：只通过 hidden 切换，不销毁 DOM */
+  function showScreen(name) {
+    landingEl.classList.toggle('hidden', name !== 'landing');
+    questionScreen.classList.toggle('hidden', name !== 'question');
+    resultScreen.classList.toggle('hidden', name !== 'result');
+    progressWrap.classList.toggle('hidden', name !== 'question');
+  }
 
   var PROGRESS_KEY = 'xinjing_quiz_progress_v3_';
   var RESULT_KEY = 'xinjing_quiz_result_v3_';
@@ -1193,7 +1302,7 @@
         }).join('') + '</section>';
     }
 
-    app.innerHTML =
+    landingEl.innerHTML =
       '<div class="fade">' +
         '<div class="eyebrow">' + esc(bank.cat || '测评') + '</div>' +
         '<h1 class="h1">' + esc(bank.title) + '</h1>' +
@@ -1218,6 +1327,7 @@
         '</p>' +
       '</div>';
 
+    showScreen('landing');
     var startBtn = document.getElementById('startBtn');
     if (startBtn) startBtn.addEventListener('click', startQuiz);
   }
@@ -1307,11 +1417,12 @@
         }).join('') + '</div>';
     }
 
-    app.innerHTML =
-      '<div class="quiz-progress">' +
-        '<div class="progress-meta"><span>' + esc(bank.title) + '</span><span class="pct">' + pct + '%</span></div>' +
-        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
-      '</div>' +
+    /* 更新静态进度条 */
+    progressFill.style.width = pct + '%';
+    progressCount.textContent = (index + 1) + ' / ' + total;
+    if (sectionTag) sectionTag.textContent = bank.title || '';
+
+    qCard.innerHTML =
       '<div class="quiz-body">' +
         '<div class="q-count">Q ' + (index + 1) + ' / ' + total + '</div>' +
         '<h2 class="q-text">' + esc(question.text || '') + '</h2>' +
@@ -1325,7 +1436,9 @@
         '</div>' +
       '</div>';
 
-    var optionEls = app.querySelectorAll('.option');
+    showScreen('question');
+
+    var optionEls = questionScreen.querySelectorAll('.option');
     for (var i = 0; i < optionEls.length; i += 1) {
       optionEls[i].addEventListener('click', onSelectOption);
     }
@@ -1377,7 +1490,7 @@
       }
     }
 
-    var options = app.querySelectorAll('.option');
+    var options = questionScreen.querySelectorAll('.option');
     for (var i = 0; i < options.length; i += 1) {
       options[i].classList.remove('selected');
     }
@@ -1550,7 +1663,7 @@
       ? '<div class="result-card"><h3>写在最后</h3><p>' + esc(result.tip) + '</p></div>'
       : '';
 
-    app.innerHTML =
+    resultScreen.innerHTML =
       '<div class="fade">' +
         (restored ? '<div class="resume-note">这是你上次测出的结果</div>' : '') +
         '<div class="result-kicker">' + esc(bank.title) + (result.category ? ' · ' + esc(result.category) : '') + '</div>' +
@@ -1578,6 +1691,8 @@
         '</div>' +
         '<p class="disclaimer">纯属娱乐，非医学诊断。结果只描述最近的状态，不构成任何医学或心理诊断；转发时可以只分享结果，不必带上你的答案。</p>' +
       '</div>';
+
+    showScreen('result');
 
     document.getElementById('shareBtn').addEventListener('click', function () {
       generateShareCard(result);
@@ -1891,12 +2006,13 @@
 
   /* ---------- 初始化 ---------- */
   function renderMissing() {
-    app.innerHTML =
+    landingEl.innerHTML =
       '<div class="empty-state fade">' +
         '<h2>没有找到这个测试</h2>' +
         '<p>链接可能写错了，或者这个测试还没有上线。</p>' +
         '<a class="btn primary" href="/assess.html" style="display:inline-block;">回测评中心</a>' +
       '</div>';
+    showScreen('landing');
   }
 
   function init() {
