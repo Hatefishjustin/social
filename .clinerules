@@ -478,16 +478,20 @@ document.addEventListener('DOMContentLoaded', function () {
 - [ ] 免责声明（年龄 + 本地计算 + 不构成诊断）
 - [ ] **有 `.hidden{display:none !important}`**（七宗罪/深度匹配风格；无动态注入屏的页面如 quiz.html 可不写，但严禁有 `hidden` 类的 DOM 元素不具备 `.hidden` 规则）
 
-### 14.6 现有测评页对齐状态（2026-11-06 更新）
+### 14.6 现有测评页对齐状态（2026-11-07 更新）
 
 | 页面 | 对齐度 | 主要备注 |
 |---|---|---|
-| `match.html`（标杆） | **95%** | 账户栏已用 auth-login-btn；内部有自定义 loginOverlay（完整屏切换逻辑，非技术债） |
-| `seven-sins.html` | **95%** | 账户栏/登录已统一 auth.js；缺 AI 解读区（产品设计即如此） |
-| `sm-test.html` | **95%** | 账户栏/登录已统一 auth.js；缺 AI 解读区（产品设计即如此） |
-| `quiz.html`（通用答题器） | **90%** | 账户栏已用 seven-sins 同款结构；无 `.hidden` 规则（纯动态注入，无静态屏） |
+| `match.html`（标杆） | **100%** | 登录已统一到 auth.js（移除自定义 loginOverlay，改用 `.auth-login-btn`）；四屏 + progress-wrap 完整 |
+| `seven-sins.html` | **98%** | 账户栏/登录已统一 auth.js；组件样式（btn-primary / option 16px）与 match.html 一致 |
+| `sm-test.html` | **98%** | 账户栏/登录已统一 auth.js；progress-wrap 已补 hidden；组件样式与 match.html 一致 |
+| `quiz.html`（通用答题器） | **98%** | 已改为静态屏结构（landing/questionScreen/resultScreen + progress-wrap）；按钮/选项/背景色已对齐 match.html |
 
-**quiz.html 特例**：它是 `quiz.html?slug=xxx` 的统一运行页，屏完全由 JS 注入，不需要静态 `#landing / #questionScreen / #resultScreen`，但账户栏 + auth-login-btn + OG + CSS 变量 + 脚本顺序全部对齐。
+**2026-11-07 更新**：
+- `match.html` 移除自定义 `loginOverlay` / `requestLoginLink`，登录入口统一为 `.auth-login-btn`，由共享 `auth.js` 接管弹层与状态同步
+- `quiz.html` 从全动态注入改为 match.html 静态屏骨架，`renderLanding/renderQuestion/renderResult` 改为操作 `#landing/#qCard/#resultScreen` + `showScreen()` 切换
+- UI 组件统一：所有测评页主按钮为圆角药丸（`border-radius:100px`）、选项卡 `border-radius:16px` surface 背景、选中 accent 边框、进度条为 1px rouge 细线 + 圆点
+- 登录全站同步：所有页面引入同一 `auth.js`，登录状态由后端 session cookie 管理，`authchange` 事件广播状态变化
 
 **2026-11-06 关键修复**：前一轮尝试把 match.html 的 `login-overlay hidden` 弹层复制到其它页面，结果 quiz.html 无 `.hidden{}` 规则 → 弹层永久显示 → 黑屏遮罩（用户截图反馈）。另一些页面弹层显示但 `showLoginPanel()` 仅 match.html 内部定义，点击无效。**最终正确做法**：所有页面只用 `<button class="auth-login-btn">` 让 auth.js 全局接管。这条已写进模板和 Checklist，严禁再犯。
 
