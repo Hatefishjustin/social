@@ -6,7 +6,7 @@
 <title>七宗罪 · 你的欲望浓度图 · SoulMirror 心镜</title>
 <meta name="description" content="42 道日常题 + 3 道情境抉择，看看七种欲望里哪一宗在你身上最响。娱乐性自我探索，不构成心理诊断。">
 <meta property="og:title" content="七宗罪 · 你的欲望浓度图 · SoulMirror 心镜">
-<meta property="og:description" content="42 道日常题 + 3 道情境抉择，生成你的七维倾向剖面、主峰与副峰，以及一句可以分享的话。">
+<meta property="og:description" content="42 道日常题 + 3 道情境抉择，生成你的十四维倾向剖面（七宗罪 × 七美德）、主峰与副峰，以及一句可以分享的话。">
 <meta property="og:image" content="https://soulmirror-255.pages.dev/shareLOGO-icon.png">
 <meta property="og:url" content="https://soulmirror-255.pages.dev/seven-sins.html">
 <meta property="og:type" content="website">
@@ -44,6 +44,7 @@
   --rouge:var(--accent);
   --rouge-dim:var(--accent-dim);
   --gold:var(--accent);
+  --virtue:#d9b26a;
   --line:var(--hairline);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -196,6 +197,15 @@ button:focus-visible,a:focus-visible{outline:2px solid rgba(223,182,178,.72);out
 .bar-row.top .bar-fill{opacity:1;}
 .bar-val{font-size:12.5px;color:var(--text-secondary);text-align:right;font-variant-numeric:tabular-nums;}
 .bar-row.top .bar-val{color:var(--accent);font-weight:700;}
+/* 14 维：罪 / 德 配对 */
+.bar-row.virtue{margin-top:-6px;}
+.bar-row.virtue .bar-label{color:var(--virtue,#d9b26a);opacity:.85;font-size:12.5px;}
+.bar-row.virtue .bar-track{height:4px;}
+.bar-row.virtue .bar-fill{background:var(--virtue,#d9b26a);opacity:.55;}
+.bar-row.virtue.top .bar-label{color:var(--virtue,#d9b26a);font-weight:600;opacity:1;}
+.bar-row.virtue.top .bar-fill{opacity:.95;}
+.bar-row.virtue.top .bar-val{color:var(--virtue,#d9b26a);font-weight:700;}
+.bar-pair-sep{height:1px;background:var(--line,rgba(255,255,255,.08));margin:4px 0;}
 .primary-card{
   border:1px solid var(--hairline-strong);border-radius:22px;padding:24px 22px;
   background:linear-gradient(160deg,var(--surface-hover) 0%,var(--surface) 74%);
@@ -221,6 +231,8 @@ details.interpret summary .arrow{color:var(--text-secondary);font-size:12px;tran
 details.interpret[open] summary .arrow{transform:rotate(90deg);}
 details.interpret .body{padding-top:10px;font-size:13px;line-height:1.85;color:var(--text-secondary);}
 details.interpret .body .quote{font-family:var(--font-serif);color:var(--accent);margin-bottom:8px;display:block;}
+details.interpret.virtue summary{color:var(--virtue,#d9b26a);}
+details.interpret.virtue .body .quote{color:var(--virtue,#d9b26a);}
 .disclaimer{margin-top:44px;padding-top:20px;border-top:1px solid var(--hairline);font-size:11.5px;line-height:1.8;color:var(--text-secondary);}
 
 /* share */
@@ -287,13 +299,13 @@ details.interpret .body .quote{font-family:var(--font-serif);color:var(--accent)
   <section class="landing" id="landing">
     <div class="eyebrow">SoulMirror · 七宗罪</div>
     <h1 class="hero-title">你的欲望<br><span class="accent">浓度图</span></h1>
-    <p class="hero-subtitle">七宗罪 · 45 题，看见哪一宗在你身上最响</p>
-    <p class="lede">42 道日常题 + 3 道情境抉择。没有标准答案，按第一反应选就好；结果是你的相对剖面，不是审判。</p>
+    <p class="hero-subtitle">七宗罪 × 七美德 · 45 题，看见哪一宗最响、哪一种德最稳</p>
+    <p class="lede">42 道日常题 + 3 道情境抉择。罪与德一一配对：傲慢/谦逊、贪婪/慷慨、嫉妒/仁慈、暴怒/耐心、色欲/贞洁、暴食/节制、懒惰/勤勉。没有标准答案，按第一反应选就好；结果是你的相对剖面，不是审判。</p>
 
     <div class="meta-row">
       <div><strong>45</strong>道题</div>
       <div><strong>7</strong>分钟</div>
-      <div><strong>7</strong>维剖面</div>
+      <div><strong>14</strong>维剖面</div>
     </div>
 
     <div class="resume-bar hidden" id="resumeBar">
@@ -369,8 +381,67 @@ var DIM_META = {
   }
 };
 
+/* ==================== 七美德（与七宗罪一一配对，共 14 维） ==================== */
+
+var VIRTUE_OF = {
+  pride:'humility', greed:'generosity', envy:'kindness', wrath:'patience',
+  lust:'chastity', gluttony:'temperance', sloth:'diligence'
+};
+
+var VIRTUE_META = {
+  humility:{
+    label:'谦逊', short:'谦', icon:'dove', pair:'pride',
+    phrase:'“我不需要一直对，也可以被尊重。”',
+    clause:'你能承认自己的局限，也愿意把功劳分给别人',
+    text:'你能把「被认可」和「必须赢」分开：知道自己的长处，也不怕承认别人更擅长某件事。被指出问题时，你先分辨对错，而不是先维护面子。这种松弛让你更容易被信任，也更容易真正学到东西。'
+  },
+  generosity:{
+    label:'慷慨', short:'慷', icon:'gift', pair:'greed',
+    phrase:'“分出去的东西，不会让我变少。”',
+    clause:'你不太靠占有获得安全感，愿意把资源和机会分给别人',
+    text:'你不太靠占有来获得安全感：够用就好，愿意把资源、时间和机会分出去，即使没有回报。分享不会让你变少，反而让身边的人更愿意在需要时想起你。'
+  },
+  kindness:{
+    label:'仁慈', short:'仁', icon:'hands', pair:'envy',
+    phrase:'“你过得好，我也替你高兴。”',
+    clause:'别人变好时，你能真心替对方高兴，而不急着比较',
+    text:'别人过得好，你能真心替对方高兴，而不急着把自己放上天平。你不把别人的成功当作对自己的否定，所以关系里更少暗暗较劲，也更容易被当作可靠的朋友。'
+  },
+  patience:{
+    label:'耐心', short:'耐', icon:'hourglass', pair:'wrath',
+    phrase:'“先缓一拍，再说。”',
+    clause:'被冒犯时你能先冷静，不急着把情绪甩出去',
+    text:'你被冒犯时能先缓一拍：不急着回击，也不急着把情绪甩出去。你知道有些事过一夜就没那么重要，这让你在冲突里更不容易把小事升级。'
+  },
+  chastity:{
+    label:'贞洁', short:'贞', icon:'shield', pair:'lust',
+    phrase:'“心动是真的，选择也是。”',
+    clause:'你能把心动留在欣赏的位置，先想清楚再靠近',
+    text:'你能把心动留在欣赏的位置：喜欢是真的，但你会先想清楚后果再靠近。你不靠暧昧来确认自己的价值，所以关系里更少事后需要解释的决定。'
+  },
+  temperance:{
+    label:'节制', short:'节', icon:'scales', pair:'gluttony',
+    phrase:'“够了，就停在这里。”',
+    clause:'你能在「想要」和「够了」之间踩住刹车',
+    text:'你能在「想要」和「够了」之间踩住刹车：好吃的一口可以只吃一口，购物车可以放一夜。享受还在，但你不容易被它牵着走。'
+  },
+  diligence:{
+    label:'勤勉', short:'勤', icon:'sun', pair:'sloth',
+    phrase:'“先做五分钟，就顺下去了。”',
+    clause:'你不太需要等一个完美的开始，愿意现在就动手',
+    text:'你不太需要等一个完美的开始：先做五分钟，往往就顺下去了。你知道拖延只是把麻烦留给以后的自己，所以更愿意现在就把它挪走。'
+  }
+};
+
 var ICON_SVG = {
   crown:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 18h16"/><path d="M5 18l-1.2-9 4.8 3.4L12 6l3.4 6.4L20.2 9 19 18"/></svg>',
+  dove:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8.5c-3.6.3-6.2 1.7-8 4.2-1.2 1.7-2.4 3-4.2 3.7"/><path d="M21 8.5c-.6-2-2.4-3.3-4.6-3.3-2.8 0-4.6 2-5.4 4.6L8 14.5l-4.5 1.6 3.6 2.3c3.4 2.2 8 .6 9.2-3.3"/></svg>',
+  gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9.5" width="17" height="11" rx="1.5"/><path d="M3.5 13.5h17M12 9.5v11"/><path d="M12 9.5C10 9.5 7.5 8.6 7.5 6.6 7.5 5.4 8.4 4.6 9.5 4.6c1.7 0 2.5 2.4 2.5 4.9 0-2.5.8-4.9 2.5-4.9 1.1 0 2 .8 2 2 0 2-2.5 2.9-4.5 2.9z"/></svg>',
+  hands:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-6.5-4-6.5-8.6c0-2 1.6-3.4 3.4-3.4 1.3 0 2.3.8 3.1 2 .8-1.2 1.8-2 3.1-2 1.8 0 3.4 1.4 3.4 3.4C18.5 16 12 20 12 20z"/><path d="M9 9.6c.6-.9 1.6-1.4 3-1.4s2.4.5 3 1.4"/></svg>',
+  hourglass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10"/><path d="M7 3c0 4 5 5.2 5 9s-5 5-5 9M17 3c0 4-5 5.2-5 9s5 5 5 9"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 2.6v5.2c0 4.5-3 7.7-7 10.2-4-2.5-7-5.7-7-10.2V5.6z"/><path d="M9 12l2.2 2.2L15.5 10"/></svg>',
+  scales:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M7 20h10"/><path d="M4 8h16M6 8l-2.5 5h5zM18 8l-2.5 5h5z"/></svg>',
+  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>',
   coin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="9" cy="9" r="4.2"/><circle cx="15.5" cy="15" r="4.2"/><path d="M9 6.8v4.4M6.8 9h4.4"/></svg>',
   eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.8 12s3.3-5.4 9.2-5.4S21.2 12 21.2 12s-3.3 5.4-9.2 5.4S2.8 12 2.8 12z"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></svg>',
   flame:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 21c3.8 0 6-2.4 6-5.6 0-3.4-2.6-5.6-3.6-7.9-.4 1.7-1.4 2.7-2.5 3.2.2-2.4-.6-4.2-2.1-5.7.3 3.3-3.8 6-3.8 10.4C6 18.6 8.2 21 12 21z"/></svg>',
@@ -601,7 +672,7 @@ function renderQuestion(){
   html += '<div class="q-eyebrow">第 ' + (state.current + 1) + ' 题 · ' + (q.type === 'scenario' ? '情境抉择' : '日常题') + '</div>';
   html += '<div class="q-text" id="qText" tabindex="-1">' + esc(q.text) + '</div>';
   if (q.type === 'scenario'){
-    html += '<div class="q-sub">情境题不计入七维分数，只用于理解你在具体选择里的倾向。</div>';
+    html += '<div class="q-sub">情境题不计入十四维分数，只用于理解你在具体选择里的倾向。</div>';
   }
   html += '</div>';
 
@@ -695,21 +766,29 @@ function tryExit(){
 
 function computeResult(){
   var per = {};
-  DIMS.forEach(function(d){ per[d] = { sum:0, n:0 }; });
+  DIMS.forEach(function(d){ per[d] = { sum:0, n:0, vsum:0, vn:0 }; });
 
   QUESTIONS.forEach(function(q){
     if (q.type !== 'likert5' || !isDim(q.dim)) return;
     var raw = state.answers[q.id];
     if (raw == null) return;
-    var x = q.reverse ? (6 - Number(raw)) : Number(raw);
-    per[q.dim].sum += x;
-    per[q.dim].n += 1;
+    var x = Number(raw);
+    if (q.reverse){
+      /* 反向题 = 美德维度：同意越强，美德越高 */
+      per[q.dim].vsum += x;
+      per[q.dim].vn += 1;
+    } else {
+      /* 正向题 = 罪维度：同意越强，浓度越高 */
+      per[q.dim].sum += x;
+      per[q.dim].n += 1;
+    }
   });
 
-  var D = {};
+  var D = {}, V = {};
   DIMS.forEach(function(d){
     var p = per[d];
     D[d] = p.n ? ((p.sum / p.n) - 1) / 4 * 100 : 0;
+    V[d] = p.vn ? ((p.vsum / p.vn) - 1) / 4 * 100 : 0;
   });
 
   var M = DIMS.reduce(function(a,d){ return a + D[d]; },0) / DIMS.length;
@@ -789,7 +868,7 @@ function computeResult(){
   var scenarioTop = s[sRanked[0]] > 0 && s[sRanked[0]] !== s[sRanked[1]] ? sRanked[0] : null;
 
   return {
-    D:D, M:M, SD:SD, z:z, ranked:ranked, gap:gap, double:double,
+    D:D, V:V, M:M, SD:SD, z:z, ranked:ranked, gap:gap, double:double,
     intensity:intensity, shape:shape, straight:straight, flags:flags,
     scenario:s, scenarioTop:scenarioTop, covered:covered,
     consistencyGap:consistencyGap, duration:duration
@@ -809,13 +888,13 @@ function overviewText(r){
   var p = r.ranked[0], s = r.ranked[1];
   var pMeta = DIM_META[p], sMeta = DIM_META[s];
   if (r.straight){
-    return '这张剖面暂时只作参考：七维读数比较接近，不适合用它给你贴一个确定的主峰。';
+    return '这张剖面暂时只作参考：十四维读数比较接近，不适合用它给你贴一个确定的主峰。';
   }
   if (r.double){
     return '你的两个峰是「' + pMeta.label + '」和「' + sMeta.label + '」，差距很小，不必硬分主次。' + pMeta.clause + '；' + sMeta.clause + '。两股力量交替出现时，你可能会在不同情境里像两个人。';
   }
   if (r.shape === '平坦'){
-    return '你的七维读数相差不大，整体比较平。相对高一点的是「' + pMeta.label + '」，但别急着把它当成固定标签。' + pMeta.clause + '。';
+    return '你的十四维读数相差不大，整体比较平。相对高一点的是「' + pMeta.label + '」，但别急着把它当成固定标签。' + pMeta.clause + '。';
   }
   return '你的主导倾向是「' + pMeta.label + '」，辅以「' + sMeta.label + '」。' + pMeta.clause + '；' + sMeta.clause + '。当两股力量同向时，你会很有冲劲；反向时，则容易内耗。';
 }
@@ -865,6 +944,8 @@ function renderResult(r){
 }
 
 function renderHeader(r, titleHtml){
+  var virRanked = DIMS.slice().sort(function(a,b){ return r.V[b] - r.V[a]; });
+  var virTop = VIRTUE_META[VIRTUE_OF[virRanked[0]]];
   return '<div class="result-hero">' +
     '<div class="result-tag">你的欲望浓度图</div>' +
     '<h1>' + titleHtml + '</h1>' +
@@ -872,6 +953,7 @@ function renderHeader(r, titleHtml){
     '<div class="result-chips">' +
       '<span class="chip accent">整体强度 ' + r.intensity + '/100 · ' + intensityLabel(r.intensity) + '</span>' +
       '<span class="chip">剖面 ' + r.shape + '</span>' +
+      '<span class="chip">最强美德 ' + virTop.label + ' ' + round(r.V[virRanked[0]]) + '</span>' +
       (r.straight ? '<span class="chip">参考剖面</span>' : '') +
       '<span class="chip">建议 16 岁以上阅读</span>' +
     '</div>' +
@@ -879,17 +961,26 @@ function renderHeader(r, titleHtml){
 }
 
 function renderBars(r){
-  var rows = DIMS.slice().sort(function(a,b){ return r.D[b] - r.D[a]; });
-  var top3 = rows.slice(0,3);
+  var sinSorted = DIMS.slice().sort(function(a,b){ return r.D[b] - r.D[a]; });
+  var virSorted = DIMS.slice().sort(function(a,b){ return r.V[b] - r.V[a]; });
+  var sinTop = sinSorted.slice(0,3);
+  var virTop = virSorted.slice(0,3);
+
   var html = '<div class="bars">';
-  DIMS.forEach(function(d){
-    var v = round(r.D[d]);
-    var isTop = top3.indexOf(d) !== -1;
-    html += '<div class="bar-row' + (isTop ? ' top' : '') + '">' +
+  DIMS.forEach(function(d, i){
+    var vd = VIRTUE_OF[d];
+    var sv = round(r.D[d]), vv = round(r.V[d]);
+    html += '<div class="bar-row' + (sinTop.indexOf(d) !== -1 ? ' top' : '') + '">' +
       '<div class="bar-label">' + DIM_META[d].label + '</div>' +
-      '<div class="bar-track"><div class="bar-fill" data-w="' + v + '"></div></div>' +
-      '<div class="bar-val">' + v + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" data-w="' + sv + '"></div></div>' +
+      '<div class="bar-val">' + sv + '</div>' +
     '</div>';
+    html += '<div class="bar-row virtue' + (virTop.indexOf(d) !== -1 ? ' top' : '') + '">' +
+      '<div class="bar-label">' + VIRTUE_META[vd].label + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" data-w="' + vv + '"></div></div>' +
+      '<div class="bar-val">' + vv + '</div>' +
+    '</div>';
+    if (i < DIMS.length - 1) html += '<div class="bar-pair-sep"></div>';
   });
   html += '</div>';
   return html;
@@ -910,12 +1001,23 @@ function renderMainCard(r, dim, kicker){
 function renderInterpretations(r){
   var openSet = [r.ranked[0]];
   if (r.double) openSet.push(r.ranked[1]);
+  var virRanked = DIMS.slice().sort(function(a,b){ return r.V[b] - r.V[a]; });
+  var virTop = virRanked[0];
   var html = '';
   DIMS.forEach(function(d){
     var m = DIM_META[d];
     var open = openSet.indexOf(d) !== -1;
     html += '<details class="interpret"' + (open ? ' open' : '') + '>' +
-      '<summary><span>' + m.label + ' · ' + round(r.D[d]) + '</span><span class="arrow" aria-hidden="true">▸</span></summary>' +
+      '<summary><span>' + m.label + ' · 罪 ' + round(r.D[d]) + '</span><span class="arrow" aria-hidden="true">▸</span></summary>' +
+      '<div class="body"><span class="quote">' + esc(m.phrase) + '</span>' + esc(m.text) + '</div>' +
+    '</details>';
+  });
+  DIMS.forEach(function(d){
+    var vd = VIRTUE_OF[d];
+    var m = VIRTUE_META[vd];
+    var open = d === virTop;
+    html += '<details class="interpret virtue"' + (open ? ' open' : '') + '>' +
+      '<summary><span>' + m.label + ' · 德 ' + round(r.V[d]) + '</span><span class="arrow" aria-hidden="true">▸</span></summary>' +
       '<div class="body"><span class="quote">' + esc(m.phrase) + '</span>' + esc(m.text) + '</div>' +
     '</details>';
   });
@@ -937,8 +1039,9 @@ function renderFull(r){
   }
 
   html += '<div class="section-block">' +
-    '<div class="section-head"><span class="num">01</span><h2>七维浓度</h2></div>' +
-    '<p class="section-desc">0–100 是相对强度，不是人群百分位。固定顺序：傲 / 贪 / 妒 / 怒 / 欲 / 馋 / 惰，前三名高亮。</p>' +
+    '<div class="section-head"><span class="num">01</span><h2>十四维剖面</h2></div>' +
+    '<p class="section-desc">七宗罪 · 七美德，一一配对：傲/谦、贪/慷、妒/仁、怒/耐、欲/贞、馋/节、惰/勤。' +
+    '0–100 是相对强度，不是人群百分位；上方为罪维（玫红），下方为对应的德维（金），各自前三名高亮。</p>' +
     renderBars(r) +
   '</div>';
 
@@ -962,14 +1065,14 @@ function renderFull(r){
   }
 
   html += '<div class="section-block">' +
-    '<div class="section-head"><span class="num">0' + (sText ? 4 : 3) + '</span><h2>七段解读</h2></div>' +
-    '<p class="section-desc">主峰与次峰默认展开，其余可以按需查看。每段只写情境与一个小动作，不做评判。</p>' +
+    '<div class="section-head"><span class="num">0' + (sText ? 4 : 3) + '</span><h2>十四段解读</h2></div>' +
+    '<p class="section-desc">前七段是罪维，后七段是对应的德维；主峰、次峰与最高的德维默认展开，其余可以按需查看。每段只写情境与一个小动作，不做评判。</p>' +
     renderInterpretations(r) +
   '</div>';
 
   html += '<div class="section-block">' +
     '<div class="section-head"><span class="num">0' + (sText ? 5 : 4) + '</span><h2>分享卡</h2></div>' +
-    '<p class="section-desc">默认只显示主/副峰与七维浓度，不显示你的具体作答。保存图片或复制文案都可以。</p>' +
+    '<p class="section-desc">默认只显示主/副峰与十四维浓度，不显示你的具体作答。保存图片或复制文案都可以。</p>' +
     renderShareCard(r) +
     '<div class="share-actions">' +
       '<button class="btn-secondary" type="button" id="copyBtn">复制分享文案</button>' +
@@ -988,10 +1091,10 @@ function renderFull(r){
 function renderReference(r){
   var html = renderHeader(r, '这次的剖面<br><span class="accent">更像一张参考图</span>');
   html += '<div class="quality-banner"><strong>为什么不给主峰</strong>' +
-    '你的作答非常整齐，七维读数几乎一样。与其硬挑一个「主罪」，不如把这张图当作一次参考；建议间隔一段时间、按第一反应重做。' +
+    '你的作答非常整齐，十四维读数几乎一样。与其硬挑一个「主罪」，不如把这张图当作一次参考；建议间隔一段时间、按第一反应重做。' +
   '</div>';
   html += '<div class="section-block">' +
-    '<div class="section-head"><span class="num">01</span><h2>七维浓度</h2></div>' +
+    '<div class="section-head"><span class="num">01</span><h2>十四维剖面</h2></div>' +
     '<p class="section-desc">数值仍按你的作答计算，但这次不判定主峰与次峰。</p>' +
     renderBars(r) +
   '</div>';
@@ -1013,15 +1116,18 @@ function sharePrimaryText(r){
 function renderShareCard(r){
   var p = r.ranked[0];
   var primary = sharePrimaryText(r);
-  var values = DIMS.map(function(d){
+  var sinVals = DIMS.map(function(d){
     return DIM_META[d].short + ' <span class="v">' + round(r.D[d]) + '</span>';
+  }).join(' · ');
+  var virVals = DIMS.map(function(d){
+    return VIRTUE_META[VIRTUE_OF[d]].short + ' <span class="v">' + round(r.V[d]) + '</span>';
   }).join(' · ');
   return '<div class="share-card" id="shareCard">' +
     '<div class="share-brand">SOULMIRROR · 心镜</div>' +
     '<div class="share-title">我的七宗罪浓度</div>' +
     '<div class="share-primary">' + primary + '</div>' +
     '<div class="share-phrase">' + esc(DIM_META[p].phrase) + '</div>' +
-    '<div class="share-values">' + values + '</div>' +
+    '<div class="share-values">罪 ' + sinVals + '<br>德 ' + virVals + '</div>' +
     '<div class="share-foot">娱乐性自我探索 · 非临床诊断 · 0–100 为相对强度</div>' +
   '</div>';
 }
@@ -1060,7 +1166,8 @@ function shareText(r){
     ? '我的两个峰是「' + DIM_META[p].label + '」和「' + DIM_META[s].label + '」'
     : '我的主峰是「' + DIM_META[p].label + '」，副峰是「' + DIM_META[s].label + '」';
   var vals = DIMS.map(function(d){ return DIM_META[d].short + ' ' + round(r.D[d]); }).join(' · ');
-  return DIM_META[p].phrase + '\n' + head + '\n我的七宗罪浓度：' + vals + '\n#心镜';
+  var vvals = DIMS.map(function(d){ return VIRTUE_META[VIRTUE_OF[d]].short + ' ' + round(r.V[d]); }).join(' · ');
+  return DIM_META[p].phrase + '\n' + head + '\n我的七宗罪：' + vals + '\n我的七美德：' + vvals + '\n#心镜';
 }
 
 function copyShareText(r, btn){
@@ -1108,10 +1215,15 @@ function wrapText(ctx, text, maxWidth){
   return lines;
 }
 
-function drawRadar(ctx, cx, cy, radius, D){
-  var n = DIMS.length;
+function drawRadar(ctx, cx, cy, radius, D, V){
+  var axes = [];
+  DIMS.forEach(function(d){
+    axes.push({ label: DIM_META[d].short + ' ' + round(D[d]), v: D[d], virtue: false });
+    axes.push({ label: VIRTUE_META[VIRTUE_OF[d]].short + ' ' + round(V[d]), v: V[d], virtue: true });
+  });
+  var n = axes.length;
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,.14)';
+  ctx.strokeStyle = 'rgba(255,255,255,.12)';
   ctx.lineWidth = 1;
   [0.25,0.5,0.75,1].forEach(function(k){
     ctx.beginPath();
@@ -1124,7 +1236,7 @@ function drawRadar(ctx, cx, cy, radius, D){
     ctx.closePath();
     ctx.stroke();
   });
-  ctx.strokeStyle = 'rgba(255,255,255,.10)';
+  ctx.strokeStyle = 'rgba(255,255,255,.08)';
   for (var i = 0; i < n; i++){
     var a = -Math.PI / 2 + i * Math.PI * 2 / n;
     ctx.beginPath();
@@ -1132,30 +1244,37 @@ function drawRadar(ctx, cx, cy, radius, D){
     ctx.lineTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
     ctx.stroke();
   }
-  ctx.beginPath();
-  for (var j = 0; j < n; j++){
-    var aj = -Math.PI / 2 + j * Math.PI * 2 / n;
-    var rj = radius * (clamp(D[DIMS[j]],0,100) / 100);
-    var xj = cx + Math.cos(aj) * rj;
-    var yj = cy + Math.sin(aj) * rj;
-    if (j === 0) ctx.moveTo(xj,yj); else ctx.lineTo(xj,yj);
-  }
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(223,182,178,.20)';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(223,182,178,.90)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
 
-  ctx.fillStyle = 'rgba(247,237,232,.92)';
-  ctx.font = '500 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  function polygon(isVirtue, fill, stroke){
+    ctx.beginPath();
+    var first = true;
+    for (var j = 0; j < n; j++){
+      if (axes[j].virtue !== isVirtue) continue;
+      var aj = -Math.PI / 2 + j * Math.PI * 2 / n;
+      var rj = radius * (clamp(axes[j].v,0,100) / 100);
+      var xj = cx + Math.cos(aj) * rj;
+      var yj = cy + Math.sin(aj) * rj;
+      if (first){ ctx.moveTo(xj,yj); first = false; } else ctx.lineTo(xj,yj);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  polygon(false, 'rgba(223,182,178,.20)', 'rgba(223,182,178,.90)');
+  polygon(true, 'rgba(212,164,74,.14)', 'rgba(212,164,74,.85)');
+
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (var k2 = 0; k2 < n; k2++){
     var ak = -Math.PI / 2 + k2 * Math.PI * 2 / n;
-    var lx = cx + Math.cos(ak) * (radius + 66);
-    var ly = cy + Math.sin(ak) * (radius + 62);
-    ctx.fillText(DIM_META[DIMS[k2]].short + ' ' + round(D[DIMS[k2]]), lx, ly);
+    var lx = cx + Math.cos(ak) * (radius + 74);
+    var ly = cy + Math.sin(ak) * (radius + 66);
+    ctx.fillStyle = axes[k2].virtue ? 'rgba(230,196,128,.95)' : 'rgba(247,237,232,.92)';
+    ctx.font = '500 24px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillText(axes[k2].label, lx, ly);
   }
   ctx.restore();
 }
@@ -1228,12 +1347,17 @@ function downloadShareCard(r, btn){
       ctx.fillText(line, W/2, 520 + i * 62);
     });
 
-    drawRadar(ctx, W/2, 1030, 300, r.D);
+    drawRadar(ctx, W/2, 1030, 288, r.D, r.V);
 
-    ctx.fillStyle = 'rgba(179,163,174,.96)';
-    ctx.font = '500 32px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.fillStyle = 'rgba(223,182,178,.96)';
+    ctx.font = '500 28px "PingFang SC","Microsoft YaHei",sans-serif';
     var vals = DIMS.map(function(d){ return DIM_META[d].short + ' ' + round(r.D[d]); }).join(' · ');
-    ctx.fillText(vals, W/2, 1510);
+    ctx.fillText('罪 ' + vals, W/2, 1488);
+
+    ctx.fillStyle = 'rgba(230,196,128,.96)';
+    ctx.font = '500 28px "PingFang SC","Microsoft YaHei",sans-serif';
+    var vvals = DIMS.map(function(d){ return VIRTUE_META[VIRTUE_OF[d]].short + ' ' + round(r.V[d]); }).join(' · ');
+    ctx.fillText('德 ' + vvals, W/2, 1538);
 
     ctx.strokeStyle = 'rgba(255,255,255,.10)';
     ctx.beginPath();
@@ -1300,6 +1424,8 @@ function saveRecord(r){
   try{
     var scores = {};
     DIMS.forEach(function(d){ scores[d] = round(r.D[d]); });
+    var virtues = {};
+    DIMS.forEach(function(d){ virtues[VIRTUE_OF[d]] = round(r.V[d]); });
     var headline = '七宗罪 · ' + (r.double ? '双峰「' + DIM_META[r.ranked[0]].label + '」×「' + DIM_META[r.ranked[1]].label + '」' : '主峰「' + DIM_META[r.ranked[0]].label + '」');
     var visitorToken = '';
     try{ if (window.SMTrack && window.SMTrack.getVisitorToken) visitorToken = window.SMTrack.getVisitorToken(); }catch(e){}
@@ -1309,7 +1435,7 @@ function saveRecord(r){
       credentials:'include',
       body:JSON.stringify({
         headline:headline,
-        data:{ scores:scores, answers:state.answers },
+        data:{ scores:scores, virtues:virtues, answers:state.answers },
         visitorToken:visitorToken
       })
     }).catch(function(){});
