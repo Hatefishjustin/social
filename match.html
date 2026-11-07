@@ -1558,6 +1558,7 @@ const QUESTIONS = [
 let current = 0;
 let answers = [];
 let pendingSelection = []; // 当前多选题临时选中的index数组
+let advanceTimer = null; // 单选自动前进计时器，防止快速连点跳题
 
 const landing = document.getElementById('landing');
 const questionScreen = document.getElementById('questionScreen');
@@ -1576,6 +1577,7 @@ const sectionNeutral = {M:'准备开始', A:'第一部分', B:'第二部分', C:
 
 function startQuiz(){
   try { if (window.trackEvent) window.trackEvent('quiz_start', { quiz_type: 'ideal_partner' }); } catch(e) {}
+  if (advanceTimer){ clearTimeout(advanceTimer); advanceTimer = null; }
   current = 0;
   answers = [];
   pendingSelection = [];
@@ -1630,6 +1632,8 @@ function renderQuestion(){
 }
 
 function selectOption(i){
+  // 快速连点保护：自动前进计时器存在时忽略后续点击，避免同一次点击被调度两次、跳过下一题。
+  if (advanceTimer) return;
   const q = QUESTIONS[current];
 
   if(q.multi){
@@ -1657,7 +1661,8 @@ function selectOption(i){
   document.querySelectorAll('#optionsWrap .option').forEach((el,idx)=>{
     el.classList.toggle('selected', idx===i);
   });
-  setTimeout(()=>{
+  advanceTimer = setTimeout(()=>{
+    advanceTimer = null;
     advance();
   }, 300);
 }
@@ -1698,6 +1703,7 @@ function advance(){
 }
 
 function goBack(){
+  if(advanceTimer){ clearTimeout(advanceTimer); advanceTimer = null; }
   if(current>0){
     current--;
     renderQuestion();
@@ -2395,6 +2401,7 @@ function personalitySummary(p){
    导出结果：使用浏览器原生打印能力生成 PDF（零外部依赖）。
    之所以不用 html2canvas 等第三方截图库，是因为那类库需要从 CDN 加载，
 function restartQuiz(){
+  if (advanceTimer){ clearTimeout(advanceTimer); advanceTimer = null; }
   current=0;
   answers=[];
   pendingSelection=[];
