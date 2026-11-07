@@ -212,6 +212,20 @@
 
   .stage.is-dragging { cursor: grabbing; }
 
+  /* 拖动/动画期间禁用卡片内部过渡，避免 is-active 快速切换时过渡反复触发产生闪烁 */
+  .stage.is-dragging .card-inner,
+  .stage.is-dragging .card-inner::before,
+  .stage.is-dragging .card-details,
+  .stage.is-animating .card-inner,
+  .stage.is-animating .card-inner::before,
+  .stage.is-animating .card-details {
+    transition: none !important;
+  }
+  .stage.is-dragging .card-float,
+  .stage.is-animating .card-float {
+    animation: none !important;
+  }
+
   .wheel {
     position: absolute;
     inset: 0;
@@ -1810,9 +1824,10 @@
 
   function animateTo(end) {
     cancelAnimationFrame(rafId);
+    stage.classList.add('is-animating');
     var start = current;
     var dist = end - start;
-    if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
+    if (Math.abs(dist) < 0.0005) { current = end; render(); stage.classList.remove('is-animating'); return; }
 
     var duration = 380;
     var t0 = performance.now();
@@ -1826,6 +1841,7 @@
         rafId = requestAnimationFrame(frame);
       } else {
         rafId = 0;
+        stage.classList.remove('is-animating');
       }
     }
 
@@ -2114,6 +2130,7 @@
     velocity = 0;
     cancelAnimationFrame(rafId);
     rafId = 0;
+    stage.classList.remove('is-animating');
     stage.classList.add('is-dragging');
 
     if (stage.setPointerCapture) {
