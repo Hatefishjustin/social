@@ -1258,8 +1258,13 @@
     });
   }
 
+  // 演示数据仅允许本机开发环境使用，生产域名下忽略 ?demo=1，避免演示卡片泄漏给真实用户。
+  function isLocalDev() {
+    return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  }
+
   async function loadCatalog() {
-    var demo = new URLSearchParams(window.location.search).get('demo') === '1';
+    var demo = new URLSearchParams(window.location.search).get('demo') === '1' && isLocalDev();
     if (demo) {
       try {
         await loadDemoScript();
