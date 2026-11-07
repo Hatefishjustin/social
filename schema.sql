@@ -641,6 +641,14 @@ CREATE INDEX IF NOT EXISTS idx_quizzes_status_sort ON quizzes(status, sort_order
 -- 说明：/quiz.html 通用答题器的结果摘要，只存结果，不存逐题答案。
 -- 匿名用户以 visitor_token 记录；登录用户同时写入 user_id。
 -- 迁移文件：docs/migrations/2026-11-05-S15-three-quizzes.sql
+--
+-- 2026-11-07 补充：后台「测评结果」模块所需明细字段（只增不删）
+--   answers_json  逐题选择明细（JSON 数组）
+--   dims_json     维度得分与结果快照（JSON 对象）
+--   mode          计分模式 type / scale / score
+--   user_agent    提交时 UA
+--   ip            提交时真实 IP
+-- 迁移文件：docs/migrations/2026-11-07-quiz-attempts-detail.sql
 CREATE TABLE IF NOT EXISTS quiz_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     slug TEXT NOT NULL DEFAULT '',
@@ -651,11 +659,18 @@ CREATE TABLE IF NOT EXISTS quiz_attempts (
     mouth_score REAL,
     user_id INTEGER,
     visitor_token TEXT NOT NULL DEFAULT '',
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    answers_json TEXT NOT NULL DEFAULT '[]',
+    dims_json TEXT NOT NULL DEFAULT '{}',
+    mode TEXT NOT NULL DEFAULT '',
+    user_agent TEXT NOT NULL DEFAULT '',
+    ip TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_user_time ON quiz_attempts(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_slug ON quiz_attempts(slug, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_created ON quiz_attempts(created_at, id);
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_result ON quiz_attempts(result_name, created_at);
 
 
 

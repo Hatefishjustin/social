@@ -52,7 +52,9 @@
   .tabs {
     display: flex; gap: 4px; margin-bottom: 20px;
     background: var(--card); padding: 4px; border-radius: 14px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab-btn {
     flex: 1; text-align: center; padding: 10px 16px; border: none;
     background: transparent; color: var(--muted); font-size: 13px; font-weight: 600;
@@ -86,6 +88,24 @@
   }
   .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+  .filter-select, .filter-input {
+    padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 12px;
+    font-family: var(--font); outline: none; max-width: 180px;
+  }
+  .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+  .filter-input[type="date"] { max-width: 140px; }
+  .attempts-summary {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap; margin-bottom: 10px;
+    font-size: 12px; color: var(--muted);
+  }
+  .dim-chip {
+    display: inline-block; margin: 0 4px 4px 0; padding: 1px 7px;
+    border-radius: 10px; background: rgba(196,82,110,.12);
+    color: var(--accent); font-size: 10px; white-space: nowrap;
+  }
 
   /* Activity list */
   .activity-list { display: flex; flex-direction: column; gap: 8px; }
@@ -278,6 +298,7 @@
       <button class="tab-btn" data-tab="pages">页面分析</button>
       <button class="tab-btn" data-tab="users">用户管理</button>
       <button class="tab-btn" data-tab="quiz">心理测评</button>
+      <button class="tab-btn" data-tab="attempts">测评结果</button>
       <button class="tab-btn" data-tab="smtest">S/M测试</button>
       <button class="tab-btn" data-tab="tarot">塔罗数据</button>
       <button class="tab-btn" data-tab="reports">内容审核</button>
@@ -363,6 +384,55 @@
       </div>
       <div class="loading" id="quizLoading">正在加载心理测评数据...</div>
       <div id="quizDashboard"></div>
+    </div>
+
+    <!-- ======== 测评结果（通用答题器 quiz_attempts） Tab ======== -->
+    <div class="tab-content" id="tab-attempts">
+      <div class="stats" id="attemptsStats"></div>
+      <div class="section" id="attemptsByQuiz"></div>
+
+      <div class="filters" id="attemptsFilters">
+        <select class="filter-select" id="attemptsSlug">
+          <option value="">全部测评</option>
+        </select>
+        <select class="filter-select" id="attemptsLogin">
+          <option value="">全部用户</option>
+          <option value="1">仅登录用户</option>
+          <option value="0">仅匿名/未登录</option>
+        </select>
+        <select class="filter-select" id="attemptsResult">
+          <option value="">全部结果标签</option>
+        </select>
+        <input class="filter-input" id="attemptsKeyword" type="search" placeholder="昵称 / slug / 关键词" maxlength="80">
+        <input class="filter-input" id="attemptsFrom" type="date" title="开始日期">
+        <input class="filter-input" id="attemptsTo" type="date" title="结束日期">
+        <select class="filter-select" id="attemptsSort">
+          <option value="desc">时间倒序（新→旧）</option>
+          <option value="asc">时间正序（旧→新）</option>
+        </select>
+        <select class="filter-select" id="attemptsPageSize">
+          <option value="50">每页 50 条</option>
+          <option value="100">每页 100 条</option>
+          <option value="200">每页 200 条</option>
+        </select>
+        <button class="filter-btn active" id="attemptsQueryBtn">查询</button>
+        <button class="filter-btn" id="attemptsResetBtn">重置</button>
+        <button class="filter-btn" id="attemptsExportCsv">导出 CSV（全量）</button>
+        <button class="filter-btn" id="attemptsExportJson">导出 JSON（全量）</button>
+      </div>
+
+      <div class="attempts-summary" id="attemptsSummary"></div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>时间</th><th>用户</th><th>测评名称 / slug</th><th>结果标签</th>
+            <th>关键维度分</th><th>设备 / IP</th><th>操作</th>
+          </tr></thead>
+          <tbody id="attemptsBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="attemptsPagination"></div>
+      <button class="refresh-btn" onclick="loadAttempts()">刷新数据</button>
     </div>
 
     <!-- ======== S/M 互动倾向测试 Tab ======== -->
@@ -457,6 +527,17 @@
   </div>
 </div>
 
+<!-- 测评结果（通用答题器）明细弹窗 -->
+<div id="attemptDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAttemptDetail()">
+  <div style="background:#111;border:1px solid #333;border-radius:14px;max-width:820px;width:100%;max-height:88vh;overflow:auto;padding:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="font-size:16px;color:#fff;margin:0;">测评结果明细 #<span id="attemptDetailId"></span></h2>
+      <button class="filter-btn" onclick="closeAttemptDetail()">关闭</button>
+    </div>
+    <div id="attemptDetailBody" style="font-size:13px;color:#ccc;line-height:1.6;"></div>
+  </div>
+</div>
+
 <script src="/quiz-display-helper.js"></script>
 <script src="/auth.js"></script>
 <script>
@@ -514,8 +595,8 @@ function actionLabel(a) {
 }
 
 function esc(s) {
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  if (s === null || s === undefined || s === '') return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 function renderActivity(item) {
@@ -1354,6 +1435,336 @@ window.closeQuizDetail = function() {
   document.getElementById('quizDetailModal').style.display = 'none';
 };
 
+// ==================== 测评结果（quiz_attempts，全量可见） ====================
+var attemptsState = {
+  page: 1,
+  pageSize: 50,
+  slug: '',
+  login: '',
+  result: '',
+  q: '',
+  from: '',
+  to: '',
+  sort: 'desc'
+};
+var attemptsLoaded = false;
+
+function attemptsDateStart(value) {
+  if (!value) return '';
+  var parts = String(value).split('-');
+  if (parts.length !== 3) return '';
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 0, 0, 0, 0);
+  return isNaN(d.getTime()) ? '' : String(d.getTime());
+}
+
+function attemptsDateEnd(value) {
+  if (!value) return '';
+  var parts = String(value).split('-');
+  if (parts.length !== 3) return '';
+  var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 23, 59, 59, 999);
+  return isNaN(d.getTime()) ? '' : String(d.getTime());
+}
+
+function attemptsQueryString() {
+  var qs = [];
+  if (attemptsState.slug) qs.push('slug=' + encodeURIComponent(attemptsState.slug));
+  if (attemptsState.login) qs.push('login=' + encodeURIComponent(attemptsState.login));
+  if (attemptsState.result) qs.push('result=' + encodeURIComponent(attemptsState.result));
+  if (attemptsState.q) qs.push('q=' + encodeURIComponent(attemptsState.q));
+  if (attemptsState.from) qs.push('from=' + encodeURIComponent(attemptsState.from));
+  if (attemptsState.to) qs.push('to=' + encodeURIComponent(attemptsState.to));
+  qs.push('sort=' + encodeURIComponent(attemptsState.sort));
+  return qs.join('&');
+}
+
+function attemptsUserCell(r) {
+  if (r.userId) {
+    var name = r.displayName || (r.email ? r.email.split('@')[0] : ('用户#' + r.userId));
+    return esc(name) + ' <span style="color:var(--muted);font-size:11;">(ID: ' + r.userId + ')</span>';
+  }
+  var token = r.visitorToken || '';
+  return '<span class="anon-tag">未登录/匿名</span>' +
+    (token ? '<div class="mono" title="' + esc(token) + '">' + esc(token.slice(0, 10)) + (token.length > 10 ? '…' : '') + '</div>' : '');
+}
+
+function attemptsDimsCell(r) {
+  var dims = r.dims || [];
+  if (dims.length === 0) {
+    if (r.score === null || r.score === undefined) return '<span style="color:var(--muted);">—</span>';
+    return '<span class="dim-chip">得分 ' + esc(r.score) + '</span>';
+  }
+  var html = dims.slice(0, 3).map(function (d) {
+    return '<span class="dim-chip" title="' + esc(d.key || '') + '">' + esc(d.name || d.key || '维度') +
+      ' ' + (d.percent === null || d.percent === undefined ? '—' : d.percent + '%') + '</span>';
+  }).join('');
+  if (dims.length > 3) html += '<span class="dim-chip">+' + (dims.length - 3) + '</span>';
+  return html;
+}
+
+function attemptsOverviewHtml(o) {
+  var rate = o.completionRate || 0;
+  return '<div class="stat-card"><div class="num">' + o.total + '</div><div class="label">总作答数</div></div>' +
+    '<div class="stat-card"><div class="num">' + o.today + '</div><div class="label">今日新增</div></div>' +
+    '<div class="stat-card"><div class="num">' + o.last7d + '</div><div class="label">近 7 天新增</div></div>' +
+    '<div class="stat-card"><div class="num">' + rate + '%</div><div class="label">完成率（仅完成提交）</div></div>' +
+    '<div class="stat-card"><div class="num">' + o.anonymous + '</div><div class="label">匿名/未登录</div></div>' +
+  '</div>';
+}
+
+function renderAttemptsByQuiz(byQuiz) {
+  var el = document.getElementById('attemptsByQuiz');
+  if (!byQuiz || byQuiz.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+  var max = Math.max(1, byQuiz.map(function (q) { return q.count; }).reduce(function (a, b) { return Math.max(a, b); }, 0));
+  el.innerHTML =
+    '<div class="section-title">各测评作答数</div>' +
+    '<div class="breakdown-list">' +
+      byQuiz.map(function (q) {
+        return '<div class="breakdown-row">' +
+          '<div class="name" title="' + esc(q.slug) + '">' + esc(q.quizTitle || q.slug) + '</div>' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + Math.round(q.count / max * 100) + '%"></div></div>' +
+          '<div class="count">' + q.count + '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+}
+
+function fillAttemptsSelect(id, items, allLabel, valueKey, labelKey) {
+  var select = document.getElementById(id);
+  if (!select) return;
+  var current = select.value;
+  var html = '<option value="">' + allLabel + '</option>';
+  (items || []).forEach(function (item) {
+    var value = String(item[valueKey] || '');
+    if (!value) return;
+    html += '<option value="' + esc(value) + '">' + esc(item[labelKey] || value) + '</option>';
+  });
+  select.innerHTML = html;
+  if (current && Array.prototype.some.call(select.options, function (opt) { return opt.value === current; })) {
+    select.value = current;
+  }
+}
+
+function renderAttemptsPagination(p) {
+  var el = document.getElementById('attemptsPagination');
+  var totalPages = Math.max(1, p.totalPages || 0);
+  if (p.total === 0) {
+    el.innerHTML = '<span class="page-info">暂无数据</span>';
+    return;
+  }
+  el.innerHTML =
+    '<button ' + (p.page <= 1 ? 'disabled' : '') + ' onclick="attemptsGoPage(1)">首页</button>' +
+    '<button ' + (p.page <= 1 ? 'disabled' : '') + ' onclick="attemptsGoPage(' + (p.page - 1) + ')">上一页</button>' +
+    '<span class="page-info">第 ' + p.page + ' / ' + totalPages + ' 页</span>' +
+    '<button ' + (p.page >= totalPages ? 'disabled' : '') + ' onclick="attemptsGoPage(' + (p.page + 1) + ')">下一页</button>' +
+    '<button ' + (p.page >= totalPages ? 'disabled' : '') + ' onclick="attemptsGoPage(' + totalPages + ')">末页</button>' +
+    '<input class="filter-input" id="attemptsJumpPage" type="number" min="1" max="' + totalPages + '" placeholder="页码" style="width:72px;max-width:72px;">' +
+    '<button onclick="attemptsJumpPage()">跳转</button>';
+}
+
+function renderAttemptsTable(data) {
+  var body = document.getElementById('attemptsBody');
+  var records = data.records || [];
+  if (records.length === 0) {
+    body.innerHTML = '<tr><td colspan="7" style="color:var(--muted);">暂无符合条件的记录</td></tr>';
+  } else {
+    body.innerHTML = records.map(function (r) {
+      return '<tr class="clickable" onclick="showAttemptDetail(' + r.id + ')">' +
+        '<td class="mono">' + formatDate(r.createdAt) + '</td>' +
+        '<td>' + attemptsUserCell(r) + '</td>' +
+        '<td><div>' + esc(r.quizTitle || '—') + '</div><div class="mono">' + esc(r.slug || '—') + '</div></td>' +
+        '<td>' + (r.resultName ? esc(r.resultName) : '<span style="color:var(--muted);">—</span>') + '</td>' +
+        '<td>' + attemptsDimsCell(r) + '</td>' +
+        '<td><div>' + esc(r.device || '未知') + '</div><div class="mono" title="' + esc(r.userAgent || '') + '">' + esc(r.ip || '—') + '</div></td>' +
+        '<td><button class="filter-btn" style="font-size:11px;padding:4px 10px;" onclick="event.stopPropagation();showAttemptDetail(' + r.id + ')">查看明细</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  var p = data.pagination;
+  var summary = document.getElementById('attemptsSummary');
+  summary.innerHTML = '<span>共 <strong style="color:var(--text);">' + p.total + '</strong> 条，当前第 ' +
+    (p.total ? p.from : 0) + '–' + (p.total ? p.to : 0) + ' 条</span>' +
+    '<span>分页为服务端全量分页，未做任何条数截断</span>';
+}
+
+async function loadAttempts(page) {
+  attemptsState.page = Math.max(1, Number(page) || 1);
+  var body = document.getElementById('attemptsBody');
+  body.innerHTML = '<tr><td colspan="7" class="loading">正在加载测评结果...</td></tr>';
+  try {
+    var url = '/api/admin/quiz-attempts?page=' + attemptsState.page + '&pageSize=' + attemptsState.pageSize + '&' + attemptsQueryString();
+    var r = await fetch(url, { credentials: 'include' });
+    var data = await r.json();
+    if (r.status === 401) {
+      body.innerHTML = '<tr><td colspan="7" class="error-msg">未登录，无法查看测评结果（401）</td></tr>';
+      return;
+    }
+    if (r.status === 403) {
+      body.innerHTML = '<tr><td colspan="7" class="error-msg">当前账号不是管理员（403）</td></tr>';
+      return;
+    }
+    if (data.error) {
+      body.innerHTML = '<tr><td colspan="7" class="error-msg">' + esc(data.message || data.error) + '</td></tr>';
+      return;
+    }
+    document.getElementById('attemptsStats').innerHTML = attemptsOverviewHtml(data.overview);
+    renderAttemptsByQuiz(data.overview.byQuiz);
+    fillAttemptsSelect('attemptsSlug', data.overview.byQuiz, '全部测评', 'slug', 'quizTitle');
+    fillAttemptsSelect('attemptsResult', data.overview.resultNames, '全部结果标签', 'name', 'name');
+    renderAttemptsTable(data);
+    renderAttemptsPagination(data.pagination);
+  } catch (e) {
+    body.innerHTML = '<tr><td colspan="7" class="error-msg">加载失败：' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function applyAttemptsFilters() {
+  attemptsState.slug = document.getElementById('attemptsSlug').value || '';
+  attemptsState.login = document.getElementById('attemptsLogin').value || '';
+  attemptsState.result = document.getElementById('attemptsResult').value || '';
+  attemptsState.q = document.getElementById('attemptsKeyword').value.trim();
+  attemptsState.sort = document.getElementById('attemptsSort').value === 'asc' ? 'asc' : 'desc';
+  attemptsState.pageSize = parseInt(document.getElementById('attemptsPageSize').value || '50', 10) || 50;
+  attemptsState.from = attemptsDateStart(document.getElementById('attemptsFrom').value);
+  attemptsState.to = attemptsDateEnd(document.getElementById('attemptsTo').value);
+  loadAttempts(1);
+}
+
+function resetAttemptsFilters() {
+  document.getElementById('attemptsSlug').value = '';
+  document.getElementById('attemptsLogin').value = '';
+  document.getElementById('attemptsResult').value = '';
+  document.getElementById('attemptsKeyword').value = '';
+  document.getElementById('attemptsFrom').value = '';
+  document.getElementById('attemptsTo').value = '';
+  document.getElementById('attemptsSort').value = 'desc';
+  document.getElementById('attemptsPageSize').value = '50';
+  applyAttemptsFilters();
+}
+
+window.attemptsGoPage = function (page) { loadAttempts(page); };
+
+window.attemptsJumpPage = function () {
+  var input = document.getElementById('attemptsJumpPage');
+  var page = parseInt(input.value || '1', 10);
+  if (!page || page < 1) return;
+  loadAttempts(page);
+};
+
+window.exportAttempts = function (format) {
+  var url = '/api/admin/quiz-attempts?export=1&format=' + (format === 'json' ? 'json' : 'csv') +
+    (attemptsQueryString() ? '&' + attemptsQueryString() : '');
+  window.location.href = url;
+};
+
+function attemptScoreText(score, mode) {
+  if (!score || typeof score !== 'object') return '—';
+  if (mode === 'scale') {
+    var value = Number(score.value);
+    return '维度 ' + esc(score.dim || '—') + ' · 选值 ' + value +
+      (score.reverse ? '（反向计分：6−' + value + '=' + (6 - value) + '）' : '');
+  }
+  if (score.p !== undefined || score.m !== undefined) {
+    return 'P +' + (Number(score.p) || 0) + ' / M +' + (Number(score.m) || 0);
+  }
+  var parts = Object.keys(score).map(function (key) { return esc(key) + ' +' + (Number(score[key]) || 0); });
+  return parts.join('，') || '—';
+}
+
+function renderAttemptDetail(d) {
+  var dims = (d.dimsDetail && Array.isArray(d.dimsDetail.dims) && d.dimsDetail.dims.length)
+    ? d.dimsDetail.dims
+    : (d.dims || []);
+  var dimsHtml = dims.length
+    ? dims.map(function (item) {
+        var pct = item.percent === null || item.percent === undefined ? 0 : item.percent;
+        return '<div class="breakdown-row">' +
+          '<div class="name" title="' + esc(item.key || '') + '">' + esc(item.name || item.key || '维度') + '</div>' +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + Math.max(0, Math.min(100, pct)) + '%"></div></div>' +
+          '<div class="count">' + pct + '%</div>' +
+        '</div>';
+      }).join('')
+    : '<div style="color:var(--muted);font-size:12px;">该记录没有维度分快照</div>';
+
+  var userHtml = d.userId
+    ? esc(d.displayName || (d.email ? d.email.split('@')[0] : ('用户#' + d.userId))) + ' <span style="color:var(--muted);font-size:11;">(ID: ' + d.userId + ')</span>'
+    : '<span class="anon-tag">未登录/匿名</span>' +
+      (d.visitorToken ? ' <span class="mono" title="' + esc(d.visitorToken) + '">' + esc(d.visitorToken.slice(0, 18)) + '…</span>' : '');
+
+  var answersHtml;
+  if (Array.isArray(d.answers) && d.answers.length) {
+    answersHtml = '<div class="table-scroll"><table><thead><tr>' +
+      '<th>题号</th><th>题目</th><th>所选选项</th><th>计分增量</th>' +
+      '</tr></thead><tbody>' +
+      d.answers.map(function (a, i) {
+        return '<tr>' +
+          '<td class="mono">Q' + (i + 1) + '</td>' +
+          '<td style="white-space:normal;min-width:220px;">' + esc(a.q || '—') + '</td>' +
+          '<td style="white-space:normal;min-width:180px;">' + esc(a.t || ('选项 #' + a.i)) + '</td>' +
+          '<td style="white-space:normal;min-width:160px;" class="mono">' + attemptScoreText(a.s, d.mode) + '</td>' +
+        '</tr>';
+      }).join('') + '</tbody></table></div>';
+  } else {
+    answersHtml = '<div class="empty" style="padding:24px 10px;">该记录写入于明细字段上线前（2026-11-07），仅保留结果摘要，无法还原逐题答案。</div>';
+  }
+
+  return '<div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:12px;margin-bottom:16px;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">' +
+      '<div><span style="color:var(--muted);">用户：</span>' + userHtml + '</div>' +
+      '<div><span style="color:var(--muted);">时间：</span>' + formatTime(d.createdAt) + '</div>' +
+      '<div><span style="color:var(--muted);">测评：</span>' + esc(d.quizTitle || '—') + ' <span class="mono">' + esc(d.slug || '') + '</span></div>' +
+      '<div><span style="color:var(--muted);">模式：</span>' + esc(d.mode || '—') + '</div>' +
+      '<div><span style="color:var(--muted);">完成状态：</span>' + (d.completed ? '<span style="color:var(--green);">已完成</span>' : '未完成') + '</div>' +
+      '<div><span style="color:var(--muted);">IP：</span>' + esc(d.ip || '—') + '</div>' +
+      '<div><span style="color:var(--muted);">设备：</span>' + esc(d.device || '未知') + '</div>' +
+      '<div><span style="color:var(--muted);">UA：</span><span class="mono" title="' + esc(d.userAgent || '') + '">' + esc((d.userAgent || '—').slice(0, 80)) + '</span></div>' +
+    '</div>' +
+  '</div>' +
+  '<div style="margin-bottom:16px;">' +
+    '<div class="section-title">结果</div>' +
+    '<div>' + esc(d.resultName || '—') +
+      (d.score === null || d.score === undefined ? '' : ' · 主分 ' + esc(d.score) + '%') +
+      (d.mouthScore === null || d.mouthScore === undefined ? '' : ' · 嘴硬 ' + esc(d.mouthScore) + '%') +
+    '</div>' +
+  '</div>' +
+  '<div style="margin-bottom:16px;">' +
+    '<div class="section-title">维度得分</div>' +
+    dimsHtml +
+  '</div>' +
+  '<div>' +
+    '<div class="section-title">逐题作答（' + ((d.answers && d.answers.length) || 0) + ' 题）</div>' +
+    answersHtml +
+  '</div>';
+}
+
+window.showAttemptDetail = async function (id) {
+  var modal = document.getElementById('attemptDetailModal');
+  var body = document.getElementById('attemptDetailBody');
+  document.getElementById('attemptDetailId').textContent = id;
+  body.innerHTML = '<div class="loading">加载中...</div>';
+  modal.style.display = 'flex';
+  try {
+    var r = await fetch('/api/admin/quiz-attempts?id=' + id, { credentials: 'include' });
+    var data = await r.json();
+    if (r.status === 401) { body.innerHTML = '<div class="error-msg">未登录（401）</div>'; return; }
+    if (r.status === 403) { body.innerHTML = '<div class="error-msg">需要管理员权限（403）</div>'; return; }
+    if (data.error || !data.detail) {
+      body.innerHTML = '<div class="error-msg">' + esc(data.message || data.error || '加载失败') + '</div>';
+      return;
+    }
+    body.innerHTML = renderAttemptDetail(data.detail);
+  } catch (e) {
+    body.innerHTML = '<div class="error-msg">加载失败：' + esc(e.message) + '</div>';
+  }
+};
+
+window.closeAttemptDetail = function () {
+  document.getElementById('attemptDetailModal').style.display = 'none';
+};
+
 // ==================== S/M 互动倾向测试统计 ====================
 var smTypeLabels = {
   S: '偏S型（主导）',
@@ -1872,7 +2283,11 @@ var smStatsLoaded = false;
 function switchTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
-  document.querySelector('.tab-btn[data-tab="' + tabName + '"]').classList.add('active');
+  var activeTabBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+  activeTabBtn.classList.add('active');
+  if (activeTabBtn.scrollIntoView) {
+    activeTabBtn.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
   document.getElementById('tab-' + tabName).classList.add('active');
 
   if (tabName === 'dashboard') {
@@ -1906,6 +2321,12 @@ function switchTab(tabName) {
       } else {
         loadQuizStats();
       }
+    }
+  } else if (tabName === 'attempts') {
+    document.getElementById('headerSub').textContent = '测评结果（全量，无条数上限）';
+    if (!attemptsLoaded) {
+      attemptsLoaded = true;
+      loadAttempts(1);
     }
   } else if (tabName === 'smtest') {
     document.getElementById('headerSub').textContent = 'S/M 互动倾向测试统计';
@@ -1966,6 +2387,23 @@ document.addEventListener('DOMContentLoaded', function(){
       switchTab(btn.dataset.tab);
     });
   });
+
+  // 测评结果筛选与导出
+  var attemptsQueryBtn = document.getElementById('attemptsQueryBtn');
+  if (attemptsQueryBtn) {
+    attemptsQueryBtn.addEventListener('click', applyAttemptsFilters);
+    document.getElementById('attemptsResetBtn').addEventListener('click', resetAttemptsFilters);
+    document.getElementById('attemptsExportCsv').addEventListener('click', function(){ exportAttempts('csv'); });
+    document.getElementById('attemptsExportJson').addEventListener('click', function(){ exportAttempts('json'); });
+    ['attemptsSlug', 'attemptsLogin', 'attemptsResult', 'attemptsSort', 'attemptsPageSize'].forEach(function(id){
+      document.getElementById(id).addEventListener('change', applyAttemptsFilters);
+    });
+    ['attemptsKeyword', 'attemptsFrom', 'attemptsTo'].forEach(function(id){
+      document.getElementById(id).addEventListener('keydown', function(e){
+        if (e.key === 'Enter') applyAttemptsFilters();
+      });
+    });
+  }
 
   // Activity filter buttons
   document.querySelectorAll('#tab-activity .filter-btn').forEach(function(btn){

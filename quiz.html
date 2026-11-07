@@ -1312,6 +1312,50 @@
     }).slice(0, 4);
   }
 
+  function clipText(value, max) {
+    var text = String(value === null || value === undefined ? '' : value);
+    return text.length > max ? text.slice(0, max) : text;
+  }
+
+  /* 逐题作答明细：题目 / 所选项 / 该选项对维度的加减分。
+     仅在提交时写入 quiz_attempts，供后台「测评结果」查看。 */
+  function buildAnswersDetail(bank) {
+    var mode = bank.mode || 'type';
+    var scale = bank.scale || ['非常不符合', '比较不符合', '一般', '比较符合', '非常符合'];
+    var list = [];
+    (bank.questions || []).forEach(function (q, qi) {
+      var chosen = state.answers[qi];
+      if (chosen === null || chosen === undefined) return;
+      if (mode === 'scale') {
+        var value = Number(chosen);
+        if (isNaN(value)) return;
+        list.push({
+          q: clipText(q.text || '', 180),
+          t: clipText(scale[value - 1] || '', 180),
+          i: value,
+          s: { dim: String(q.dim || ''), value: value, reverse: !!q.reverse }
+        });
+        return;
+      }
+      var opt = (q.options || [])[chosen];
+      if (!opt) return;
+      var score = {};
+      if (opt.v && typeof opt.v === 'object') {
+        Object.keys(opt.v).forEach(function (key) { score[key] = Number(opt.v[key]) || 0; });
+      } else {
+        score.p = Number(opt.p) || 0;
+        score.m = Number(opt.m) || 0;
+      }
+      list.push({
+        q: clipText(q.text || '', 180),
+        t: clipText(opt.t || opt.text || '', 180),
+        i: chosen,
+        s: score
+      });
+    });
+    return list;
+  }
+
   function saveServerResult(result) {
     if (!state.bank) return;
     var payload = {
@@ -1321,6 +1365,14 @@
       resultName: String(result.name || '').slice(0, 80),
       score: Number(result.percent) || 0,
       mouthScore: result.mouthPct === null || result.mouthPct === undefined ? null : Number(result.mouthPct),
+      mode: state.bank.mode || 'type',
+      answersJson: buildAnswersDetail(state.bank),
+      dimsJson: {
+        mode: state.bank.mode || 'type',
+        percent: Number(result.percent) || 0,
+        mouthPct: result.mouthPct === null || result.mouthPct === undefined ? null : Number(result.mouthPct),
+        dims: result.dims || []
+      },
       visitorToken: getVisitorToken()
     };
     try {

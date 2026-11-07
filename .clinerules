@@ -76,7 +76,9 @@
 - **时间戳**：`created_at` 等时间字段统一为毫秒级整数（`unixepoch() * 1000` 或 `Date.now()`）。
 - **线上同步**：修改线上 D1 需通过 `wrangler d1 execute` 或 Cloudflare Dashboard 执行，并在 `schema.sql` 中同步记录迁移说明（参考 `reports` 表 `reported_id` 的迁移注释示例）。
 - **禁止破坏性操作**：禁止直接删除线上表或清空数据；结构变更需考虑向后兼容。
+- **只增不删迁移**：线上结构变更前先 `wrangler d1 export db --remote` 备份到 `backups/`，迁移文件写入 `docs/migrations/YYYY-MM-DD-*.sql`，只新增列/索引；执行后在 `schema.sql` 同步。
 - **SQL 参数化**：所有 SQL 必须使用 `?` 占位符 + `.bind()` 参数化查询，禁止字符串拼接 SQL（防注入）。
+- **后台测评结果**：`GET /api/admin/quiz-attempts`（管理员专属）必须服务端全量分页，禁止任何隐性条数上限；全量导出走 keyset 分批流式输出。详见 `交接文档.md` §5.13。
 
 ---
 
