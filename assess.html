@@ -2178,7 +2178,7 @@
     stage.classList.remove('is-dragging');
     if (moveRaf) { cancelAnimationFrame(moveRaf); moveRaf = 0; }
 
-    var projected = current + velocity * 0.42;
+    var projected = current + velocity * 0.55;
     animateTo(Math.round(projected));
 
     if (moved < 8) {
