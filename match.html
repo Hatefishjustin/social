@@ -2806,11 +2806,9 @@ function generateShareImage(data){
   ctx.textAlign = 'center';
   ctx.fillText('SOULMIRROR · 社交  —  找到最懂你的那个人', 375, 985);
 
-  // QR code：指向当前页面地址（白底黑码，静区 4 模块）
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(290, 790, 170, 170);
+  // QR code：指向当前页面地址（品牌浅玫瑰圆角底 + 深酒红码点，静区 4 模块）
   if (window.SMQR) {
-    SMQR.draw(ctx, location.origin + '/match.html', 290, 790, 170, { margin: 4, light: '#ffffff', dark: '#101010' });
+    SMQR.draw(ctx, location.origin + '/match.html', 290, 790, 170, { margin: 4, light: '#F5E7E4', dark: '#4A1F2B', radius: 14 });
   }
   showShareModal(canvas);
 }

@@ -554,7 +554,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 - 分享图品牌一律用图片资源（`/logo-icon.png` + `/logo-text.png`），禁止再用 `fillText` 画「心镜」文字；图片必须同源预加载完成再绘制，加载失败回退为文字，不能整卡空白。
 - 二维码必须按场景动态生成（`/qr-code.js` 的 `SMQR`），指向当前页面可访问地址：测评结果卡用 `location.origin + '/quiz?slug=' + slug`，其它页面用各自页面地址；禁止写死固定二维码或使用会话态 / 带参数的临时链接。
-- 码规格：白底黑码、静区 ≥4 模块、图上尺寸 ≥104px，canvas 内按整数 cell 绘制，禁止缩放糊化。
+- 码规格：静区 ≥4 模块、图上尺寸 ≥104px，canvas 内按整数 cell 绘制，禁止缩放糊化。
+- 分享卡二维码允许品牌配色（当前：浅玫瑰底 `#F5E7E4` + 深酒红码点 `#4A1F2B`，圆角由 `SMQR.draw` 的 `radius` 裁切，静区用底色实现；禁止反色码）。任何配色改动都必须附解码验证：至少用 jsQR + zxing 两个解码器在真实分享图上解出正确 URL，并在 `交接文档.md` 记录色值与结论。
 
 ---
 

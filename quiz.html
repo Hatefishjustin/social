@@ -2029,12 +2029,9 @@
     ctx.font = '13px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
     ctx.fillText('纯属娱乐 · 非医学诊断', W / 2, 952);
 
-    // 二维码：按当前测评的页面地址动态生成（白底黑码，静区 4 模块）
-    ctx.fillStyle = '#ffffff';
-    roundRect(ctx, 540, 750, 164, 164, 14);
-    ctx.fill();
+    // 二维码：按当前测评的页面地址动态生成（品牌浅玫瑰圆角底 + 深酒红码点，静区 4 模块）
     if (window.SMQR) {
-      SMQR.draw(ctx, shareUrl(), 540, 750, 164, { margin: 4, light: '#ffffff', dark: '#101010' });
+      SMQR.draw(ctx, shareUrl(), 540, 750, 164, { margin: 4, light: '#F5E7E4', dark: '#4A1F2B', radius: 14 });
     }
 
     var dataUrl = canvas.toDataURL('image/png');

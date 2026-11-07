@@ -444,6 +444,19 @@
     var ox = Math.floor(x + (size - drawn) / 2);
     var oy = Math.floor(y + (size - drawn) / 2);
 
+    ctx.save();
+    if (opts.radius) {
+      var corner = Math.min(opts.radius, drawn / 2);
+      ctx.beginPath();
+      ctx.moveTo(ox + corner, oy);
+      ctx.arcTo(ox + drawn, oy, ox + drawn, oy + drawn, corner);
+      ctx.arcTo(ox + drawn, oy + drawn, ox, oy + drawn, corner);
+      ctx.arcTo(ox, oy + drawn, ox, oy, corner);
+      ctx.arcTo(ox, oy, ox + drawn, oy, corner);
+      ctx.closePath();
+      ctx.clip();
+    }
+
     ctx.fillStyle = opts.light || '#ffffff';
     ctx.fillRect(ox, oy, drawn, drawn);
 
@@ -453,6 +466,7 @@
         if (qr.modules[r][c]) ctx.fillRect(ox + (margin + c) * cell, oy + (margin + r) * cell, cell, cell);
       }
     }
+    ctx.restore();
     return { x: ox, y: oy, size: drawn, cell: cell, version: qr.version };
   }
 

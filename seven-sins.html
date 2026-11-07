@@ -1375,11 +1375,9 @@ function downloadShareCard(r, btn){
     ctx.font = '400 22px "PingFang SC","Microsoft YaHei",sans-serif';
     ctx.fillText('建议 16 岁以上阅读 · 结果仅供自我探索', W/2, 1790);
 
-    // 二维码：指向当前页面地址（白底黑码，静区 4 模块）
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(820, 1660, 200, 200);
+    // 二维码：指向当前页面地址（品牌浅玫瑰圆角底 + 深酒红码点，静区 4 模块）
     if (window.SMQR){
-      SMQR.draw(ctx, location.origin + '/seven-sins.html', 820, 1660, 200, { margin: 4, light: '#ffffff', dark: '#101010' });
+      SMQR.draw(ctx, location.origin + '/seven-sins.html', 820, 1660, 200, { margin: 4, light: '#F5E7E4', dark: '#4A1F2B', radius: 16 });
     }
 
     if (canvas.toBlob){
