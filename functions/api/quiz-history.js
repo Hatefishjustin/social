@@ -45,12 +45,15 @@ export async function onRequestGet({ request, env }) {
     ).bind(user.id, limit).all();
 
     (deep.results || []).forEach((row) => {
+      const headline = row.headline || '深度匹配测评';
+      const isSevenSins = headline.indexOf('七宗罪') === 0;
       items.push({
         id: 'deep-' + row.id,
         type: 'deep',
-        title: row.headline || '深度匹配测评',
+        title: headline,
         createdAt: row.created_at,
         summary: '',
+        href: isSevenSins ? '/seven-sins.html' : '/match.html',
       });
     });
   } catch (e) {

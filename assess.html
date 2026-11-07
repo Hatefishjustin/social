@@ -2081,7 +2081,8 @@
             ? (item.slug ? '/quiz.html?slug=' + encodeURIComponent(item.slug) : '/assess.html')
             : (isSm ? '/sm-test.html' : '/match.html');
         }
-        var typeLabel = isQuiz ? '状态测评' : (isSm ? 'S/M 互动倾向' : '深度匹配测评');
+        var isSevenSins = href.indexOf('/seven-sins') === 0;
+        var typeLabel = isQuiz ? '状态测评' : (isSm ? 'S/M 互动倾向' : (isSevenSins ? '七宗罪 · 十四维' : '深度匹配测评'));
         return '<a class="history-item" href="' + esc(href) + '">' +
           '<div class="history-item-top">' +
             '<span class="history-item-type">' + esc(typeLabel) + '</span>' +
