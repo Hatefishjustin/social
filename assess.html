@@ -1596,15 +1596,7 @@
   var parRaf = 0;
   var parX = 0, parY = 0;
 
-  /* 惯性手感参数：慢拖不加惯性，轻甩 1 格、用力甩 2 格，跟手比例始终 1:1 */
-  var INERTIA_WINDOW_MS = 320;
-  var INERTIA_MAX_EXTRA = 2;
-  var INERTIA_DEAD_ZONE_PX = 0.30;
-  var INERTIA_IDLE_MS = 80;
-  var ANIM_BASE_MS = 380;
-  var ANIM_PER_EXTRA_CARD_MS = 70;
-  var ANIM_MAX_MS = 560;
-  var activeIndex = -1;
+  var activeIndex = 0;
   var closing = false;
   var cleanupTimer = 0;
   var openedIndex = -1;
@@ -1822,7 +1814,7 @@
     var dist = end - start;
     if (Math.abs(dist) < 0.0005) { current = end; render(); return; }
 
-    var duration = Math.min(ANIM_MAX_MS, ANIM_BASE_MS + ANIM_PER_EXTRA_CARD_MS * Math.max(0, Math.abs(dist) - 1));
+    var duration = 380;
     var t0 = performance.now();
 
     function frame(t) {
@@ -2169,19 +2161,7 @@
     stage.classList.remove('is-dragging');
     if (moveRaf) { cancelAnimationFrame(moveRaf); moveRaf = 0; }
 
-    /* 惯性：先扣掉慢拖死区，再按 320ms 速度窗口投影；额外跨卡最多 2 格，
-       且已拖过的距离优先，避免一甩多张 */
-    var dragCards = Math.abs(current - startCurrent);
-    var slack = Math.max(0, INERTIA_MAX_EXTRA - dragCards);
-    var speed = Math.abs(velocity);
-    var span = geometry.mobile ? 150 : 190;
-    var extra = speed > INERTIA_DEAD_ZONE_PX
-      ? (velocity < 0 ? -1 : 1) * ((speed - INERTIA_DEAD_ZONE_PX) * INERTIA_WINDOW_MS / span)
-      : 0;
-    if (moved < 8 || performance.now() - lastTime > INERTIA_IDLE_MS) extra = 0;
-    extra = Math.max(-slack, Math.min(slack, extra));
-
-    var projected = current + extra;
+    var projected = current + velocity * 0.42;
     animateTo(Math.round(projected));
 
     if (moved < 8) {
