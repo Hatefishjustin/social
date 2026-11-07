@@ -1332,7 +1332,8 @@ document.getElementById('restartFromResume').addEventListener('click', function(
   refreshResumeBar();
   startQuiz(false);
 });
-document.getElementById('exitLink').addEventListener('click', function(e){
+var exitLink = document.getElementById('exitLink');
+if (exitLink) exitLink.addEventListener('click', function(e){
   if (state.mode === 'quiz' && countAnswered() > 0){
     e.preventDefault();
     tryExit();

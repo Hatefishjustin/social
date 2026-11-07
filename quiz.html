@@ -137,32 +137,61 @@
     align-items: center;
     gap: 10px;
     font-size: 11px;
-    letter-spacing: 0.24em;
+    letter-spacing: 0.22em;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 14px;
+    margin-bottom: 18px;
+    font-weight: 600;
   }
   .eyebrow::before {
     content: "";
-    width: 18px;
+    width: 20px;
     height: 1px;
-    background: var(--accent);
-    opacity: .7;
+    background: var(--hairline-strong);
   }
 
-  .h1 {
-    font-size: clamp(30px, 5.4vw, 42px);
-    line-height: 1.16;
-    letter-spacing: -0.035em;
+  .hero-title {
+    font-size: clamp(36px, 7vw, 56px);
+    line-height: 1.05;
     font-weight: 700;
-    margin-bottom: 12px;
+    letter-spacing: -0.035em;
+    margin-bottom: 16px;
+    text-wrap: balance;
+  }
+  .hero-title .accent { color: var(--accent); }
+
+  .hero-subtitle {
+    font-size: 19px;
+    line-height: 1.55;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: -0.01em;
+    margin-bottom: 18px;
+    text-wrap: balance;
   }
 
-  .sub {
-    font-size: 15.5px;
-    line-height: 1.75;
+  .lede {
+    font-size: 14.5px;
+    line-height: 1.85;
     color: var(--text-secondary);
-    margin-bottom: 22px;
+    max-width: 500px;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 32px;
+    margin: 30px 0 34px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .meta-row strong {
+    display: block;
+    font-size: 21px;
+    line-height: 1.2;
+    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
   }
 
   .muted {
@@ -172,15 +201,6 @@
   }
 
   /* ---------- 落地页 ---------- */
-  .landing-card {
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    background: linear-gradient(160deg, var(--surface-raised), #150e1b);
-    border: 1px solid rgba(223, 182, 178, 0.16);
-    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
-    margin-bottom: 22px;
-  }
-
   .chips {
     display: flex;
     flex-wrap: wrap;
@@ -202,53 +222,81 @@
     color: var(--accent);
   }
 
-  .landing-card h2 {
-    font-size: 18px;
-    line-height: 1.5;
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-  .landing-card p {
-    font-size: 14px;
-    line-height: 1.8;
-    color: var(--text-secondary);
-  }
-
   .btn {
     font: inherit;
-    font-size: 13px;
-    padding: 11px 16px;
-    border-radius: 100px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-secondary);
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--hairline-strong);
+    padding: 14px 28px;
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all .2s ease;
+    border-radius: 100px;
+    transition: all .2s var(--ease);
     text-align: center;
   }
-  .btn:hover { border-color: var(--border-hover); color: var(--text-primary); }
+  .btn:hover { background: var(--surface-hover); border-color: rgba(255,255,255,.24); }
+  .btn:active { transform: scale(.98); }
   .btn.primary {
     background: var(--accent);
     border-color: var(--accent);
-    color: #fff;
+    color: #1a0f18;
     font-weight: 600;
   }
-  .btn.primary:hover { background: var(--accent-dim); border-color: var(--accent-dim); }
-  .btn.block {
-    display: block;
-    width: 100%;
-    padding: 15px 20px;
-    font-size: 15px;
-    border-radius: 100px;
-  }
+  .btn.primary:hover { background: var(--accent-dim); transform: translateY(-1px) scale(1.01); box-shadow: 0 12px 32px var(--accent-glow); }
+  .btn.primary:active { transform: translateY(0) scale(.98); box-shadow: none; }
+  .btn.block { display: block; width: 100%; padding: 15px 20px; font-size: 15px; }
+  .btn:disabled { opacity: .3; cursor: default; transform: none; box-shadow: none; }
 
-  .start-row {
+  .resume-bar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    border: 1px solid var(--hairline-strong);
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin: 0 0 24px;
   }
-  .start-row .btn.primary { flex: 1; }
+  .resume-bar p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+  .resume-bar p strong { color: var(--accent); font-weight: 600; }
+  .resume-actions { display: flex; gap: 10px; align-items: center; }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 6px 2px;
+  }
+  .link-btn:hover { color: var(--text-primary); }
+  .mini-btn {
+    background: var(--accent);
+    color: #1a0f18;
+    border: none;
+    border-radius: 100px;
+    padding: 9px 18px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s var(--ease);
+  }
+  .mini-btn:hover { background: var(--accent-dim); }
+
+  .landing-note {
+    margin-top: 22px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    max-width: 480px;
+  }
+  .landing-note strong { color: var(--text-primary); font-weight: 600; }
+
+  /* 结果页复用 */
   .resume-note {
     display: inline-flex;
     align-items: center;
@@ -256,6 +304,12 @@
     font-size: 12px;
     color: var(--accent);
     margin-bottom: 12px;
+  }
+  .disclaimer {
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--text-tertiary);
+    margin-top: 18px;
   }
 
   .recent {
@@ -809,7 +863,6 @@
     .topbar { padding: 14px 16px; }
     .brand { display: none; }
     .shell { padding: 72px 16px 56px; }
-    .landing-card { padding: 20px; border-radius: 18px; }
     .q-text { font-size: 21px; }
     .option { padding: 15px 16px; font-size: 14.5px; border-radius: 13px; }
     .result-card { padding: 18px; border-radius: 18px; }
@@ -818,7 +871,7 @@
   }
 
   @media (max-width: 390px) {
-    .h1 { font-size: 30px; }
+    .hero-title { font-size: 32px; }
     .score-num { font-size: 48px; }
     .q-nav { margin-top: 20px; }
   }
@@ -1281,15 +1334,40 @@
   }
 
   /* ---------- 落地页 ---------- */
+  function titleWithAccent(title) {
+    var t = String(title || '');
+    if (t.indexOf('|') >= 0) {
+      var parts = t.split('|');
+      return esc(parts[0]) + '<span class="accent">' + esc(parts.slice(1).join('|')) + '</span>';
+    }
+    var len = t.length;
+    if (len <= 3) return esc(t);
+    var split = Math.max(1, Math.ceil(len / 2));
+    return esc(t.slice(0, split)) + '<span class="accent">' + esc(t.slice(split)) + '</span>';
+  }
+
+  function estimateMinutes(bank) {
+    var m = (bank.meta || '').match(/(\d+)\s*分钟/);
+    if (m) return m[1];
+    var n = bank.questions ? bank.questions.length : 0;
+    return Math.max(1, Math.ceil(n * 0.4));
+  }
+
+  function countDimensions(bank) {
+    if (bank.dimensions) return Object.keys(bank.dimensions).length;
+    if (bank.dims) return Object.keys(bank.dims).length;
+    if (bank.bands) return bank.bands.length;
+    return 0;
+  }
+
   function renderLanding() {
     var bank = state.bank;
     var progress = readJSON(PROGRESS_KEY + state.slug);
     var recent = getRecent();
 
-    var metaHtml = '';
-    if (bank.meta) metaHtml += '<span class="chip accent">' + esc(bank.meta) + '</span>';
-    if (bank.cat) metaHtml += '<span class="chip">' + esc(bank.cat) + '</span>';
-    if (bank.badge) metaHtml += '<span class="chip">' + esc(bank.badge) + '</span>';
+    var qCount = bank.questions ? bank.questions.length : 0;
+    var minutes = estimateMinutes(bank);
+    var dimCount = countDimensions(bank);
 
     var recentHtml = '';
     if (recent.length) {
@@ -1303,37 +1381,47 @@
     }
 
     var hasProgress = progress && progress.answers && progress.answers.length > 0;
+    var answeredCount = hasProgress ? progress.answers.filter(function (a) { return a !== null && a !== undefined; }).length : 0;
+
+    var resumeHtml = '';
+    if (hasProgress) {
+      resumeHtml =
+        '<div class="resume-bar">' +
+          '<p>上次答到 <strong>第 ' + Math.min((progress.index || 0) + 1, qCount) + ' 题</strong>（已答 ' + answeredCount + ' / ' + qCount + '），进度已保存在本机。</p>' +
+          '<div class="resume-actions">' +
+            '<button class="link-btn" type="button" id="restartBtn">重新开始</button>' +
+            '<button class="mini-btn" type="button" id="resumeBtn">继续作答</button>' +
+          '</div>' +
+        '</div>';
+    }
+
     landingEl.innerHTML =
       '<div class="fade">' +
-        '<div class="eyebrow">' + esc(bank.cat || '测评') + '</div>' +
-        '<h1 class="h1">' + esc(bank.title) + '</h1>' +
-        '<p class="sub">' + esc(bank.subtitle || bank.sub || '') + '</p>' +
-        (hasProgress
-          ? '<div class="resume-note">已保存上次进度，可以接着答，也可以重新开始</div>'
-          : '') +
-        '<div class="start-row">' +
-          '<button id="startBtn" class="btn primary block" type="button">' +
-            (hasProgress ? '继续上次进度' : '开始测试') +
-          '</button>' +
-          (hasProgress
-            ? '<button id="restartBtn" class="btn block" type="button" style="margin-top:10px;">重新开始</button>'
-            : '') +
+        '<div class="eyebrow">' + esc(bank.cat || 'SoulMirror · 测评') + '</div>' +
+        '<h1 class="hero-title">' + titleWithAccent(bank.title) + '</h1>' +
+        '<p class="hero-subtitle">' + esc(bank.subtitle || bank.sub || '') + '</p>' +
+        '<p class="lede">' + esc(bank.intro || bank.desc || '') + '</p>' +
+        '<div class="meta-row">' +
+          '<div><strong>' + qCount + '</strong>道题</div>' +
+          '<div><strong>' + minutes + '</strong>分钟</div>' +
+          (dimCount ? '<div><strong>' + dimCount + '</strong>维剖面</div>' : '') +
         '</div>' +
-        '<div class="landing-card">' +
-          '<div class="chips">' + metaHtml + '</div>' +
-          '<h2>开始之前</h2>' +
-          '<p>' + esc(bank.intro || bank.desc || '') + '</p>' +
-        '</div>' +
-        recentHtml +
-        '<p class="disclaimer">' +
-          '本测试为娱乐与自我探索用途，不构成心理诊断或医疗建议。结果只描述倾向，不是对你的定义。' +
+        resumeHtml +
+        '<button class="btn primary" type="button" id="startBtn" style="align-self:flex-start;">' +
+          (hasProgress ? '继续测评 →' : '开始测评 →') +
+        '</button>' +
+        '<p class="landing-note">' +
+          '本测试为娱乐与自我探索用途，<strong>不构成心理诊断或医疗建议</strong>。结果只描述倾向，不是对你的定义。' +
           '如果你近期持续感到困扰，建议和信任的人聊聊，或联系学校心理老师。' +
         '</p>' +
+        recentHtml +
       '</div>';
 
     showScreen('landing');
     var startBtn = document.getElementById('startBtn');
     if (startBtn) startBtn.addEventListener('click', startQuiz);
+    var resumeBtn = document.getElementById('resumeBtn');
+    if (resumeBtn) resumeBtn.addEventListener('click', startQuiz);
     var restartBtn = document.getElementById('restartBtn');
     if (restartBtn) restartBtn.addEventListener('click', function () {
       removeKey(PROGRESS_KEY + state.slug);
