@@ -1302,18 +1302,22 @@
         }).join('') + '</section>';
     }
 
+    var hasProgress = progress && progress.answers && progress.answers.length > 0;
     landingEl.innerHTML =
       '<div class="fade">' +
         '<div class="eyebrow">' + esc(bank.cat || '测评') + '</div>' +
         '<h1 class="h1">' + esc(bank.title) + '</h1>' +
         '<p class="sub">' + esc(bank.subtitle || bank.sub || '') + '</p>' +
-        (progress && progress.answers && progress.answers.length
-          ? '<div class="resume-note">已保存上次进度，可以接着答</div>'
+        (hasProgress
+          ? '<div class="resume-note">已保存上次进度，可以接着答，也可以重新开始</div>'
           : '') +
         '<div class="start-row">' +
           '<button id="startBtn" class="btn primary block" type="button">' +
-            (progress && progress.answers && progress.answers.length ? '继续上次进度' : '开始测试') +
+            (hasProgress ? '继续上次进度' : '开始测试') +
           '</button>' +
+          (hasProgress
+            ? '<button id="restartBtn" class="btn block" type="button" style="margin-top:10px;">重新开始</button>'
+            : '') +
         '</div>' +
         '<div class="landing-card">' +
           '<div class="chips">' + metaHtml + '</div>' +
@@ -1330,6 +1334,11 @@
     showScreen('landing');
     var startBtn = document.getElementById('startBtn');
     if (startBtn) startBtn.addEventListener('click', startQuiz);
+    var restartBtn = document.getElementById('restartBtn');
+    if (restartBtn) restartBtn.addEventListener('click', function () {
+      removeKey(PROGRESS_KEY + state.slug);
+      startQuiz();
+    });
   }
 
   /* ---------- 答题 ---------- */
