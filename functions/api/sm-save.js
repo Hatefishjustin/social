@@ -9,6 +9,7 @@
  */
 import { hasTable } from '../_lib/schema.js';
 import { getCurrentUser } from '../_lib/auth.js';
+import { checkRateLimit, getRateLimitIdentity, isSameOrigin } from '../_lib/ratelimit.js';
 
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -19,6 +20,18 @@ function jsonResponse(body, status = 200) {
 
 export const onRequestPost = async ({ request, env }) => {
   if (!env || !env.DB) return jsonResponse({ error: 'missing_db' }, 500);
+
+  // 同源校验：浏览器跨站 POST 会携带 Origin，直接拒绝，避免被第三方页面刷入。
+  if (!isSameOrigin(request)) {
+    return jsonResponse({ message: '非法来源' }, 403);
+  }
+
+  // 按 IP 限流，防止脚本批量灌入测评记录。
+  const rl = getRateLimitIdentity(request);
+  const limited = await checkRateLimit(env, `sm-save:ip:${rl.ip}`, 20, 60 * 60 * 1000);
+  if (!limited.allowed) {
+    return jsonResponse({ message: '保存太频繁，请稍后再试', retryAfter: limited.retryAfter }, 429);
+  }
 
   // 1. 解析请求
   let body;
